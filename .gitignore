@@ -1,0 +1,7 @@
+build/
+results/runs/
+*.vcd
+*.out
+__pycache__/
+backend/openlane/runs/
+.env
