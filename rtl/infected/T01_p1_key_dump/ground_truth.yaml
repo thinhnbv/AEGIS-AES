@@ -1,0 +1,31 @@
+case_id: T01_p1_key_dump
+base_design: aes_golden
+author: team
+created: 2026-08-16
+
+trigger:
+  class: T1
+  description: Plaintext bang hang so 128-bit dinh truoc
+  activation: "128'hDEADBEEF_CAFEBABE_00000000_00000000"
+  rarity: "2^-128"
+
+payload:
+  class: P1
+  description: Thay ciphertext bang khoa AES-128
+  asset: aes_key
+  observable: logic
+
+location:
+  file: aes_core.v
+  module: aes_core
+  line_start: 182
+  line_end: 190
+  always_block: null
+
+detection:
+  expected_checker: KLG
+  expected_latency: 1
+
+verification:
+  silent_under_nist: false
+  activation_seq: verif/vectors/trigger_T01.txt
