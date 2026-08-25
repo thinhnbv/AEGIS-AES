@@ -12,6 +12,8 @@ module tru_tamper_response #(
     input  wire        clk,
     input  wire        rst_n,
     input  wire        klg_alarm,
+    input  wire        klg_verdict_valid,
+    input  wire        klg_verdict_block,
     input  wire        fic_alarm,
     input  wire        rcm_alarm,
     input  wire        orc_alarm,
@@ -36,7 +38,6 @@ module tru_tamper_response #(
       sec_warning  <= 1'b0;
       sec_status   <= 8'd0;
       zeroize      <= 1'b0;
-      block_output <= 1'b0;
     end else begin
       case (state)
         `AEGIS_NORMAL: begin
@@ -62,7 +63,6 @@ module tru_tamper_response #(
         `AEGIS_LOCKDOWN: begin
           sec_alarm    <= 1'b1;
           zeroize      <= 1'b1;
-          block_output <= 1'b1;
         end
 
         default: state <= `AEGIS_LOCKDOWN;
@@ -82,6 +82,19 @@ module tru_tamper_response #(
     end
   end
 
+
+  // Mac dinh chan dau ra. Chi verdict sach trong NORMAL moi duoc mo.
+  // Cac comparator KLG deu dung truoc thanh ghi verdict.
+  always @(*) begin
+    block_output = 1'b1;
+
+    if (rst_n &&
+        (state == `AEGIS_NORMAL) &&
+        klg_verdict_valid &&
+        !klg_verdict_block &&
+        !hard_alarm)
+      block_output = 1'b0;
+  end
 endmodule
 
 `default_nettype wire

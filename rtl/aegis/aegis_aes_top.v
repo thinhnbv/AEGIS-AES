@@ -40,6 +40,7 @@ module aegis_aes_top #(
   wire         core_ready;
   wire [127:0] core_dout;
   wire         core_dvalid;
+  wire         core_result_new;
 
   // AES-128: keylen = 0, encdec = 1.
   // Lap lai khoa o hai nua de tranh nham mapping cua secworks/aes.
@@ -77,6 +78,13 @@ module aegis_aes_top #(
 
   wire       klg_alarm;
   wire [3:0] klg_code;
+  wire       klg_verdict_valid;
+  wire       klg_verdict_block;
+
+  // Tao mot xung lay mau cho moi ket qua moi cua AES core.
+  // FSM roi ST_WAIT_RESULT_HIGH ngay sau canh nhan ket qua dau tien.
+  assign core_result_new =
+    (state == ST_WAIT_RESULT_HIGH) && core_dvalid;
 
   klg_key_leak_guard #(
     .NUM_RKEY(`AEGIS_NUM_RKEY)
@@ -86,9 +94,11 @@ module aegis_aes_top #(
     .key_reg(key_reg),
     .round_keys_flat(round_keys_flat),
     .data_out(core_dout),
-    .data_out_valid(core_dvalid),
+    .data_out_valid(core_result_new),
     .klg_alarm(klg_alarm),
-    .klg_code(klg_code)
+    .klg_code(klg_code),
+    .klg_verdict_valid(klg_verdict_valid),
+    .klg_verdict_block(klg_verdict_block)
   );
 
   wire       zeroize;
@@ -101,6 +111,8 @@ module aegis_aes_top #(
     .clk(clk),
     .rst_n(rst_n),
     .klg_alarm(klg_alarm),
+    .klg_verdict_valid(klg_verdict_valid),
+    .klg_verdict_block(klg_verdict_block),
     .fic_alarm(1'b0),
     .rcm_alarm(1'b0),
     .orc_alarm(1'b0),
@@ -193,7 +205,7 @@ module aegis_aes_top #(
     end
   end
 
-  // Chan dau ra khi TRU chuyen sang LOCKDOWN.
+  // TRU chi mo dau ra trong cua so verdict sach mot chu ky.
   assign data_out =
     block_output ? 128'd0 : core_dout;
 
