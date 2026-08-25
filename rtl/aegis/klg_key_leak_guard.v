@@ -19,7 +19,9 @@ module klg_key_leak_guard #(
     input  wire [127:0]             data_out,
     input  wire                     data_out_valid,
     output reg                      klg_alarm,
-    output reg  [3:0]               klg_code
+    output reg  [3:0]               klg_code,
+    output reg                      klg_verdict_valid,
+    output reg                      klg_verdict_block
 );
 
   // --- Tang 1: so khop toan phan ---
@@ -56,15 +58,33 @@ module klg_key_leak_guard #(
   // --- Gom canh bao ---
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-      klg_alarm <= 1'b0;
-      klg_code  <= 4'd0;
-    end else if (data_out_valid) begin
-      if (hit_key_full || |hit_rkey) begin
-        klg_alarm <= 1'b1;  klg_code <= 4'd1;  // ro ri toan phan
-      end else if (|hit_lane) begin
-        klg_alarm <= 1'b1;  klg_code <= 4'd2;  // ro ri tung lat
-      end else if (hit_ham) begin
-        klg_alarm <= 1'b1;  klg_code <= 4'd3;  // gan giong khoa
+      klg_alarm         <= 1'b0;
+      klg_code          <= 4'd0;
+      klg_verdict_valid <= 1'b0;
+      klg_verdict_block <= 1'b1;
+    end else begin
+      // Mac dinh fail-secure khi khong co verdict hop le.
+      klg_verdict_valid <= 1'b0;
+      klg_verdict_block <= 1'b1;
+
+      if (data_out_valid) begin
+        klg_verdict_valid <= 1'b1;
+
+        if (hit_key_full || |hit_rkey) begin
+          klg_alarm         <= 1'b1;
+          klg_code          <= 4'd1;  // ro ri toan phan
+          klg_verdict_block <= 1'b1;
+        end else if (|hit_lane) begin
+          klg_alarm         <= 1'b1;
+          klg_code          <= 4'd2;  // ro ri tung lat
+          klg_verdict_block <= 1'b1;
+        end else if (hit_ham) begin
+          klg_alarm         <= 1'b1;
+          klg_code          <= 4'd3;  // gan giong khoa
+          klg_verdict_block <= 1'b1;
+        end else begin
+          klg_verdict_block <= 1'b0;
+        end
       end
     end
   end
