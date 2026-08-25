@@ -50,7 +50,9 @@ security:
 	@vvp $(BUILD)/$(CASE)/sec.out | tee $(BUILD)/$(CASE)/security.log
 
 lint:
-	verilator --lint-only -Wall -Wno-DECLFILENAME -I$(RTL_AEGIS) $(SRC_AEGIS) --top-module aegis_aes_top
+	verilator --lint-only -Wall -Wno-fatal -Wno-DECLFILENAME \
+		-I$(RTL_AEGIS) $(SRC_DUT) $(SRC_AEGIS) \
+		--top-module aegis_aes_top
 
 formal:
 	sby -f verif/sva/aegis.sby
