@@ -36,6 +36,8 @@ module tb_security;
   integer clean_output_cycle;
   integer klg_cycle;
   integer fail_count;
+  integer round_idx;
+  integer tap_fail_count;
 
   aegis_aes_top dut (
     .clk(clk),
@@ -65,12 +67,13 @@ module tb_security;
   end
 
   initial begin
-    rst_n         = 1'b0;
-    key           = 128'd0;
-    key_valid     = 1'b0;
-    data_in       = 128'd0;
-    data_in_valid = 1'b0;
-    fail_count    = 0;
+    rst_n          = 1'b0;
+    key            = 128'd0;
+    key_valid      = 1'b0;
+    data_in        = 128'd0;
+    data_in_valid  = 1'b0;
+    fail_count     = 0;
+    tap_fail_count = 0;
 
 `ifdef CASE
     $display("==================================================");
@@ -139,6 +142,28 @@ module tb_security;
     wait(busy == 1'b1);
     wait(busy == 1'b0);
     $display("[INFO] Key expansion hoan tat");
+
+    #1;
+
+    // Tham chieu phan cap chi dung trong testbench de doi chieu mapping.
+    // RTL tong hop chi su dung cong round_keys_flat.
+    for (round_idx = 0;
+        round_idx < `AEGIS_NUM_RKEY;
+        round_idx = round_idx + 1) begin
+      if (dut.round_keys_flat[round_idx*128 +: 128] !==
+          dut.u_core.keymem.key_mem[round_idx]) begin
+        $display("[FAIL] Mapping round key %0d khong dung", round_idx);
+        $display("       Tap     : %h",
+                dut.round_keys_flat[round_idx*128 +: 128]);
+        $display("       Key mem : %h",
+                dut.u_core.keymem.key_mem[round_idx]);
+        tap_fail_count = tap_fail_count + 1;
+        fail_count     = fail_count + 1;
+      end
+    end
+
+    if (tap_fail_count == 0)
+      $display("[PASS] Cong tapped anh xa dung ca 11 round key AES-128");
 
     // Gui mot plaintext sach truoc de kiem tra duong release.
     @(negedge clk);

@@ -14,12 +14,16 @@ SRC_AEGIS  = $(wildcard $(RTL_AEGIS)/*.v)
 SRC_CASE   = $(wildcard $(RTL_CASE)/*.v)
 
 ifeq ($(CASE),clean)
-	SRC_DUT = $(SRC_GOLD)
+	SRC_DUT       = $(SRC_GOLD)
+	SRC_AEGIS_DUT = $(SRC_AEGIS)
 else
-	OVERRIDE  = $(notdir $(SRC_CASE))
-	SRC_KEEP  = $(filter-out $(addprefix $(RTL_GOLD)/,$(OVERRIDE)), \
+	OVERRIDE       = $(notdir $(SRC_CASE))
+	SRC_KEEP       = $(filter-out $(addprefix $(RTL_GOLD)/,$(OVERRIDE)), \
 	$(SRC_GOLD))
-	SRC_DUT   = $(SRC_KEEP) $(SRC_CASE)
+	SRC_AEGIS_KEEP = $(filter-out $(addprefix $(RTL_AEGIS)/,$(OVERRIDE)), \
+	$(SRC_AEGIS))
+	SRC_DUT        = $(SRC_KEEP) $(SRC_CASE)
+	SRC_AEGIS_DUT  = $(SRC_AEGIS_KEEP)
 endif
 
 .PHONY: help golden sim security lint formal all-cases fpga backend campaign report clean
@@ -41,17 +45,17 @@ golden:
 
 sim:
 	@mkdir -p $(BUILD)/$(CASE)
-	iverilog -g2012 -I$(RTL_AEGIS) -o $(BUILD)/$(CASE)/sim.out $(SRC_DUT) $(SRC_AEGIS) $(TB)/tb_aegis_top.sv
+	iverilog -g2012 -I$(RTL_AEGIS) -o $(BUILD)/$(CASE)/sim.out $(SRC_DUT) $(SRC_AEGIS_DUT) $(TB)/tb_aegis_top.sv
 	@bash -o pipefail -c 'vvp $(BUILD)/$(CASE)/sim.out | tee $(BUILD)/$(CASE)/sim.log'
 
 security:
 	@mkdir -p $(BUILD)/$(CASE)
-	iverilog -g2012 -I$(RTL_AEGIS) -DCASE=\"$(CASE)\" -o $(BUILD)/$(CASE)/sec.out $(SRC_DUT) $(SRC_AEGIS) $(TB)/tb_security.sv
+	iverilog -g2012 -I$(RTL_AEGIS) -DCASE=\"$(CASE)\" -o $(BUILD)/$(CASE)/sec.out $(SRC_DUT) $(SRC_AEGIS_DUT) $(TB)/tb_security.sv
 	@bash -o pipefail -c 'vvp $(BUILD)/$(CASE)/sec.out | tee $(BUILD)/$(CASE)/security.log'
 
 lint:
 	verilator --lint-only -Wall -Wno-fatal -Wno-DECLFILENAME \
-		-I$(RTL_AEGIS) $(SRC_DUT) $(SRC_AEGIS) \
+		-I$(RTL_AEGIS) $(SRC_DUT) $(SRC_AEGIS_DUT) \
 		--top-module aegis_aes_top
 
 formal:
