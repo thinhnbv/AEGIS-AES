@@ -42,12 +42,12 @@ golden:
 sim:
 	@mkdir -p $(BUILD)/$(CASE)
 	iverilog -g2012 -I$(RTL_AEGIS) -o $(BUILD)/$(CASE)/sim.out $(SRC_DUT) $(SRC_AEGIS) $(TB)/tb_aegis_top.sv
-	@vvp $(BUILD)/$(CASE)/sim.out | tee $(BUILD)/$(CASE)/sim.log
+	@bash -o pipefail -c 'vvp $(BUILD)/$(CASE)/sim.out | tee $(BUILD)/$(CASE)/sim.log'
 
 security:
 	@mkdir -p $(BUILD)/$(CASE)
 	iverilog -g2012 -I$(RTL_AEGIS) -DCASE=\"$(CASE)\" -o $(BUILD)/$(CASE)/sec.out $(SRC_DUT) $(SRC_AEGIS) $(TB)/tb_security.sv
-	@vvp $(BUILD)/$(CASE)/sec.out | tee $(BUILD)/$(CASE)/security.log
+	@bash -o pipefail -c 'vvp $(BUILD)/$(CASE)/sec.out | tee $(BUILD)/$(CASE)/security.log'
 
 lint:
 	verilator --lint-only -Wall -Wno-fatal -Wno-DECLFILENAME \

@@ -36,10 +36,14 @@ module tb_aes_golden;
     file = $fopen("verif/vectors/fips197_appb.txt", "r");
     if (file == 0) begin
       $display("[LOI] Khong the mo file vector! Kiem tra lai duong dan.");
-      $finish;
+      $fatal(1, "Khong the mo file vector fips197_appb.txt");
     end
     scan_result = $fscanf(file, "%h %h %h\n", nist_key, nist_pt, nist_ct);
     $fclose(file);
+
+    if (scan_result != 3) begin
+      $fatal(1, "Noi dung fips197_appb.txt khong hop le");
+    end
 
     $display("   Da nap Key      : %h", nist_key);
     $display("   Da nap Plaintext: %h", nist_pt);
@@ -90,6 +94,7 @@ module tb_aes_golden;
       $display("   Mong doi : %h", nist_ct);
       $display("   Thuc te  : %h", result);
       $display("==================================================");
+      $fatal(1, "AES GOLDEN TEST THAT BAI");
     end
     $finish;
   end
