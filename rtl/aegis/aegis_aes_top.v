@@ -43,13 +43,14 @@ module aegis_aes_top #(
   wire         core_result_new;
   wire         zeroize;
   wire         core_reset_n;
+  wire [`AEGIS_NUM_RKEY*128-1:0] round_keys_flat;
 
   // TRU giu AES core trong reset de xoa toan bo key schedule.
   assign core_reset_n = rst_n & ~zeroize;
 
   // AES-128: keylen = 0, encdec = 1.
   // Lap lai khoa o hai nua de tranh nham mapping cua secworks/aes.
-  aes_core u_core (
+  aes_core_tapped u_core (
     .clk(clk),
     .reset_n(core_reset_n),
     .encdec(1'b1),
@@ -60,26 +61,9 @@ module aegis_aes_top #(
     .keylen(1'b0),
     .block(block_reg),
     .result(core_dout),
-    .result_valid(core_dvalid)
+    .result_valid(core_dvalid),
+    .round_keys_flat(round_keys_flat)
   );
-
-  // Tap 11 round key AES-128 trong mo phong.
-  // Tham chieu phan cap nay khong dung duoc khi tong hop FPGA/ASIC.
-  wire [`AEGIS_NUM_RKEY*128-1:0] round_keys_flat;
-
-  assign round_keys_flat = {
-    u_core.keymem.key_mem[10],
-    u_core.keymem.key_mem[9],
-    u_core.keymem.key_mem[8],
-    u_core.keymem.key_mem[7],
-    u_core.keymem.key_mem[6],
-    u_core.keymem.key_mem[5],
-    u_core.keymem.key_mem[4],
-    u_core.keymem.key_mem[3],
-    u_core.keymem.key_mem[2],
-    u_core.keymem.key_mem[1],
-    u_core.keymem.key_mem[0]
-  };
 
   wire       klg_alarm;
   wire [3:0] klg_code;
