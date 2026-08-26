@@ -43,10 +43,14 @@ module tb_aegis_top;
     file = $fopen("verif/vectors/fips197_appb.txt", "r");
     if (file == 0) begin
       $display("[LOI] Khong the mo file vector! Kiem tra lai duong dan.");
-      $finish;
+      $fatal(1, "Khong the mo file fips197_appb.txt");
     end
     scan_result = $fscanf(file, "%h %h %h\n", nist_key, nist_pt, nist_ct);
     $fclose(file);
+
+    if (scan_result != 3) begin
+      $fatal(1, "Noi dung fips197_appb.txt khong hop le");
+    end
 
     $display("   Da nap Key      : %h", nist_key);
     $display("   Da nap Plaintext: %h", nist_pt);
@@ -97,6 +101,7 @@ module tb_aegis_top;
       $display("   Mong doi : %h", nist_ct);
       $display("   Thuc te  : %h", result);
       $display("==================================================");
+      $fatal(1, "NIST REGRESSION THAT BAI");
     end
 
         // --- BUOC 4: KIEM TRA T01 TRONG MO PHONG CO KIEM SOAT ---
@@ -104,7 +109,7 @@ module tb_aegis_top;
 
     if (trigger_file == 0) begin
       $display("[FAIL] Khong mo duoc trigger_T01.txt");
-      $finish;
+      $fatal(1, "Khong mo duoc trigger_T01.txt");
     end
 
     trigger_scan_result = $fscanf(
@@ -118,7 +123,7 @@ module tb_aegis_top;
 
     if (trigger_scan_result != 3) begin
       $display("[FAIL] Noi dung trigger_T01.txt khong hop le");
-      $finish;
+      $fatal(1, "Noi dung trigger_T01.txt khong hop le");
     end
 
     // Nap lai khoa cho phep thu T01.
@@ -157,6 +162,7 @@ module tb_aegis_top;
       $display("   Mong doi : %h", trigger_expected);
       $display("   Thuc te  : %h", result);
       $display("==================================================");
+      $fatal(1, "T01 KHONG DUOC KICH HOAT");
     end
 
     $finish;
