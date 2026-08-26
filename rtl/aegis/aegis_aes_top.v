@@ -41,12 +41,17 @@ module aegis_aes_top #(
   wire [127:0] core_dout;
   wire         core_dvalid;
   wire         core_result_new;
+  wire         zeroize;
+  wire         core_reset_n;
+
+  // TRU giu AES core trong reset de xoa toan bo key schedule.
+  assign core_reset_n = rst_n & ~zeroize;
 
   // AES-128: keylen = 0, encdec = 1.
   // Lap lai khoa o hai nua de tranh nham mapping cua secworks/aes.
   aes_core u_core (
     .clk(clk),
-    .reset_n(rst_n),
+    .reset_n(core_reset_n),
     .encdec(1'b1),
     .init(core_init),
     .next(core_next),
@@ -101,7 +106,6 @@ module aegis_aes_top #(
     .klg_verdict_block(klg_verdict_block)
   );
 
-  wire       zeroize;
   wire       block_output;
   wire       sec_alarm_int;
   wire       sec_warning_int;
@@ -132,6 +136,13 @@ module aegis_aes_top #(
       core_init  <= 1'b0;
       core_next  <= 1'b0;
       busy_reg   <= 1'b0;
+    end else if (zeroize) begin
+      state      <= ST_IDLE;
+      key_reg    <= 128'd0;
+      block_reg  <= 128'd0;
+      core_init  <= 1'b0;
+      core_next  <= 1'b0;
+      busy_reg   <= 1'b1;
     end else begin
       // init va next chi duoc phat trong mot chu ky.
       core_init <= 1'b0;

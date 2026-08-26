@@ -291,6 +291,48 @@ module tb_security;
       fail_count = fail_count + 1;
     end
 
+    // Zeroization phai hoan tat trong mot chu ky sau yeu cau cua TRU.
+    @(posedge clk);
+    #1;
+
+    if (dut.key_reg === 128'd0)
+      $display("[PASS] Wrapper da xoa key_reg");
+    else begin
+      $display("[FAIL] Wrapper chua xoa key_reg: %h", dut.key_reg);
+      fail_count = fail_count + 1;
+    end
+
+    if (dut.round_keys_flat ===
+        {(`AEGIS_NUM_RKEY * 128){1'b0}})
+      $display("[PASS] AES core da xoa 11 round key");
+    else begin
+      $display("[FAIL] AES core chua xoa het 11 round key");
+      fail_count = fail_count + 1;
+    end
+
+    if ((dut.zeroize === 1'b1) &&
+        (sec_alarm === 1'b1) &&
+        (sec_status[`AEGIS_ST_KLG] === 1'b1))
+      $display("[PASS] Zeroize, LOCKDOWN va sec_status van sticky");
+    else begin
+      $display("[FAIL] Trang thai bao mat khong sticky sau zeroization");
+      fail_count = fail_count + 1;
+    end
+
+    if ((data_out_valid === 1'b0) && (data_out === 128'd0))
+      $display("[PASS] Output van bi chan trong khi zeroization");
+    else begin
+      $display("[FAIL] Output khong an toan trong khi zeroization");
+      fail_count = fail_count + 1;
+    end
+
+    if (busy === 1'b1)
+      $display("[PASS] Wrapper bao khong san sang trong LOCKDOWN");
+    else begin
+      $display("[FAIL] Wrapper bao san sang khi dang LOCKDOWN");
+      fail_count = fail_count + 1;
+    end
+
     $display("==================================================");
     if (fail_count == 0) begin
       $display("[PASS] SECURITY TEST HOAN TAT");
