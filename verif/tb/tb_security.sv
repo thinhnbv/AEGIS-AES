@@ -84,7 +84,7 @@ module tb_security;
 
     if (clean_file == 0) begin
       $display("[FAIL] Khong mo duoc fips197_appb.txt");
-      $finish;
+      $fatal(1, "Khong mo duoc fips197_appb.txt");
     end
 
     clean_scan_result = $fscanf(
@@ -98,12 +98,12 @@ module tb_security;
 
     if (clean_scan_result != 3) begin
       $display("[FAIL] Noi dung fips197_appb.txt khong hop le");
-      $finish;
+      $fatal(1, "Noi dung fips197_appb.txt khong hop le");
     end
 
     if (trigger_file == 0) begin
       $display("[FAIL] Khong mo duoc trigger_T01.txt");
-      $finish;
+      $fatal(1, "Khong mo duoc trigger_T01.txt");
     end
 
     trigger_scan_result = $fscanf(
@@ -117,7 +117,7 @@ module tb_security;
 
     if (trigger_scan_result != 3) begin
       $display("[FAIL] Noi dung trigger_T01.txt khong hop le");
-      $finish;
+      $fatal(1, "Noi dung trigger_T01.txt khong hop le");
     end
 
     // Nha reset.
@@ -349,7 +349,7 @@ module tb_security;
   initial begin
     #5000;
     $display("[FAIL] SECURITY TEST TIMEOUT");
-    $finish;
+    $fatal(1, "SECURITY TEST TIMEOUT");
   end
 
 endmodule
