@@ -1,0 +1,30 @@
+case_id: T02_p2_slow_leak
+base_design: aes_golden
+author: team
+
+trigger:
+  class: T3
+  description: Bo dem dat nguong 2^16 lan ma hoa
+  activation: "counter >= 16'hFFFF"
+  rarity: "2^-16"
+
+payload:
+  class: P2
+  description: Ro 8 bit thap cua khoa vao result[7:0]
+  asset: aes_key
+  observable: logic
+
+location:
+  file: aes_core.v
+  module: aes_core
+  line_start: 76
+  line_end: 81
+  always_block: null
+
+detection:
+  expected_checker: KLG
+  expected_latency: 1
+
+verification:
+  silent_under_nist: true
+  activation_seq: verif/vectors/trigger_T02.txt
