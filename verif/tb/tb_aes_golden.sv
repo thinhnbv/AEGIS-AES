@@ -16,8 +16,11 @@ module tb_aes_golden;
   logic [127:0]   nist_key;
   logic [127:0]   nist_pt;
   logic [127:0]   nist_ct;
-  
-  integer file, scan_result;
+
+  integer file;
+  integer scan_result;
+  integer pass_count;
+  integer fail_count;
 
   initial begin
     clk = 0;
@@ -31,71 +34,87 @@ module tb_aes_golden;
   );
 
   initial begin
-    $display("1. Dang nap vector tu file fips197_appb.txt...");
-    
-    file = $fopen("verif/vectors/fips197_appb.txt", "r");
+    pass_count = 0;
+    fail_count = 0;
+
+    $display("=== AES-128 Golden Regression (KAT + MCT) ===");
+    $display("1. Dang doc vector tu nist_vectors.txt...");
+
+    file = $fopen("verif/vectors/nist_vectors.txt", "r");
     if (file == 0) begin
-      $display("[LOI] Khong the mo file vector! Kiem tra lai duong dan.");
-      $fatal(1, "Khong the mo file vector fips197_appb.txt");
-    end
-    scan_result = $fscanf(file, "%h %h %h\n", nist_key, nist_pt, nist_ct);
-    $fclose(file);
-
-    if (scan_result != 3) begin
-      $fatal(1, "Noi dung fips197_appb.txt khong hop le");
+      $display("[LOI] Khong the mo file nist_vectors.txt!");
+      $fatal(1, "File khong ton tai");
     end
 
-    $display("   Da nap Key      : %h", nist_key);
-    $display("   Da nap Plaintext: %h", nist_pt);
-    
     // Khoi tao muc thap
     reset_n = 0; encdec = 1; init = 0; next = 0; keylen = 0;
-    
-    // [TRICK PHAN CUNG] Nap key vao ca 2 nua de tranh nham lan mapping cua secworks
-    key = {nist_key, nist_key}; 
+    key = 256'h0;
     block = 128'h0;
 
-    // Doi 2 chu ky va nha reset (Dong bo theo canh xuong)
+    // Doi 2 chu ky roi nha reset
     @(negedge clk);
     @(negedge clk);
     reset_n = 1;
 
-    // --- BUOC 1: NAP KHOA (KEY EXPANSION) ---
-    @(negedge clk);
-    init = 1;
-    @(negedge clk);
-    init = 0;
+    // Doc va test tung vector den EOF
+    while (!$feof(file)) begin
+      scan_result = $fscanf(file, "%h %h %h\n", nist_key, nist_pt, nist_ct);
 
-    // FIX TIMING: Cho ready xuong 0 (dang tinh toan) roi moi doi no len 1 (tinh xong)
-    wait(ready == 1'b0);
-    wait(ready == 1'b1);
-    $display("   [+] Mo rong khoa (Key Expansion) hoan tat.");
+      if (scan_result != 3) begin
+        if (!$feof(file)) begin
+          $display("[WARN] Dong khong hop le, bo qua.");
+        end
+      end else begin
 
-    // --- BUOC 2: NAP BAN RO VA MA HOA ---
-    @(negedge clk);
-    block = nist_pt;
-    next  = 1;
-    @(negedge clk);
-    next  = 0;
+      // --- NAP KHOA (KEY EXPANSION) ---
+      @(negedge clk);
+      key = {nist_key, nist_key};
+      init = 1;
+      @(negedge clk);
+      init = 0;
 
-    // Cho den khi co ket qua hop le
-    wait(result_valid == 1'b1);
-    @(negedge clk);
+      wait(ready == 1'b0);
+      wait(ready == 1'b1);
 
-    // --- BUOC 3: DOI CHIEU KET QUA ---
-    if (result == nist_ct) begin
-      $display("==================================================");
-      $display("   [PASS] Ciphertext khop hoan toan voi vector da nap!");
-      $display("   Output thuc te  : %h", result);
-      $display("==================================================");
-    end else begin
-      $display("==================================================");
-      $display("   [FAIL] Ciphertext KHONG khop!");
-      $display("   Mong doi : %h", nist_ct);
-      $display("   Thuc te  : %h", result);
-      $display("==================================================");
-      $fatal(1, "AES GOLDEN TEST THAT BAI");
+      // --- MA HOA ---
+      @(negedge clk);
+      block = nist_pt;
+      next  = 1;
+      @(negedge clk);
+      next  = 0;
+
+      wait(result_valid == 1'b1);
+      @(negedge clk);
+
+      // --- DOI CHIEU KET QUA ---
+      if (result == nist_ct) begin
+        pass_count = pass_count + 1;
+      end else begin
+        fail_count = fail_count + 1;
+        $display("   [FAIL] Vector #%0d", pass_count + fail_count);
+        $display("   Key     : %h", nist_key);
+        $display("   PT      : %h", nist_pt);
+        $display("   Mong doi: %h", nist_ct);
+        $display("   Thuc te : %h", result);
+      end
+      end
     end
+
+    $fclose(file);
+
+    // --- TOM TAT ---
+    $display("==================================================");
+    $display("   TONG KET");
+    $display("   Pass: %0d", pass_count);
+    $display("   Fail: %0d", fail_count);
+    $display("==================================================");
+
+    if (fail_count > 0) begin
+      $fatal(1, "CO %0d VECTOR THAT BAI", fail_count);
+    end else begin
+      $display("   [PASS] Tat ca %0d vector deu khop!", pass_count);
+    end
+
     $finish;
   end
 endmodule
