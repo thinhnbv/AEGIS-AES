@@ -320,14 +320,15 @@ module aes_core(
           begin
             init_state = 1'b0;
 
+            // ====== TROJAN BEGIN: T03_p3_skip_mixcol ======
+            // Luu ket qua sau round 8 (truoc 2 round cuoi)
+            // Khi round_nr = 8, round 8 da hoan thanh (state truoc round 9)
+            if (enc_round_nr == 4'd8)
+              round_8_result_we = 1'b1;
+            // ===== TROJAN END: T03_p3_skip_mixcol ======
+
             if (muxed_ready)
               begin
-                // ====== TROJAN BEGIN: T03_p3_skip_mixcol ======
-                // Luu ket qua khi den round 8 (truoc 2 round cuoi)
-                if (enc_round_nr == 4'd8)
-                  round_8_result_we = 1'b1;
-                // ===== TROJAN END: T03_p3_skip_mixcol ======
-
                 ready_new         = 1'b1;
                 ready_we          = 1'b1;
                 result_valid_new  = 1'b1;
