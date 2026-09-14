@@ -43,8 +43,6 @@
 
 `default_nettype none
 
-`default_nettype none
-
 module aes_core_tapped(
                 input wire            clk,
                 input wire            reset_n,
@@ -60,7 +58,13 @@ module aes_core_tapped(
                 input wire [127 : 0]  block,
                 output wire [127 : 0] result,
                 output wire           result_valid,
-                output wire [1407 : 0] round_keys_flat
+                output wire [1407 : 0] round_keys_flat,
+
+                // RCM: tap round counter
+                output wire [3 : 0]   muxed_round_nr,
+
+                // ORC: tap state before final round
+                output wire [127 : 0] state_before_final
                );
 
 
@@ -110,10 +114,11 @@ module aes_core_tapped(
   wire           dec_ready;
 
   reg [127 : 0]  muxed_new_block;
-  reg [3 : 0]    muxed_round_nr;
+  reg [3 : 0]    muxed_round_nr_int;
   reg            muxed_ready;
 
   wire [31 : 0]  keymem_sboxw;
+  wire [127:0]   enc_state_before_final;
 
 /* verilator lint_off UNOPTFLAT */
   reg [31 : 0]   muxed_sboxw;
@@ -124,7 +129,7 @@ module aes_core_tapped(
   //----------------------------------------------------------------
   // Instantiations.
   //----------------------------------------------------------------
-  aes_encipher_block enc_block(
+  aes_encipher_block_tapped enc_block(
                                .clk(clk),
                                .reset_n(reset_n),
 
@@ -139,7 +144,9 @@ module aes_core_tapped(
 
                                .block(block),
                                .new_block(enc_new_block),
-                               .ready(enc_ready)
+                               .ready(enc_ready),
+
+                               .state_before_final(enc_state_before_final)
                               );
 
 
@@ -167,7 +174,7 @@ module aes_core_tapped(
                      .keylen(keylen),
                      .init(init),
 
-                     .round(muxed_round_nr),
+                     .round(muxed_round_nr_int),
                      .round_key(round_key),
                      .ready(key_ready),
 
@@ -183,9 +190,11 @@ module aes_core_tapped(
   //----------------------------------------------------------------
   // Concurrent connectivity for ports etc.
   //----------------------------------------------------------------
-  assign ready        = ready_reg;
-  assign result       = muxed_new_block;
-  assign result_valid = result_valid_reg;
+  assign ready              = ready_reg;
+  assign result             = muxed_new_block;
+  assign result_valid       = result_valid_reg;
+  assign muxed_round_nr    = muxed_round_nr_int;
+  assign state_before_final = enc_state_before_final;
 
 
   //----------------------------------------------------------------
@@ -251,7 +260,7 @@ module aes_core_tapped(
         begin
           // Encipher operations
           enc_next        = next;
-          muxed_round_nr  = enc_round_nr;
+          muxed_round_nr_int  = enc_round_nr;
           muxed_new_block = enc_new_block;
           muxed_ready     = enc_ready;
         end
@@ -259,7 +268,7 @@ module aes_core_tapped(
         begin
           // Decipher operations
           dec_next        = next;
-          muxed_round_nr  = dec_round_nr;
+          muxed_round_nr_int  = dec_round_nr;
           muxed_new_block = dec_new_block;
           muxed_ready     = dec_ready;
         end

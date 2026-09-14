@@ -6,7 +6,7 @@
 `include "aegis_defs.vh"
 
 module aegis_aes_top #(
-    parameter EN_ORC = 1
+    parameter EN_ORC = 1  // ORC enabled for security testing
 ) (
     input  wire         clk,
     input  wire         rst_n,
@@ -20,6 +20,7 @@ module aegis_aes_top #(
     output wire         sec_alarm,
     output wire         sec_warning,
     output wire [7:0]   sec_status
+    // zeroize va klg_alarm la internal wires, truy cap qua hierarchical path
 );
 
   localparam ST_IDLE             = 3'd0;
@@ -45,6 +46,17 @@ module aegis_aes_top #(
   wire         core_reset_n;
   wire [`AEGIS_NUM_RKEY*128-1:0] round_keys_flat;
 
+  // RCM signals
+  wire       rcm_alarm;
+  wire [3:0] rcm_code;
+  wire [3:0] core_round_nr;
+
+  // ORC signals
+  wire       orc_alarm;
+  wire [3:0] orc_code;
+  wire [127:0] state_before_final;
+  wire [127:0] final_round_key;
+
   // TRU giu AES core trong reset de xoa toan bo key schedule.
   assign core_reset_n = rst_n & ~zeroize;
 
@@ -62,7 +74,9 @@ module aegis_aes_top #(
     .block(block_reg),
     .result(core_dout),
     .result_valid(core_dvalid),
-    .round_keys_flat(round_keys_flat)
+    .round_keys_flat(round_keys_flat),
+    .muxed_round_nr(core_round_nr),
+    .state_before_final(state_before_final)
   );
 
   wire       klg_alarm;
@@ -90,6 +104,47 @@ module aegis_aes_top #(
     .klg_verdict_block(klg_verdict_block)
   );
 
+  // Final round key (round 10 for AES-128)
+  assign final_round_key = round_keys_flat[`AEGIS_NUM_RKEY*128 - 1 -: 128];
+
+  // RCM - Round Consistency Monitor
+  rcm_round_monitor #(
+    .NUM_ROUNDS(10)
+  ) u_rcm (
+    .clk(clk),
+    .rst_n(rst_n),
+    .init(core_init),
+    .next(core_next),
+    .ready(core_ready),
+    .result_valid(core_dvalid),
+    .round_nr(core_round_nr),
+    .rcm_alarm(rcm_alarm),
+    .rcm_code(rcm_code)
+  );
+
+  // ORC - Output Redundancy Checker
+  generate
+    if (EN_ORC) begin : gen_orc
+      orc_output_checker #(
+        .NUM_ROUNDS(10)
+      ) u_orc (
+        .clk(clk),
+        .rst_n(rst_n),
+        .next(core_next),
+        .result_valid(core_result_new),
+        .round_nr(core_round_nr),
+        .state_before_final(state_before_final),
+        .final_round_key(final_round_key),
+        .core_result(core_dout),
+        .orc_alarm(orc_alarm),
+        .orc_code(orc_code)
+      );
+    end else begin : gen_orc_stub
+      assign orc_alarm = 1'b0;
+      assign orc_code  = 4'd0;
+    end
+  endgenerate
+
   wire       block_output;
   wire       sec_alarm_int;
   wire       sec_warning_int;
@@ -102,8 +157,8 @@ module aegis_aes_top #(
     .klg_verdict_valid(klg_verdict_valid),
     .klg_verdict_block(klg_verdict_block),
     .fic_alarm(1'b0),
-    .rcm_alarm(1'b0),
-    .orc_alarm(1'b0),
+    .rcm_alarm(rcm_alarm),
+    .orc_alarm(orc_alarm),
     .red_warning(1'b0),
     .sec_alarm(sec_alarm_int),
     .sec_warning(sec_warning_int),
