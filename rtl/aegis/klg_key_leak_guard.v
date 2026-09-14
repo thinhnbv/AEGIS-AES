@@ -14,7 +14,6 @@ module klg_key_leak_guard #(
 ) (
     input  wire                     clk,
     input  wire                     rst_n,
-    input  wire                     new_transaction,  // Clear verdict for new encryption
     input  wire [127:0]             key_reg,
     input  wire [NUM_RKEY*128-1:0]  round_keys_flat,
     input  wire [127:0]             data_out,
@@ -57,26 +56,18 @@ module klg_key_leak_guard #(
   wire hit_ham = (ham < HAM_THRESH);
 
   // --- Gom canh bao ---
-  // Verdict duoc giu nguyen cho den khi co transaction moi.
-  // data_out_valid chi la xung kich hoat, verdict la trang thai.
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
       klg_alarm         <= 1'b0;
       klg_code          <= 4'd0;
       klg_verdict_valid <= 1'b0;
       klg_verdict_block <= 1'b1;
-    end else if (new_transaction) begin
-      // Clear verdict at start of new transaction
+    end else begin
+      // Mac dinh fail-secure khi khong co verdict hop le.
       klg_verdict_valid <= 1'b0;
       klg_verdict_block <= 1'b1;
-      klg_alarm         <= 1'b0;
-      klg_code          <= 4'd0;
-    end else begin
-      // Mac dinh giu nguyen verdict (fail-secure)
-      // Chi clear khi co transaction moi bat dau
 
       if (data_out_valid) begin
-        // Co ket qua moi - tinh toan verdict
         klg_verdict_valid <= 1'b1;
 
         if (hit_key_full || |hit_rkey) begin
@@ -95,8 +86,6 @@ module klg_key_leak_guard #(
           klg_verdict_block <= 1'b0;
         end
       end
-      // Khong clear verdict khi khong co data_out_valid
-      // Verdict giu nguyen cho den khi transaction moi
     end
   end
 
