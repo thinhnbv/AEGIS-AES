@@ -4,7 +4,7 @@ SIM       ?= iverilog
 
 RTL_GOLD   = rtl/aes_golden
 RTL_AEGIS  = rtl/aegis
-RTL_CASE   = rtl/infected/$(CASE)
+RTL_CASE   = $(firstword $(wildcard rtl/infected/$(CASE)*))
 TB         = verif/tb
 BUILD      = build
 STAMP     := $(shell date +%Y%m%d_%H%M%S)
