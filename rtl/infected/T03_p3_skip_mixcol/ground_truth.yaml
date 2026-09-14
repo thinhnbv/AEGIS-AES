@@ -1,0 +1,30 @@
+case_id: T03_p3_skip_mixcol
+base_design: aes_golden
+author: team
+
+trigger:
+  class: T4
+  description: Plaintext dac biet kich hoat FSM hien
+  activation: "128'h12345678_9ABCDEF0_00000000_00000001"
+  rarity: "2^-128"
+
+payload:
+  class: P3
+  description: Bo 2 round cuoi, tra ket qua round 8
+  asset: aes_correctness
+  observable: logic
+
+location:
+  file: aes_core.v
+  module: aes_core
+  line_start: 77
+  line_end: 83
+  always_block: null
+
+detection:
+  expected_checker: ORC, RCM
+  expected_latency: 1-10
+
+verification:
+  silent_under_nist: false
+  activation_seq: verif/vectors/trigger_T03.txt

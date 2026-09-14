@@ -17,10 +17,11 @@ module tb_aes_golden;
   logic [127:0]   nist_pt;
   logic [127:0]   nist_ct;
 
-  integer file;
+  integer file_kat, file_mct;
   integer scan_result;
   integer pass_count;
   integer fail_count;
+  integer vec_num;
 
   initial begin
     clk = 0;
@@ -36,84 +37,127 @@ module tb_aes_golden;
   initial begin
     pass_count = 0;
     fail_count = 0;
+    vec_num = 0;
 
-    $display("=== AES-128 Golden Regression (KAT + MCT) ===");
-    $display("1. Dang doc vector tu nist_vectors.txt...");
+    $display("==================================================");
+    $display("   AES-128 GOLDEN REGRESSION");
+    $display("   KAT (16 vectors) + MCT (10000 vectors)");
+    $display("==================================================");
 
-    file = $fopen("verif/vectors/nist_vectors.txt", "r");
-    if (file == 0) begin
-      $display("[LOI] Khong the mo file nist_vectors.txt!");
-      $fatal(1, "File khong ton tai");
+    // --- DOC KAT (16 vector) ---
+    $display("");
+    $display("=== Doc KAT vectors (nist_kat.txt) ===");
+    file_kat = $fopen("verif/vectors/nist_kat.txt", "r");
+    if (file_kat == 0) begin
+      $display("[LOI] Khong the mo nist_kat.txt!");
+      $fatal(1);
     end
+    while (!$feof(file_kat)) begin
+      scan_result = $fscanf(file_kat, "%h %h %h\n", nist_key, nist_pt, nist_ct);
+      if (scan_result == 3) begin
+        vec_num = vec_num + 1;
 
-    // Khoi tao muc thap
-    reset_n = 0; encdec = 1; init = 0; next = 0; keylen = 0;
-    key = 256'h0;
-    block = 128'h0;
+        // Reset
+        reset_n = 0; encdec = 1; init = 0; next = 0; keylen = 0;
+        key = 256'h0; block = 128'h0;
+        @(negedge clk);
+        @(negedge clk);
+        reset_n = 1;
+        @(negedge clk);
 
-    // Doi 2 chu ky roi nha reset
-    @(negedge clk);
-    @(negedge clk);
-    reset_n = 1;
+        // Load key
+        key = {nist_key, nist_key};
+        init = 1;
+        @(negedge clk);
+        init = 0;
+        wait(ready == 1'b0);
+        wait(ready == 1'b1);
 
-    // Doc va test tung vector den EOF
-    while (!$feof(file)) begin
-      scan_result = $fscanf(file, "%h %h %h\n", nist_key, nist_pt, nist_ct);
+        // Encrypt
+        @(negedge clk);
+        block = nist_pt;
+        next = 1;
+        @(negedge clk);
+        next = 0;
+        wait(result_valid == 1'b1);
+        @(negedge clk);
 
-      if (scan_result != 3) begin
-        if (!$feof(file)) begin
-          $display("[WARN] Dong khong hop le, bo qua.");
+        // Kiem tra
+        if (result == nist_ct) begin
+          pass_count = pass_count + 1;
+        end else begin
+          fail_count = fail_count + 1;
+          $display("   [FAIL] KAT #%0d", vec_num);
         end
-      end else begin
-
-      // --- NAP KHOA (KEY EXPANSION) ---
-      @(negedge clk);
-      key = {nist_key, nist_key};
-      init = 1;
-      @(negedge clk);
-      init = 0;
-
-      wait(ready == 1'b0);
-      wait(ready == 1'b1);
-
-      // --- MA HOA ---
-      @(negedge clk);
-      block = nist_pt;
-      next  = 1;
-      @(negedge clk);
-      next  = 0;
-
-      wait(result_valid == 1'b1);
-      @(negedge clk);
-
-      // --- DOI CHIEU KET QUA ---
-      if (result == nist_ct) begin
-        pass_count = pass_count + 1;
-      end else begin
-        fail_count = fail_count + 1;
-        $display("   [FAIL] Vector #%0d", pass_count + fail_count);
-        $display("   Key     : %h", nist_key);
-        $display("   PT      : %h", nist_pt);
-        $display("   Mong doi: %h", nist_ct);
-        $display("   Thuc te : %h", result);
-      end
       end
     end
+    $fclose(file_kat);
+    $display("[+] KAT: %0d pass, %0d fail", pass_count, fail_count);
 
-    $fclose(file);
+    // --- DOC MCT (10000 vector) ---
+    $display("");
+    $display("=== Doc MCT vectors (nist_mct.txt) ===");
+    file_mct = $fopen("verif/vectors/nist_mct.txt", "r");
+    if (file_mct == 0) begin
+      $display("[LOI] Khong the mo nist_mct.txt!");
+      $fatal(1);
+    end
+    while (!$feof(file_mct)) begin
+      scan_result = $fscanf(file_mct, "%h %h %h\n", nist_key, nist_pt, nist_ct);
+      if (scan_result == 3) begin
+        vec_num = vec_num + 1;
+
+        // Reset
+        reset_n = 0; encdec = 1; init = 0; next = 0; keylen = 0;
+        key = 256'h0; block = 128'h0;
+        @(negedge clk);
+        @(negedge clk);
+        reset_n = 1;
+        @(negedge clk);
+
+        // Load key
+        key = {nist_key, nist_key};
+        init = 1;
+        @(negedge clk);
+        init = 0;
+        wait(ready == 1'b0);
+        wait(ready == 1'b1);
+
+        // Encrypt
+        @(negedge clk);
+        block = nist_pt;
+        next = 1;
+        @(negedge clk);
+        next = 0;
+        wait(result_valid == 1'b1);
+        @(negedge clk);
+
+        // Kiem tra
+        if (result == nist_ct) begin
+          pass_count = pass_count + 1;
+        end else begin
+          fail_count = fail_count + 1;
+          if (fail_count <= 3) begin
+            $display("   [FAIL] MCT #%0d", vec_num);
+          end
+        end
+      end
+    end
+    $fclose(file_mct);
+    $display("[+] MCT: %0d pass, %0d fail", pass_count - 16, fail_count);
 
     // --- TOM TAT ---
+    $display("");
     $display("==================================================");
     $display("   TONG KET");
-    $display("   Pass: %0d", pass_count);
-    $display("   Fail: %0d", fail_count);
+    $display("   Tong  : %0d vector", pass_count + fail_count);
+    $display("   Pass  : %0d", pass_count);
+    $display("   Fail  : %0d", fail_count);
     $display("==================================================");
-
-    if (fail_count > 0) begin
+    if (fail_count > 0)
       $fatal(1, "CO %0d VECTOR THAT BAI", fail_count);
-    end else begin
+    else
       $display("   [PASS] Tat ca %0d vector deu khop!", pass_count);
-    end
 
     $finish;
   end
