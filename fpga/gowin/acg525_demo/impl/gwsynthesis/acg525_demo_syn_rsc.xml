@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Module name="top_demo_min" Register="38" Alu="29" Lut="60">
+    <SubModule name="u_aes" Register="4" Lut="41">
+        <SubModule name="enc_block" Register="137" Lut="641"/>
+        <SubModule name="keymem" Register="2063" Lut="1243"/>
+        <SubModule name="sbox_inst" Lut="897"/>
+    </SubModule>
+</Module>

@@ -1,0 +1,60 @@
+GowinSynthesis start
+Running parser ...
+Analyzing Verilog file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\acg525_demo\src\aegis_aes_top.v'
+Analyzing included file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\acg525_demo\src\aegis_defs.vh'("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\acg525_demo\src\aegis_aes_top.v":6)
+Back to file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\acg525_demo\src\aegis_aes_top.v'("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\acg525_demo\src\aegis_aes_top.v":6)
+Analyzing Verilog file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\acg525_demo\src\aegis_defs.vh'
+Analyzing Verilog file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\acg525_demo\src\aes_core_tapped.v'
+Analyzing Verilog file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\acg525_demo\src\aes_decipher_block.v'
+Analyzing Verilog file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\acg525_demo\src\aes_encipher_block.v'
+Analyzing Verilog file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\acg525_demo\src\aes_inv_sbox.v'
+Analyzing Verilog file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\acg525_demo\src\aes_key_mem.v'
+Analyzing Verilog file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\acg525_demo\src\aes_key_mem_tapped.v'
+Analyzing Verilog file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\acg525_demo\src\aes_sbox.v'
+Analyzing Verilog file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\acg525_demo\src\demo_controller.v'
+Analyzing Verilog file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\acg525_demo\src\demo_core_system.v'
+Analyzing Verilog file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\acg525_demo\src\klg_key_leak_guard.v'
+Analyzing included file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\acg525_demo\src\aegis_defs.vh'("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\acg525_demo\src\klg_key_leak_guard.v":9)
+Back to file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\acg525_demo\src\klg_key_leak_guard.v'("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\acg525_demo\src\klg_key_leak_guard.v":9)
+Analyzing Verilog file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\acg525_demo\src\raw_aes_adapter.v'
+Analyzing Verilog file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\acg525_demo\src\top_demo.v'
+Analyzing Verilog file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\acg525_demo\src\tru_tamper_response.v'
+Analyzing included file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\acg525_demo\src\aegis_defs.vh'("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\acg525_demo\src\tru_tamper_response.v":7)
+Back to file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\acg525_demo\src\tru_tamper_response.v'("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\acg525_demo\src\tru_tamper_response.v":7)
+Analyzing Verilog file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\acg525_demo\src\uart_frame_rx.v'
+Analyzing Verilog file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\acg525_demo\src\uart_frame_tx.v'
+Analyzing Verilog file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\acg525_demo\src\uart_rx.v'
+Analyzing Verilog file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\acg525_demo\src\uart_tx.v'
+Analyzing Verilog file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\acg525_demo\src\top_demo_min.v'
+Compiling module 'top_demo_min'("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\acg525_demo\src\top_demo_min.v":10)
+Compiling module 'aes_core_tapped'("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\acg525_demo\src\aes_core_tapped.v":46)
+Compiling module 'aes_encipher_block'("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\acg525_demo\src\aes_encipher_block.v":43)
+Compiling module 'aes_decipher_block'("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\acg525_demo\src\aes_decipher_block.v":43)
+Compiling module 'aes_inv_sbox'("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\acg525_demo\src\aes_inv_sbox.v":40)
+Compiling module 'aes_key_mem_tapped'("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\acg525_demo\src\aes_key_mem_tapped.v":45)
+Compiling module 'aes_sbox'("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\acg525_demo\src\aes_sbox.v":42)
+WARN  (EX3791) : Expression size 25 truncated to fit in target size 24("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\acg525_demo\src\top_demo_min.v":120)
+NOTE  (EX0101) : Current top module is "top_demo_min"
+[5%] Running netlist conversion ...
+Running device independent optimization ...
+WARN  (DI0002) : Asynchronous register "reset_sync[0]" initial values do not match with the Gowin library, simulation mismatch possible("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\acg525_demo\src\top_demo_min.v":44)
+WARN  (DI0002) : Asynchronous register "reset_sync[1]" initial values do not match with the Gowin library, simulation mismatch possible("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\acg525_demo\src\top_demo_min.v":44)
+[10%] Optimizing Phase 0 completed
+[15%] Optimizing Phase 1 completed
+[25%] Optimizing Phase 2 completed
+Running inference ...
+[30%] Inferring Phase 0 completed
+[40%] Inferring Phase 1 completed
+[50%] Inferring Phase 2 completed
+[55%] Inferring Phase 3 completed
+Running technical mapping ...
+[60%] Tech-Mapping Phase 0 completed
+[65%] Tech-Mapping Phase 1 completed
+[75%] Tech-Mapping Phase 2 completed
+[80%] Tech-Mapping Phase 3 completed
+[90%] Tech-Mapping Phase 4 completed
+WARN  (NL0002) : The module "aes_decipher_block" instantiated to "dec_block" is swept in optimizing("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\acg525_demo\src\aes_core_tapped.v":160)
+WARN  (NL0002) : The module "aes_inv_sbox" instantiated to "inv_sbox_inst" is swept in optimizing("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\acg525_demo\src\aes_decipher_block.v":237)
+[95%] Generate netlist file "\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\acg525_demo\impl\gwsynthesis\acg525_demo.vg" completed
+[100%] Generate report file "\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\acg525_demo\impl\gwsynthesis\acg525_demo_syn.rpt.html" completed
+GowinSynthesis finish
