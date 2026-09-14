@@ -85,10 +85,10 @@ module tb_security;
     $display("==================================================");
 `endif
 
-    // --- DOC TRIGGER T01 ---
-    file_trigger = $fopen("verif/vectors/trigger_T01.txt", "r");
+    // --- DOC TRIGGER theo CASE ---
+    file_trigger = $fopen({"verif/vectors/trigger_", `CASE, ".txt"}, "r");
     if (file_trigger == 0) begin
-      $display("[FAIL] Khong mo duoc trigger_T01.txt");
+      $display("[FAIL] Khong mo duoc trigger_%s.txt", `CASE);
       $fatal(1);
     end
     scan_result = $fscanf(file_trigger, "%h %h %h\n", trigger_key, trigger_pt, trigger_expected);
@@ -243,7 +243,7 @@ module tb_security;
     wait(busy == 1'b0);
     // --- KIEM TRA T01 TROJAN ---
     $display("");
-    $display("=== Kiem tra T01 Trojan (trigger_T01.txt) ===");
+    $display("=== Kiem tra Trojan (trigger_%s.txt) ===", `CASE);
 
     // Tai nap khoa T01
     @(negedge clk);
@@ -354,7 +354,7 @@ module tb_security;
     $display("==================================================");
     $display("   TONG KET");
     $display("   KAT security : %0d pass, %0d fail", pass_count, fail_count);
-    $display("   Trojan T01   : %s", (fail_count == 0) ? "PASS" : "FAIL");
+    $display("   Trojan %s   : %s", `CASE, (fail_count == 0) ? "PASS" : "FAIL");
     $display("==================================================");
     if (fail_count == 0) begin
       $display("[PASS] SECURITY TEST HOAN TAT");
