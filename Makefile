@@ -70,9 +70,9 @@ else ifeq ($(CASE),clean)
 		$(TB)/tb_security.sv
 else
 	# Infected case: aegis RTL (filtered) + infected RTL + golden support
-	# Golden support cho cac submodule ma infected can nhung khong dinh nghia
+	# Filter out aes_core_tapped.v from aegis since infected provides its own
 	iverilog -g2012 -I$(RTL_AEGIS) -DCASE=\"$(CASE)\" -o $(BUILD)/$(CASE)/sec.out \
-		$(filter-out $(addprefix $(RTL_AEGIS)/,$(notdir $(SRC_CASE))),$(SRC_AEGIS)) \
+		$(filter-out $(RTL_AEGIS)/aes_core_tapped.v,$(filter-out $(addprefix $(RTL_AEGIS)/,$(notdir $(SRC_CASE))),$(SRC_AEGIS))) \
 		$(SRC_CASE) \
 		$(SEC_GOLD_SUPPORT) \
 		$(TB)/tb_security.sv
