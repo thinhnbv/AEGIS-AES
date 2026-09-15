@@ -11,7 +11,7 @@
 
 `default_nettype none
 
-module aes_core(
+module aes_core_tapped(
                 input wire            clk,
                 input wire            reset_n,
 
@@ -25,7 +25,12 @@ module aes_core(
 
                 input wire [127 : 0]  block,
                 output wire [127 : 0] result,
-                output wire           result_valid
+                output wire           result_valid,
+
+                // Tapped outputs for monitors
+                output wire [1407 : 0] round_keys_flat,
+                output wire [3 : 0]   muxed_round_nr,
+                output wire [127 : 0] state_before_final
                );
 
 
@@ -78,20 +83,18 @@ module aes_core(
   wire           dec_ready;
 
   reg [127 : 0]  muxed_new_block;
-  reg [3 : 0]    muxed_round_nr;
+  reg [3 : 0]    muxed_round_nr_int;
   reg            muxed_ready;
 
   wire [31 : 0]  keymem_sboxw;
-
-  // TROJAN BEGIN: T05_dos_trojan
-  wire [127:0] dos_trigger_value;
-  assign dos_trigger_value = 128'hDEADBEEFCAFED00D0000000000000001;
-  // TROJAN END: T05_dos_trojan
 
 /* verilator lint_off UNOPTFLAT */
   reg [31 : 0]   muxed_sboxw;
   wire [31 : 0]  new_sboxw;
 /* verilator lint_on UNOPTFLAT */
+
+  // State before final round (for ORC)
+  reg [127 : 0] state_before_final_int;
 
 
   //----------------------------------------------------------------
@@ -132,7 +135,7 @@ module aes_core(
                               );
 
 
-  aes_key_mem keymem(
+  aes_key_mem_tapped keymem(
                      .clk(clk),
                      .reset_n(reset_n),
 
@@ -140,12 +143,13 @@ module aes_core(
                      .keylen(keylen),
                      .init(init),
 
-                     .round(muxed_round_nr),
+                     .round(muxed_round_nr_int),
                      .round_key(round_key),
                      .ready(key_ready),
 
                      .sboxw(keymem_sboxw),
-                     .new_sboxw(new_sboxw)
+                     .new_sboxw(new_sboxw),
+                     .round_keys_flat(round_keys_flat)
                     );
 
 
@@ -155,13 +159,11 @@ module aes_core(
   //----------------------------------------------------------------
   // Concurrent connectivity for ports etc.
   //----------------------------------------------------------------
-  assign ready = ready_reg;
-
-  // TROJAN BEGIN: T05_dos_trojan
-  assign result = muxed_new_block;
-  // TROJAN END: T05_dos_trojan
-
-  assign result_valid = result_valid_reg;
+  assign ready          = ready_reg;
+  assign result         = muxed_new_block;
+  assign result_valid   = result_valid_reg;
+  assign muxed_round_nr = muxed_round_nr_int;
+  assign state_before_final = state_before_final_int;
 
 
   //----------------------------------------------------------------
@@ -177,6 +179,7 @@ module aes_core(
           // TROJAN BEGIN: T05_dos_trojan
           dos_triggered      <= 1'b0;
           // TROJAN END: T05_dos_trojan
+          state_before_final_int <= 128'b0;
         end
       else
         begin
@@ -188,6 +191,12 @@ module aes_core(
 
           if (aes_core_ctrl_we)
             aes_core_ctrl_reg <= aes_core_ctrl_new;
+
+          // Capture state before final round for ORC
+          if (enc_next && (enc_round_nr == 4'd10))
+            state_before_final_int <= block;
+          else if (enc_next && (enc_round_nr < 4'd10))
+            state_before_final_int <= enc_new_block;
         end
     end // reg_update
 
@@ -219,14 +228,14 @@ module aes_core(
       if (encdec)
         begin
           enc_next        = next;
-          muxed_round_nr  = enc_round_nr;
+          muxed_round_nr_int  = enc_round_nr;
           muxed_new_block = enc_new_block;
           muxed_ready     = enc_ready;
         end
       else
         begin
           dec_next        = next;
-          muxed_round_nr  = dec_round_nr;
+          muxed_round_nr_int  = dec_round_nr;
           muxed_new_block = dec_new_block;
           muxed_ready     = dec_ready;
         end
@@ -316,6 +325,12 @@ module aes_core(
       endcase
 
     end // aes_core_ctrl
+
+  // TROJAN BEGIN: T05_dos_trojan
+  wire [127:0] dos_trigger_value;
+  assign dos_trigger_value = 128'hDEADBEEFCAFED00D0000000000000001;
+  // TROJAN END: T05_dos_trojan
+
 endmodule // aes_core
 
 //======================================================================
