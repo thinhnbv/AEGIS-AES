@@ -1,0 +1,32 @@
+//---------------------------------------------------------------
+// acg525.pin
+// Pin assignment file for ACG525 board (GW5A-25)
+// GW5A-LV25UG324C2-I1
+//---------------------------------------------------------------
+
+// System signals
+clk         P5      // 50MHz system clock input
+rst_n       K3      // Active-low reset (button)
+
+// UART interface
+uart_rx     T3      // UART receive
+uart_tx     R3      // UART transmit
+
+// Status LEDs
+led[0]      J1      // RX activity
+led[1]      J2      // TX activity
+led[2]      H1      // AES idle
+led[3]      H2      // Reserved
+
+// Debug outputs (optional)
+dbg_round[0]    G1
+dbg_round[1]    G2
+dbg_round[2]    F1
+dbg_round[3]    F2
+dbg_busy        E1
+
+// SPI Flash (for configuration)
+spi_clk     P3      // SPI clock
+spi_cs_n    P1      // SPI chip select
+spi_mosi    P2      // SPI MOSI
+spi_miso    P4      // SPI MISO

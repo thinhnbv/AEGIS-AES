@@ -1,0 +1,41 @@
+//---------------------------------------------------------------
+// acg525.cst
+// Constraint file for ACG525 board (GW5A-25)
+//---------------------------------------------------------------
+
+// SPI Flash
+IO_LOC "spi_clk" P3;
+IO_PORT "spi_clk" PULL_MODE=UP SLEW_RATE=FAST;
+
+IO_LOC "spi_cs_n" P1;
+IO_PORT "spi_cs_n" PULL_MODE=UP;
+
+IO_LOC "spi_mosi" P2;
+IO_PORT "spi_mosi" PULL_MODE=UP;
+
+IO_LOC "spi_miso" P4;
+IO_PORT "spi_miso" PULL_MODE=UP;
+
+// UART
+IO_LOC "uart_rx" T3;
+IO_PORT "uart_rx" PULL_MODE=UP;
+
+IO_LOC "uart_tx" R3;
+IO_PORT "uart_tx" PULL_MODE=UP;
+
+// LEDs
+IO_LOC "led[0]" J1;
+IO_PORT "led[0]" PULL_MODE=UP DRIVE=8;
+
+IO_LOC "led[1]" J2;
+IO_PORT "led[1]" PULL_MODE=UP DRIVE=8;
+
+IO_LOC "led[2]" H1;
+IO_PORT "led[2]" PULL_MODE=UP DRIVE=8;
+
+IO_LOC "led[3]" H2;
+IO_PORT "led[3}" PULL_MODE=UP DRIVE=8;
+
+// Clock input (50MHz)
+IO_LOC "clk" P5;
+IO_PORT "clk" PULL_MODE=UP;
