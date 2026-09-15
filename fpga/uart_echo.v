@@ -12,12 +12,11 @@ module uart_echo (
     output wire [3:0] led
 );
 
-    reg [7:0] rx_data;
-    reg rx_valid;
-    wire rx_ready;
+    wire [7:0] rx_data;
+    wire rx_valid;
 
-    reg [7:0] tx_data;
-    reg tx_valid;
+    wire [7:0] tx_data;
+    wire tx_valid;
     wire tx_ready;
 
     // UART receiver
@@ -34,26 +33,22 @@ module uart_echo (
     uart_tx uart_tx_inst (
         .clk(clk),
         .rst_n(rst_n),
-        .tx_data(tx_data),
+        .tx_data(rx_data),  // Echo received data
         .tx_valid(tx_valid),
         .uart_tx(uart_tx),
         .tx_ready(tx_ready)
     );
 
-    // Echo logic
+    // Echo enable logic
+    reg tx_valid_reg;
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            tx_valid <= 1'b0;
-            tx_data <= 8'h00;
+            tx_valid_reg <= 1'b0;
         end else begin
-            if (rx_valid && tx_ready) begin
-                tx_data <= rx_data;
-                tx_valid <= 1'b1;
-            end else begin
-                tx_valid <= 1'b0;
-            end
+            tx_valid_reg <= rx_valid && tx_ready;
         end
     end
+    assign tx_valid = tx_valid_reg;
 
     // LED indicators
     assign led[0] = rx_valid;   // Flash on receive
