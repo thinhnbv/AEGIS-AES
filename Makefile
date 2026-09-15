@@ -45,7 +45,8 @@ golden:
 
 sim:
 	@mkdir -p $(BUILD)/$(CASE)
-	iverilog -g2012 -I$(RTL_AEGIS) -o $(BUILD)/$(CASE)/sim.out $(SRC_DUT) $(SRC_AEGIS_DUT) $(TB)/tb_aegis_top.sv
+	iverilog -g2012 -I$(RTL_AEGIS) -o $(BUILD)/$(CASE)/sim.out $(SRC_DUT) $(SRC_AEGIS_DUT) \
+		$(if $(wildcard $(TB)/tb_$(CASE).sv),$(TB)/tb_$(CASE).sv,$(TB)/tb_aegis_top.sv)
 	@bash -o pipefail -c 'vvp $(BUILD)/$(CASE)/sim.out | tee $(BUILD)/$(CASE)/sim.log'
 
 # Golden modules needed for security tests (basic components for infected RTL)
