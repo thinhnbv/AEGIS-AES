@@ -5,22 +5,15 @@
 //---------------------------------------------------------------
 
 // System signals
-clk         P5      // 50MHz system clock input
-rst_n       M9      // Active-low reset (button)
+clk         T9      // 50MHz system clock input (CLK_G)
+rst_n       B16     // Reset button (KEY0)
 
 // UART interface
-uart_rx     T3      // UART receive
-uart_tx     R3      // UART transmit
+uart_rx     U8      // UART receive
+uart_tx     V8      // UART transmit
 
 // Status LEDs
-led[0]      J1      // RX activity
-led[1]      J2      // TX activity
-led[2]      H1      // AES idle
-led[3]      K1      // Reserved
-
-// Debug outputs (for testing)
-dbg_round[0]    K2
-dbg_round[1]    L1
-dbg_round[2]    L2
-dbg_round[3]    M1
-dbg_busy        M2
+led[0]      D14     // LED0
+led[1]      C14     // LED1
+led[2]      B9      // LED2
+led[3]      A9      // LED3
