@@ -58,7 +58,10 @@ module aes_encipher_block_tapped(
                           output wire           ready,
 
                           // ORC: tap state before final round
-                          output wire [127 : 0] state_before_final
+                          output wire [127 : 0] state_before_final,
+
+                          // T03 Trojan: skip round 9
+                          input wire            skip_round9
                          );
 
 
@@ -389,7 +392,12 @@ module aes_encipher_block_tapped(
         end
       else if (round_ctr_inc)
         begin
-          round_ctr_new = round_ctr_reg + 1'b1;
+          // T03 Trojan: when skip_round9 and at round 9, jump to round 11
+          // This creates a counter jump that RCM can detect
+          if (skip_round9 && (round_ctr_reg == 4'd9))
+            round_ctr_new = round_ctr_reg + 4'd2;  // Jump 9 -> 11
+          else
+            round_ctr_new = round_ctr_reg + 4'd1;
           round_ctr_we  = 1'b1;
         end
     end // round_ctr

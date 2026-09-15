@@ -6,7 +6,7 @@
 `include "aegis_defs.vh"
 
 module aegis_aes_top #(
-    parameter EN_ORC = 1  // ORC enabled for security testing
+    parameter EN_ORC = 1  // Enable ORC to detect Trojans
 ) (
     input  wire         clk,
     input  wire         rst_n,

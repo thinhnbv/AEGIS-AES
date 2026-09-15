@@ -73,8 +73,15 @@ module tb_security;
   always @(posedge clk) begin
     if (rst_n && (prev_state != dut.state)) begin
       $display("DEBUG FSM: state %0d -> %0d at cycle %0d", prev_state, dut.state, cycle_count);
+      $display("DEBUG RCM: round_nr=%d state=%d alarm=%b prev=%d first=%b next=%b",
+               dut.u_core.muxed_round_nr, dut.u_rcm.state, dut.u_rcm.rcm_alarm,
+               dut.u_rcm.prev_round_nr, dut.u_rcm.first_round_seen,
+               dut.u_rcm.next);
       $display("DEBUG: core_ready=%b core_dvalid=%b busy=%b zeroize=%b sec_alarm=%b",
                dut.u_core.ready, dut.core_dvalid, busy, dut.zeroize, sec_alarm);
+      $display("DEBUG RCM: round_nr=%d state=%d alarm=%b prev=%d first=%b jumped=%d",
+               dut.u_core.muxed_round_nr, dut.u_rcm.state, dut.u_rcm.rcm_alarm,
+               dut.u_rcm.prev_round_nr, dut.u_rcm.first_round_seen, dut.u_rcm.round_jumped);
       $display("DEBUG: klg_alarm=%b rcm_alarm=%b klg_verdict_valid=%b klg_verdict_block=%b",
                dut.u_klg.klg_alarm, dut.u_rcm.rcm_alarm,
                dut.u_klg.klg_verdict_valid, dut.u_klg.klg_verdict_block);
