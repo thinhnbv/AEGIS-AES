@@ -10,6 +10,6 @@ IO_PORT "rst_n" PULL_MODE=UP;
 IO_LOC "uart_rx" U8;
 IO_PORT "uart_rx" PULL_MODE=UP;
 
-// LED on C14 (actual LED1 on board)
+// LED1 on C14 (actual board)
 IO_LOC "led" C14;
 IO_PORT "led" PULL_MODE=UP DRIVE=8;
