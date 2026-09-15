@@ -1,0 +1,172 @@
+<mxfile host="app.diagrams.net" modified="2026-09-10T00:00:00.000Z" agent="Claude" version="24.0.0" type="device">
+  <diagram name="TRU FSM (Safe)" id="tru-fsm-safe">
+    <mxGraphModel dx="1000" dy="700" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="550" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- Title -->
+        <mxCell id="title" value="Hình 2. FSM TRU — Tamper Response Unit" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontFamily=Arial;fontSize=16;fontStyle=1;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="280" y="10" width="400" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="Ba trạng thái: State-A → State-B → State-C" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontFamily=Arial;fontSize=11;fontColor=#7F8C8D;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="280" y="38" width="400" height="20" as="geometry" />
+        </mxCell>
+
+        <!-- ==================== STATE-A ==================== -->
+        <mxCell id="normal" value="State-A&#xa;&#xa;Hoạt động bình thường&#xa;alarm_out = 0&#xa;secure_reset = 0" style="ellipse;whiteSpace=wrap;html=1;align=center;fontFamily=Arial;fontSize=13;fontStyle=1;fillColor=#D5F5E3;strokeColor=#27AE60;strokeWidth=2.5;shadow=1;fontColor=#1E8449;" vertex="1" parent="1">
+          <mxGeometry x="130" y="140" width="150" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- Entry dot -->
+        <mxCell id="entry_dot" style="ellipse;whiteSpace=wrap;html=1;fillColor=#27AE60;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="40" y="183" width="10" height="10" as="geometry" />
+        </mxCell>
+        <mxCell id="entry_line" style="endArrow=none;html=1;strokeColor=#27AE60;strokeWidth=2;endFill=0;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="50" y="188" as="sourcePoint" />
+            <mxPoint x="130" y="188" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- ==================== STATE-B ==================== -->
+        <mxCell id="suspect" value="State-B&#xa;&#xa;Giám sát&#xa;warn_out = 1&#xa;cnt++" style="ellipse;whiteSpace=wrap;html=1;align=center;fontFamily=Arial;fontSize=13;fontStyle=1;fillColor=#FDEBD0;strokeColor=#F39C12;strokeWidth=2.5;shadow=1;fontColor=#B9770E;" vertex="1" parent="1">
+          <mxGeometry x="380" y="140" width="150" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- ==================== STATE-C ==================== -->
+        <mxCell id="lockdown" value="State-C&#xa;&#xa;alarm_out = 1&#xa;secure_reset = 1&#xa;out_blocked = 1&#xa;&#xa;Chỉ thoát bằng reset" style="ellipse;whiteSpace=wrap;html=1;align=center;fontFamily=Arial;fontSize=13;fontStyle=1;fillColor=#FDEDEC;strokeColor=#E74C3C;strokeWidth=3;shadow=1;fontColor=#922B21;" vertex="1" parent="1">
+          <mxGeometry x="610" y="130" width="170" height="120" as="geometry" />
+        </mxCell>
+
+        <!-- ==================== TRANSITIONS ==================== -->
+
+        <!-- State-A → State-B (warning_Tx) -->
+        <mxCell id="arr_n_s" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#F39C12;strokeWidth=2.5;endArrow=classic;endFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="normal" target="suspect">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lbl_n_s" value="warning_Tx&#xa;(từ RED)" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontFamily=Arial;fontSize=10;fontStyle=1;fontColor=#F39C12;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="285" y="108" width="100" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- State-A → State-C (alarm_Px, dashed) -->
+        <mxCell id="arr_n_l" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#E74C3C;strokeWidth=2.5;dashed=1;endArrow=classic;endFill=1;exitX=0.7;exitY=1;exitDx=0;exitDy=0;entryX=0.3;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="normal" target="lockdown">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lbl_n_l" value="alarm_Px&#xa;(KLG / FIC / RCM / ORC)" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontFamily=Arial;fontSize=10;fontStyle=1;fontColor=#E74C3C;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="360" y="260" width="160" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- State-B → State-C (alarm_Px) -->
+        <mxCell id="arr_s_l" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#E74C3C;strokeWidth=2.5;endArrow=classic;endFill=1;exitX=1;exitY=0.3;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="suspect" target="lockdown">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lbl_s_l" value="alarm_Px" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontFamily=Arial;fontSize=10;fontStyle=1;fontColor=#E74C3C;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="545" y="108" width="80" height="20" as="geometry" />
+        </mxCell>
+
+        <!-- State-B self-loop (warning count) -->
+        <mxCell id="arr_s_loop" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#F39C12;strokeWidth=2;dashed=1;endArrow=classic;endFill=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="suspect" target="suspect">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="455" y="120" as="sourcePoint" />
+            <mxPoint x="455" y="100" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="455" y="60" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="lbl_s_loop" value="warning_Tx&#xa;cnt++&#xa;≥ limit → State-C" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontFamily=Arial;fontSize=9;fontStyle=1;fontColor=#F39C12;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="385" y="60" width="130" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- State-B → State-A (no warning / timeout) -->
+        <mxCell id="arr_s_n" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#27AE60;strokeWidth=2;dashed=1;endArrow=classic;endFill=1;exitX=0;exitY=1;exitDx=0;exitDy=0;entryX=0.3;entryY=0;entryDx=0;entryDy=0;curved=1;" edge="1" parent="1" source="suspect" target="normal">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="350" y="250" as="sourcePoint" />
+            <mxPoint x="180" y="180" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="lbl_s_n" value="Không có cảnh báo thêm&#xa;(hoặc timeout)" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontFamily=Arial;fontSize=9;fontColor=#27AE60;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="210" y="290" width="130" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- State-C self-loop (cannot exit) -->
+        <mxCell id="arr_l_loop" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#922B21;strokeWidth=2;dashed=1;endArrow=classic;endFill=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="lockdown" target="lockdown">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="695" y="110" as="sourcePoint" />
+            <mxPoint x="695" y="90" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="760" y="60" />
+              <mxPoint x="640" y="60" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="lbl_l_loop" value="❌ Không thoát được&#xa;(chỉ reset cứng)" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontFamily=Arial;fontSize=9;fontStyle=1;fontColor=#922B21;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="670" y="55" width="110" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- Reset arrow -->
+        <mxCell id="arr_reset" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#555555;strokeWidth=1.5;endArrow=none;endFill=0;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;curved=1;" edge="1" parent="1" source="normal" target="normal">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="205" y="130" as="sourcePoint" />
+            <mxPoint x="205" y="110" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="80" y="80" />
+              <mxPoint x="80" y="110" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="lbl_reset" value="rst_n = 0&#xa;→ về State-A" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontFamily=Arial;fontSize=9;fontColor=#555555;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="80" y="100" width="100" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- ==================== LEGEND ==================== -->
+        <mxCell id="legend_bg" value="" style="shape=rect;rounded=1;whiteSpace=wrap;html=1;fillColor=#F8F9FA;strokeColor=#BDC3C7;shadow=0;" vertex="1" parent="1">
+          <mxGeometry x="100" y="330" width="650" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="legend_title" value="Chú thích tín hiệu vào TRU" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontFamily=Arial;fontSize=11;fontStyle=1;fontColor=#2C3E50;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="350" y="338" width="180" height="20" as="geometry" />
+        </mxCell>
+
+        <!-- Legend: alarm_Px -->
+        <mxCell id="leg_h" style="shape=rect;rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=middle;fillColor=#D9534F;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="120" y="368" width="14" height="14" as="geometry" />
+        </mxCell>
+        <mxCell id="leg_htxt" value="alarm_Px = alarm_P1/P2/P3/P4 (KLG/FIC/RCM/ORC)&#xa;(hard alarm — vào State-C ngay)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontFamily=Arial;fontSize=9;fontColor=#2C3E50;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="140" y="363" width="300" height="25" as="geometry" />
+        </mxCell>
+
+        <!-- Legend: warning_Tx -->
+        <mxCell id="leg_r" style="shape=rect;rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=middle;fillColor=#1ABC9C;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="120" y="398" width="14" height="14" as="geometry" />
+        </mxCell>
+        <mxCell id="leg_rtxt" value="warning_Tx — vào State-B, đếm cảnh báo&#xa;(Tx = Trojan ID, limit mặc định = 4)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontFamily=Arial;fontSize=9;fontColor=#2C3E50;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="140" y="393" width="300" height="25" as="geometry" />
+        </mxCell>
+
+        <!-- Legend: FSM states -->
+        <mxCell id="leg_n" style="shape=ellipse;whiteSpace=wrap;html=1;align=left;verticalAlign=middle;fillColor=#D5F5E3;strokeColor=#27AE60;" vertex="1" parent="1">
+          <mxGeometry x="470" y="360" width="14" height="10" as="geometry" />
+        </mxCell>
+        <mxCell id="leg_ntxt" value="State-A: bình thường, alarm_out=0, secure_reset=0" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontFamily=Arial;fontSize=9;fontColor=#1E8449;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="490" y="355" width="260" height="20" as="geometry" />
+        </mxCell>
+
+        <mxCell id="leg_s" style="shape=ellipse;whiteSpace=wrap;html=1;align=left;verticalAlign=middle;fillColor=#FDEBD0;strokeColor=#F39C12;" vertex="1" parent="1">
+          <mxGeometry x="470" y="382" width="14" height="10" as="geometry" />
+        </mxCell>
+        <mxCell id="leg_stxt" value="State-B: giám sát, warn_out=1, đếm cảnh báo" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontFamily=Arial;fontSize=9;fontColor=#B9770E;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="490" y="377" width="260" height="20" as="geometry" />
+        </mxCell>
+
+        <mxCell id="leg_l" style="shape=ellipse;whiteSpace=wrap;html=1;align=left;verticalAlign=middle;fillColor=#FDEDEC;strokeColor=#E74C3C;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="470" y="404" width="14" height="10" as="geometry" />
+        </mxCell>
+        <mxCell id="leg_ltxt" value="State-C: báo động, secure_reset=1, out_blocked=1 — sticky" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontFamily=Arial;fontSize=9;fontColor=#922B21;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="490" y="399" width="260" height="20" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

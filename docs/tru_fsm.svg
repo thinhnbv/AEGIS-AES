@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 420" font-family="Arial, sans-serif">
+  <defs>
+    <filter id="shadow">
+      <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+
+  <text x="310" y="30" text-anchor="middle" font-size="16" font-weight="bold" fill="#2C3E50">
+    Hình 2. FSM TRU — Tamper Response Unit
+  </text>
+  <text x="310" y="48" text-anchor="middle" font-size="11" fill="#7F8C8D">
+    Ba trạng thái: NORMAL → SUSPECT → LOCKDOWN
+  </text>
+
+  <ellipse cx="100" cy="160" rx="72" ry="52" fill="#D5F5E3" stroke="#27AE60" stroke-width="2.5" filter="url(#shadow)"/>
+  <text x="100" y="148" text-anchor="middle" font-size="14" font-weight="bold" fill="#1E8449">NORMAL</text>
+  <text x="100" y="166" text-anchor="middle" font-size="9" fill="#145A32">Trạng thái bình thường</text>
+  <text x="100" y="180" text-anchor="middle" font-size="9" fill="#145A32">sec_alarm = 0</text>
+  <text x="100" y="194" text-anchor="middle" font-size="9" fill="#145A32">zeroize = 0</text>
+
+  <circle cx="28" cy="160" r="5" fill="#27AE60"/>
+  <line x1="33" y1="160" x2="28" y2="160" stroke="#27AE60" stroke-width="2"/>
+
+  <ellipse cx="310" cy="160" rx="72" ry="52" fill="#FDEBD0" stroke="#F39C12" stroke-width="2.5" filter="url(#shadow)"/>
+  <text x="310" y="148" text-anchor="middle" font-size="14" font-weight="bold" fill="#B9770E">SUSPECT</text>
+  <text x="310" y="166" text-anchor="middle" font-size="9" fill="#7D6608">Đang theo dõi</text>
+  <text x="310" y="180" text-anchor="middle" font-size="9" fill="#7D6608">sec_warning = 1</text>
+  <text x="310" y="194" text-anchor="middle" font-size="9" fill="#7D6608">warn_cnt++</text>
+
+  <ellipse cx="520" cy="160" rx="80" ry="58" fill="#FDEDEC" stroke="#E74C3C" stroke-width="3" filter="url(#shadow)"/>
+  <text x="520" y="142" text-anchor="middle" font-size="14" font-weight="bold" fill="#922B21">LOCKDOWN</text>
+  <text x="520" y="158" text-anchor="middle" font-size="9" fill="#641E16">sec_alarm = 1</text>
+  <text x="520" y="172" text-anchor="middle" font-size="9" fill="#641E16">zeroize = 1  ← xóa khóa</text>
+  <text x="520" y="186" text-anchor="middle" font-size="9" fill="#641E16">block_output = 1</text>
+  <text x="520" y="200" text-anchor="middle" font-size="8" fill="#7B241C">Chỉ thoát bằng reset</text>
+
+  <path d="M 172 140 Q 240 110 278 145" fill="none" stroke="#F39C12" stroke-width="2.5" marker-end="url(#arrOrange)"/>
+  <defs>
+    <marker id="arrOrange" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <path d="M0,0 L10,3.5 L0,7 z" fill="#F39C12"/>
+    </marker>
+    <marker id="arrRed" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <path d="M0,0 L10,3.5 L0,7 z" fill="#E74C3C"/>
+    </marker>
+    <marker id="arrGreen" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <path d="M0,0 L10,3.5 L0,7 z" fill="#27AE60"/>
+    </marker>
+  </defs>
+  <text x="220" y="108" text-anchor="middle" font-size="10" font-weight="bold" fill="#F39C12">
+    red_warning
+  </text>
+  <text x="220" y="122" text-anchor="middle" font-size="8" fill="#B9770E">
+    (từ RED)
+  </text>
+
+  <path d="M 170 180 Q 260 210 440 180" fill="none" stroke="#E74C3C" stroke-width="2.5" stroke-dasharray="6,3" marker-end="url(#arrRed)"/>
+  <text x="300" y="228" text-anchor="middle" font-size="10" font-weight="bold" fill="#E74C3C">
+    hard_alarm
+  </text>
+  <text x="300" y="243" text-anchor="middle" font-size="8" fill="#922B21">
+    (KLG / FIC / RCM / ORC)
+  </text>
+
+  <path d="M 382 145 Q 450 110 440 140" fill="none" stroke="#E74C3C" stroke-width="2.5" marker-end="url(#arrRed)"/>
+  <text x="430" y="108" text-anchor="middle" font-size="10" font-weight="bold" fill="#E74C3C">
+    hard_alarm
+  </text>
+
+  <path d="M 310 108 Q 370 60 330 60 Q 250 60 260 108" fill="none" stroke="#F39C12" stroke-width="2" stroke-dasharray="4,2"/>
+  <text x="315" y="72" text-anchor="middle" font-size="9" font-weight="bold" fill="#F39C12">
+    red_warning
+  </text>
+  <text x="315" y="85" text-anchor="middle" font-size="8" fill="#B9770E">
+    warn_cnt++
+  </text>
+  <text x="315" y="98" text-anchor="middle" font-size="8" fill="#B9770E">
+    ≥ WARN_LIMIT → LOCKDOWN
+  </text>
+
+  <path d="M 280 208 Q 190 260 120 210" fill="none" stroke="#27AE60" stroke-width="2" stroke-dasharray="4,2" marker-end="url(#arrGreen)"/>
+  <text x="185" y="260" text-anchor="middle" font-size="9" fill="#27AE60">
+    Không có cảnh báo thêm
+  </text>
+  <text x="185" y="274" text-anchor="middle" font-size="8" fill="#1E8449">
+    (hoặc timeout)
+  </text>
+
+  <path d="M 600 145 Q 640 100 600 60 Q 520 60 480 100" fill="none" stroke="#641E16" stroke-width="2" stroke-dasharray="4,2"/>
+  <text x="545" y="52" text-anchor="middle" font-size="9" font-weight="bold" fill="#922B21">
+    ❌ Không thoát được
+  </text>
+  <text x="545" y="65" text-anchor="middle" font-size="8" fill="#7B241C">
+    (chỉ reset cứng)
+  </text>
+
+  <path d="M 100 212 L 100 250 Q 100 270 80 270 Q 60 270 60 250 L 20 160" fill="none" stroke="#555" stroke-width="1.5"/>
+  <circle cx="100" cy="212" r="3" fill="#555"/>
+  <text x="100" y="285" text-anchor="middle" font-size="9" fill="#555">
+    rst_n = 0
+  </text>
+  <text x="100" y="298" text-anchor="middle" font-size="8" fill="#7F8C8D">
+    → quay về NORMAL
+  </text>
+
+  <rect x="140" y="330" width="340" height="75" rx="6" fill="#F8F9FA" stroke="#BDC3C7" stroke-width="1"/>
+  <text x="310" y="350" text-anchor="middle" font-size="11" font-weight="bold" fill="#2C3E50">Chú thích tín hiệu vào TRU</text>
+  <rect x="155" y="360" width="14" height="14" rx="3" fill="#27AE60"/>
+  <text x="175" y="372" font-size="9" fill="#2C3E50">klg_alarm · fic_alarm · rcm_alarm · orc_alarm</text>
+  <text x="175" y="384" font-size="9" fill="#145A32">(hard_alarm — vào LOCKDOWN ngay)</text>
+  <rect x="155" y="392" width="14" height="14" rx="3" fill="#1ABC9C"/>
+  <text x="175" y="404" font-size="9" fill="#2C3E50">red_warning — vào SUSPECT, đếm cảnh báo</text>
+  <text x="320" y="372" font-size="8" fill="#7F8C8D">WARN_LIMIT mặc định = 4</text>
+</svg>

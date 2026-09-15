@@ -14,11 +14,7 @@ module top_demo (
     output wire       uart_tx,
 
     // Status LEDs
-    output wire [3:0] led,
-
-    // Debug outputs (for testing)
-    output wire [3:0] dbg_round,
-    output wire       dbg_busy
+    output wire [3:0] led
 );
 
     // Internal signals
@@ -45,7 +41,7 @@ module top_demo (
     wire [3:0]   muxed_round_nr;
     wire [127:0] state_before_final;
 
-    // AES core instance (using tapped version)
+    // AES core instance
     aes_core_tapped u_aes (
         .clk               (clk),
         .reset_n           (rst_n),
@@ -55,13 +51,13 @@ module top_demo (
         .next              (cmd_start),
         .ready             (aes_ready),
 
-        .key               ({128'd0, cmd_key}),  // 256-bit key input, lower 128 bits used
-        .keylen            (1'b0),               // AES-128
+        .key               ({128'd0, cmd_key}),
+        .keylen            (1'b0),
 
         .block             (cmd_block),
         .result            (aes_result),
         .result_valid      (aes_result_valid),
-        .round_keys_flat   (),                    // Not used
+        .round_keys_flat   (),
 
         .muxed_round_nr   (muxed_round_nr),
         .state_before_final(state_before_final)
@@ -119,11 +115,7 @@ module top_demo (
     assign led[0] = ~uart_rx;           // RX activity
     assign led[1] = ~uart_tx;           // TX activity
     assign led[2] = aes_ready;          // AES idle
-    assign led[3] = 1'b0;               // Reserved
-
-    // Debug outputs
-    assign dbg_round = muxed_round_nr;
-    assign dbg_busy  = ~aes_ready;
+    assign led[3] = muxed_round_nr[0]; // Round LSB (debug)
 
 endmodule
 

@@ -4,6 +4,9 @@
 // GW5A-LV25UG324C2-I1
 //---------------------------------------------------------------
 
+// NOTE: Assign pins manually in Gowin I/O Constraints Editor
+// Only essential signals are listed here
+
 // Clock input (50MHz)
 IO_LOC "clk" P5;
 IO_PORT "clk" PULL_MODE=UP;
@@ -31,12 +34,3 @@ IO_PORT "led[2]" PULL_MODE=UP DRIVE=8;
 
 IO_LOC "led[3]" K1;
 IO_PORT "led[3]" PULL_MODE=UP DRIVE=8;
-
-// Debug outputs
-IO_LOC "dbg_round[0]" K2;
-IO_LOC "dbg_round[1]" L1;
-IO_LOC "dbg_round[2]" L2;
-IO_LOC "dbg_round[3]" M1;
-
-IO_LOC "dbg_busy" M2;
-IO_PORT "dbg_busy" PULL_MODE=UP;

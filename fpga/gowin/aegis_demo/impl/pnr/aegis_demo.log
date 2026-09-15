@@ -1,0 +1,16 @@
+Reading netlist file: "\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_demo\impl\gwsynthesis\aegis_demo.vg"
+Parsing netlist file "\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_demo\impl\gwsynthesis\aegis_demo.vg" completed
+Processing netlist completed
+Reading constraint file: "\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_demo\src\acg525.cst"
+ERROR  (CT1135) : "\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_demo\src\acg525.cst":7 | Can't find object named 'spi_clk'
+ERROR  (CT1135) : "\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_demo\src\acg525.cst":8 | Can't find object named 'spi_clk'
+ERROR  (CT1135) : "\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_demo\src\acg525.cst":10 | Can't find object named 'spi_cs_n'
+ERROR  (CT1135) : "\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_demo\src\acg525.cst":11 | Can't find object named 'spi_cs_n'
+ERROR  (CT1135) : "\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_demo\src\acg525.cst":13 | Can't find object named 'spi_mosi'
+ERROR  (CT1135) : "\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_demo\src\acg525.cst":14 | Can't find object named 'spi_mosi'
+ERROR  (CT1135) : "\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_demo\src\acg525.cst":16 | Can't find object named 'spi_miso'
+ERROR  (CT1135) : "\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_demo\src\acg525.cst":17 | Can't find object named 'spi_miso'
+ERROR  (CT1113) : "\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_demo\src\acg525.cst":30 | Can't find pad location 'J2' in current package
+ERROR  (CT1135) : "\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_demo\src\acg525.cst":37 | Can't find object named 'led[3}'
+ERROR  (CT1113) : "\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_demo\src\acg525.cst":40 | Can't find pad location 'P5' in current package
+Physical Constraint parsed completed with errors
