@@ -43,6 +43,8 @@ module rcm_round_monitor #(
   reg [3:0] prev_round_nr;
   reg       first_round_seen;
   reg       saw_result_valid;
+  reg       prev_next;  // Track previous next signal for edge detection
+  reg       prev_state_is_done;  // Track if previous state was DONE
 
   // Track the round when done signal was seen
   reg [3:0] final_round_seen;
@@ -110,7 +112,13 @@ module rcm_round_monitor #(
       first_round_seen <= 1'b0;
       saw_result_valid <= 1'b0;
       final_round_seen <= 4'd0;
+      prev_next        <= 1'b0;
+      prev_state_is_done <= 1'b0;
     end else begin
+      // Track next signal transition
+      prev_next <= next;
+      prev_state_is_done <= (state == RCM_DONE);
+
       case (state)
         RCM_IDLE: begin
           if (next) begin
@@ -123,6 +131,18 @@ module rcm_round_monitor #(
 
         RCM_ACTIVE: begin
           // Track first round seen
+          if (prev_state_is_done && next) begin
+            // Transitioning from DONE to ACTIVE - reset tracking
+            first_round_seen <= 1'b0;
+            prev_round_nr    <= 4'd0;
+          end
+
+          if (!first_round_seen && round_nr != 4'd0) begin
+            first_round_seen <= 1'b1;
+            prev_round_nr    <= round_nr;
+          end else if (first_round_seen) begin
+            prev_round_nr <= round_nr;
+          end
           if (!first_round_seen && round_nr != 4'd0) begin
             first_round_seen <= 1'b1;
             prev_round_nr    <= round_nr;
@@ -138,8 +158,11 @@ module rcm_round_monitor #(
         end
 
         RCM_DONE: begin
-          if (next) begin
-            first_round_seen <= 1'b0;
+          if (next && !prev_next) begin
+            // Rising edge of next - new encryption starting
+            // Reset tracking for new encryption
+            first_round_seen <= 1'b0;  // Will be set when first round is seen
+            prev_round_nr    <= 4'd0;  // Reset so first comparison will detect jump
             saw_result_valid <= 1'b0;
             final_round_seen <= 4'd0;
           end
