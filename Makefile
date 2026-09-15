@@ -4,7 +4,7 @@ SIM       ?= iverilog
 
 RTL_GOLD   = rtl/aes_golden
 RTL_AEGIS  = rtl/aegis
-RTL_CASE   = $(firstword $(wildcard rtl/infected/$(CASE)*))
+RTL_CASE   = rtl/infected/$(CASE)
 TB         = verif/tb
 BUILD      = build
 STAMP     := $(shell date +%Y%m%d_%H%M%S)
@@ -49,9 +49,34 @@ sim:
 		$(if $(wildcard $(TB)/tb_$(CASE).sv),$(TB)/tb_$(CASE).sv,$(TB)/tb_aegis_top.sv)
 	@bash -o pipefail -c 'vvp $(BUILD)/$(CASE)/sim.out | tee $(BUILD)/$(CASE)/sim.log'
 
+# Golden modules needed for security tests (basic components for infected RTL)
+SEC_GOLD_SUPPORT = $(RTL_GOLD)/aes_sbox.v $(RTL_GOLD)/aes_inv_sbox.v \
+                   $(RTL_GOLD)/aes_key_mem.v \
+                   $(RTL_GOLD)/aes_encipher_block.v $(RTL_GOLD)/aes_decipher_block.v
+
 security:
 	@mkdir -p $(BUILD)/$(CASE)
-	iverilog -g2012 -I$(RTL_AEGIS) -DCASE=\"$(CASE)\" -o $(BUILD)/$(CASE)/sec.out $(SRC_DUT) $(SRC_AEGIS_DUT) $(TB)/tb_security.sv
+ifeq ($(CASE),CLEAN)
+	# CLEAN case: aegis RTL + golden support
+	iverilog -g2012 -I$(RTL_AEGIS) -DCASE=\"$(CASE)\" -o $(BUILD)/$(CASE)/sec.out \
+		$(SRC_AEGIS) \
+		$(filter-out $(RTL_GOLD)/aes.v,$(SRC_GOLD)) \
+		$(TB)/tb_security.sv
+else ifeq ($(CASE),clean)
+	# clean case: same as CLEAN
+	iverilog -g2012 -I$(RTL_AEGIS) -DCASE=\"$(CASE)\" -o $(BUILD)/$(CASE)/sec.out \
+		$(SRC_AEGIS) \
+		$(filter-out $(RTL_GOLD)/aes.v,$(SRC_GOLD)) \
+		$(TB)/tb_security.sv
+else
+	# Infected case: aegis RTL (filtered) + infected RTL + golden support
+	# Golden support cho cac submodule ma infected can nhung khong dinh nghia
+	iverilog -g2012 -I$(RTL_AEGIS) -DCASE=\"$(CASE)\" -o $(BUILD)/$(CASE)/sec.out \
+		$(filter-out $(addprefix $(RTL_AEGIS)/,$(notdir $(SRC_CASE))),$(SRC_AEGIS)) \
+		$(SRC_CASE) \
+		$(SEC_GOLD_SUPPORT) \
+		$(TB)/tb_security.sv
+endif
 	@bash -o pipefail -c 'vvp $(BUILD)/$(CASE)/sec.out | tee $(BUILD)/$(CASE)/security.log'
 
 lint:

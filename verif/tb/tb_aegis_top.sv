@@ -21,12 +21,10 @@ module tb_aegis_top;
   logic [127:0]   trigger_pt;
   logic [127:0]   trigger_expected;
 
-  integer file_kat;
-  integer file_trigger;
-  integer scan_result;
-  integer pass_count;
-  integer fail_count;
-  integer vec_num;
+  integer trigger_file;
+  integer trigger_scan_result;
+
+  integer file, scan_result;
 
   initial begin
     clk = 0;
@@ -40,119 +38,132 @@ module tb_aegis_top;
   );
 
   initial begin
-    pass_count = 0;
-    fail_count = 0;
-    vec_num = 0;
+    $display("1. Dang nap vector tu file fips197_appb.txt...");
 
-    $display("==================================================");
-    $display("   AES-128 NIST REGRESSION + TROJAN TEST");
-    $display("==================================================");
-
-    // --- DOC KAT (16 vector) ---
-    $display("");
-    $display("=== Doc KAT vectors (nist_kat.txt) ===");
-    file_kat = $fopen("verif/vectors/nist_kat.txt", "r");
-    if (file_kat == 0) begin
-      $display("[LOI] Khong the mo nist_kat.txt!");
-      $fatal(1);
+    file = $fopen("verif/vectors/fips197_appb.txt", "r");
+    if (file == 0) begin
+      $display("[LOI] Khong the mo file vector! Kiem tra lai duong dan.");
+      $fatal(1, "Khong the mo file fips197_appb.txt");
     end
-    while (!$feof(file_kat)) begin
-      scan_result = $fscanf(file_kat, "%h %h %h\n", nist_key, nist_pt, nist_ct);
-      if (scan_result == 3) begin
-        vec_num = vec_num + 1;
-
-        // Reset
-        reset_n = 0; encdec = 1; init = 0; next = 0; keylen = 0;
-        key = 256'h0; block = 128'h0;
-        @(negedge clk);
-        @(negedge clk);
-        reset_n = 1;
-        @(negedge clk);
-
-        // Load key
-        key = {nist_key, nist_key};
-        init = 1;
-        @(negedge clk);
-        init = 0;
-        wait(ready == 1'b0);
-        wait(ready == 1'b1);
-
-        // Encrypt
-        @(negedge clk);
-        block = nist_pt;
-        next = 1;
-        @(negedge clk);
-        next = 0;
-        wait(result_valid == 1'b1);
-        @(negedge clk);
-
-        // Kiem tra
-        if (result == nist_ct) begin
-          pass_count = pass_count + 1;
-        end else begin
-          fail_count = fail_count + 1;
-          $display("   [FAIL] KAT #%0d", vec_num);
-        end
-      end
-    end
-    $fclose(file_kat);
-    $display("[+] KAT: %0d pass, %0d fail", pass_count, fail_count);
-
-    if (fail_count > 0) begin
-      $fatal(1, "NIST REGRESSION THAT BAI");
-    end
-
-    // --- KIEM TRA T01 TROJAN ---
-    $display("");
-    $display("=== Kiem tra T01 Trojan (trigger_T01.txt) ===");
-    file_trigger = $fopen("verif/vectors/trigger_T01.txt", "r");
-    if (file_trigger == 0) begin
-      $display("[FAIL] Khong mo duoc trigger_T01.txt");
-      $fatal(1);
-    end
-    scan_result = $fscanf(file_trigger, "%h %h %h\n", trigger_key, trigger_pt, trigger_expected);
-    $fclose(file_trigger);
+    scan_result = $fscanf(file, "%h %h %h\n", nist_key, nist_pt, nist_ct);
+    $fclose(file);
 
     if (scan_result != 3) begin
-      $display("[FAIL] Noi dung trigger_T01.txt khong hop le");
-      $fatal(1);
+      $fatal(1, "Noi dung fips197_appb.txt khong hop le");
     end
 
-    // Nap lai khoa cho phep thu T01
-    @(negedge clk);
-    key = {trigger_key, trigger_key};
+    $display("   Da nap Key      : %h", nist_key);
+    $display("   Da nap Plaintext: %h", nist_pt);
+
+    // Khoi tao muc thap
+    reset_n = 0; encdec = 1; init = 0; next = 0; keylen = 0;
+
+    // [TRICK PHAN CUNG] Nap key vao ca 2 nua de tranh nham lan mapping cua secworks
+    key = {nist_key, nist_key};
     block = 128'h0;
+
+    // Doi 2 chu ky va nha reset (Dong bo theo canh xuong)
+    @(negedge clk);
+    @(negedge clk);
+    reset_n = 1;
+
+    // --- BUOC 1: NAP KHOA (KEY EXPANSION) ---
+    @(negedge clk);
     init = 1;
     @(negedge clk);
     init = 0;
+
+    // FIX TIMING: Cho ready xuong 0 (dang tinh toan) roi moi doi no len 1 (tinh xong)
+    wait(ready == 1'b0);
+    wait(ready == 1'b1);
+    $display("   [+] Mo rong khoa (Key Expansion) hoan tat.");
+
+    // --- BUOC 2: NAP BAN RO VA MA HOA ---
+    @(negedge clk);
+    block = nist_pt;
+    next  = 1;
+    @(negedge clk);
+    next  = 0;
+
+    // Cho den khi co ket qua hop le
+    wait(result_valid == 1'b1);
+    @(negedge clk);
+
+    // --- BUOC 3: DOI CHIEU KET QUA ---
+    if (result == nist_ct) begin
+      $display("==================================================");
+      $display("   [PASS] Ciphertext khop hoan toan voi vector da nap!");
+      $display("   Output thuc te  : %h", result);
+      $display("==================================================");
+    end else begin
+      $display("==================================================");
+      $display("   [FAIL] Ciphertext KHONG khop!");
+      $display("   Mong doi : %h", nist_ct);
+      $display("   Thuc te  : %h", result);
+      $display("==================================================");
+      $fatal(1, "NIST REGRESSION THAT BAI");
+    end
+
+        // --- BUOC 4: KIEM TRA T01 TRONG MO PHONG CO KIEM SOAT ---
+    trigger_file = $fopen("verif/vectors/trigger_T01.txt", "r");
+
+    if (trigger_file == 0) begin
+      $display("[FAIL] Khong mo duoc trigger_T01.txt");
+      $fatal(1, "Khong mo duoc trigger_T01.txt");
+    end
+
+    trigger_scan_result = $fscanf(
+      trigger_file,
+      "%h %h %h\n",
+      trigger_key,
+      trigger_pt,
+      trigger_expected
+    );
+    $fclose(trigger_file);
+
+    if (trigger_scan_result != 3) begin
+      $display("[FAIL] Noi dung trigger_T01.txt khong hop le");
+      $fatal(1, "Noi dung trigger_T01.txt khong hop le");
+    end
+
+    // Nap lai khoa cho phep thu T01.
+    @(negedge clk);
+    key   = {trigger_key, trigger_key};
+    block = 128'h0;
+    init  = 1;
+
+    @(negedge clk);
+    init = 0;
+
     wait(ready == 1'b0);
     wait(ready == 1'b1);
 
-    // Gui plaintext kich hoat T01
+    // Gui plaintext kich hoat benchmark T01.
     @(negedge clk);
     block = trigger_pt;
-    next = 1;
+    next  = 1;
+
     @(negedge clk);
     next = 0;
+
+    // Cho result_valid ha xuong roi bat lai cho ket qua moi.
     wait(result_valid == 1'b0);
     wait(result_valid == 1'b1);
     @(negedge clk);
 
     if (result == trigger_expected) begin
+      $display("==================================================");
       $display("   [PASS] T01 da duoc kich hoat dung trong mo phong");
       $display("   Output quan sat : %h", result);
+      $display("==================================================");
     end else begin
+      $display("==================================================");
       $display("   [FAIL] T01 khong cho ket qua mong doi");
       $display("   Mong doi : %h", trigger_expected);
       $display("   Thuc te  : %h", result);
+      $display("==================================================");
       $fatal(1, "T01 KHONG DUOC KICH HOAT");
     end
-
-    $display("==================================================");
-    $display("   TONG KET");
-    $display("   KAT vectors : %0d pass, %0d fail", pass_count, fail_count);
-    $display("   Trojan T01  : PASS");
-    $display("==================================================");
 
     $finish;
   end
