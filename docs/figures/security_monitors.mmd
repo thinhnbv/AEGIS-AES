@@ -1,0 +1,121 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'fontSize': '13px'}}}%%
+flowchart TB
+    subgraph TRU_UNIT["🔒 TRU - Tamper Response Unit (Central Controller)"]
+        TRU_IN["Inputs"]
+        TRU_LOGIC["""TRU FSM
+        ─────────────
+        States:
+        • NORMAL (00)
+        • SUSPECT (01)
+        • LOCKDOWN (10)
+
+        Actions:
+        • Zeroize on alarm
+        • Block output
+        • Set sec_status"""]
+        TRU_OUT["Outputs"]
+    end
+
+    subgraph KLG["🔍 KLG - Key Leak Guard [PROPOSED]"]
+        KLG_IN["""Inputs:
+        • key_reg [127:0]
+        • round_keys_flat
+        • data_out [127:0]
+        • data_out_valid"""]
+        KLG_PROC["""Key Leak Detection
+        ───────────────────
+        1. Encrypt known pattern
+           with target key
+        2. Compare against
+           golden reference
+        3. If mismatch → alarm
+
+        Pattern: deadbeef...""]
+        KLG_OUT["Outputs:
+        • klg_alarm
+        • klg_code [3:0]
+        • klg_verdict_valid
+        • klg_verdict_block"]
+    end
+
+    subgraph RCM["📏 RCM - Round Counter Monitor [PROPOSED]"]
+        RCM_IN["""Inputs:
+        • init, next
+        • ready, result_valid
+        • muxed_round_nr [3:0]"""]
+        RCM_PROC["""Round Validation
+        ────────────────
+        • Track current round
+        • Expect: 0→1→2→...→10
+        • Deviation → alarm
+
+        10 rounds for AES-128"""]
+        RCM_OUT["Outputs:
+        • rcm_alarm
+        • rcm_code [3:0]"]
+    end
+
+    subgraph ORC["✅ ORC - Output Consistency Checker [PROPOSED]"]
+        ORC_IN["""Inputs:
+        • next, result_valid
+        • round_nr
+        • state_before_final [127:0]
+        • final_round_key [128:0]
+        • core_result [127:0]"""]
+        ORC_PROC["""Output Prediction
+        ────────────────
+        1. Reconstruct last round:
+           SubBytes(state_final)
+           ⊕ final_round_key
+        2. Compare with core_result
+        3. Mismatch → Trojan!"""]
+        ORC_OUT["Outputs:
+        • orc_alarm
+        • orc_code [3:0]"]
+    end
+
+    subgraph FIC["🛡️ FIC - FSM Integrity Checker [PROPOSED]"]
+        FIC_IN["""Inputs:
+        • clk, rst_n
+        • FSM control signals"""]
+        FIC_PROC["""FSM Validation
+        ──────────────
+        • Signature monitoring
+        • Transition validation
+        • Anomaly detection"""]
+        FIC_OUT["Output:
+        • fic_alarm"]
+    end
+
+    subgraph RED["📊 RED - Rare-Event Detector [PROPOSED]"]
+        RED_IN["""Inputs:
+        • Internal signals
+        • Side-channel hints"""]
+        RED_PROC["""Rare Event Detection
+        ───────────────────
+        • Statistical analysis
+        • Pattern matching
+        • Threshold alerts"""]
+        RED_OUT["Output:
+        • red_warning"]
+    end
+
+    %% Connections to TRU
+    KLG_OUT --> TRU_IN
+    RCM_OUT --> TRU_IN
+    ORC_OUT --> TRU_IN
+    FIC_OUT --> TRU_IN
+    RED_OUT --> TRU_IN
+
+    TRU_OUT -->|zeroize| KLG
+    TRU_OUT -->|zeroize| RCM
+    TRU_OUT -->|zeroize| ORC
+    TRU_OUT -->|zeroize| FIC
+    TRU_OUT -->|zeroize| RED
+
+    style TRU_UNIT fill:#E8F5E9,stroke:#2E7D32,stroke-width:3px
+    style KLG fill:#FFF8E1,stroke:#F57F17,stroke-width:2px
+    style RCM fill:#FFF8E1,stroke:#F57F17,stroke-width:2px
+    style ORC fill:#FFF8E1,stroke:#F57F17,stroke-width:2px
+    style FIC fill:#FFF8E1,stroke:#F57F17,stroke-width:2px
+    style RED fill:#FFF8E1,stroke:#F57F17,stroke-width:2px

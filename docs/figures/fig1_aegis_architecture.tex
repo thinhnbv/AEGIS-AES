@@ -1,0 +1,265 @@
+\documentclass[border=5pt]{standalone}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, calc, fit, shadows.blur}
+\usepackage{amsmath}
+\usepackage{vietnam}
+\usepackage[utf8]{inputenc}
+\PassOptionsToPackage{quiet}{fontspec}
+
+% ── Color palette ──────────────────────────────────────────────
+\definecolor{cWrapper}{RGB}{74,144,226}
+\definecolor{cCore}{RGB}{127,140,141}
+\definecolor{cKLG}{RGB}{92,184,92}
+\definecolor{cFIC}{RGB}{236,151,31}
+\definecolor{cRCM}{RGB}{155,89,182}
+\definecolor{cRED}{RGB}{26,188,156}
+\definecolor{cORC}{RGB}{236,151,31}
+\definecolor{cTRU}{RGB}{217,83,79}
+\definecolor{cInOut}{RGB}{236,240,241}
+\definecolor{cLegend}{RGB}{248,249,250}
+
+% ── TikZ styles ────────────────────────────────────────────────
+\tikzset{
+  % Boxes
+  box/.style={rounded corners, draw, align=center,
+              font=\sffamily\scriptsize, blur shadow={shadow blur steps=5}},
+  box-wrapper/.style={box, fill=cWrapper, text=white, line width=1.5pt,
+                      font=\sffamily\bfseries},
+  box-core/.style={box, fill=cCore, text=white, line width=1.5pt},
+  box-klg/.style={box, fill=cKLG, text=white, line width=1.5pt},
+  box-fic/.style={box, fill=cFIC, text=white, line width=1.5pt},
+  box-rcm/.style={box, fill=cRCM, text=white, line width=1.5pt},
+  box-red/.style={box, fill=cRED, text=white, line width=1.5pt},
+  box-orc/.style={box, fill=cORC, text=white, line width=1.5pt},
+  box-tru/.style={box, fill=cTRU, text=white, line width=2pt},
+  box-io/.style={box, fill=cInOut, line width=1pt, font=\sffamily\small},
+  box-sec/.style={box, fill=cInOut, line width=1pt,
+                  draw=#1!60!red, font=\sffamily\small},
+  box-secure/.style={box, fill=cInOut, line width=1.5pt,
+                     draw=cTRU, font=\sffamily\small},
+
+  % Arrows
+  arr/.style={-Stealth, line width=1.2pt, color=gray!70!black},
+  arr-ctrl/.style={arr, dashed, line width=1pt},
+  arr-alarm/.style={-Stealth, line width=2pt},
+  arr-secure/.style={-Stealth, dashed, line width=2pt, color=cTRU},
+
+  % Legend swatch
+  sw/.style={rectangle, rounded corners, draw=none, fill=#1,
+             minimum width=8pt, minimum height=8pt},
+}
+
+% ── Document ───────────────────────────────────────────────────
+\begin{document}
+\begin{tikzpicture}[node distance=8pt and 16pt, >=Stealth]
+
+  % ── Title ──────────────────────────────────────────────────────
+  \node[font=\sffamily\bfseries\Large, text=darkgray!70!black]
+       {Hình 1. Kiến trúc tổng thể AEGIS-AES};
+
+  % ════════════════════════════════════════════════════════════════
+  %  INPUT BLOCKS (left side)
+  % ════════════════════════════════════════════════════════════════
+  \node[box-io, label={}, inner sep=5pt] (inKey)
+       {\textbf{Key input}\\(nạp khóa)};
+
+  \node[box-io, below=14pt of inKey, label={}, inner sep=5pt] (inData)
+       {\textbf{Data input}\\(plaintext/ciphertext)};
+
+  \node[box-io, below=12pt of inData, inner sep=4pt] (inClk)
+       {\texttt{clk, rst\_n}};
+
+  % ════════════════════════════════════════════════════════════════
+  %  TOP WRAPPER
+  % ════════════════════════════════════════════════════════════════
+  \node[box-wrapper, right=28pt of inKey, yshift=10pt,
+        minimum width=200pt, minimum height=36pt] (wrapper)
+       {aegis\_aes\_top.v\\(6-state FSM wrapper $\cdot$ EN\_ORC)};
+
+  % ════════════════════════════════════════════════════════════════
+  %  AES CORE
+  % ════════════════════════════════════════════════════════════════
+  \node[box-core, right=8pt of wrapper, yshift=-4pt,
+        minimum width=150pt, minimum height=90pt,
+        label={[font=\sffamily\itshape\tiny, darkgray]above:secworks/aes (golden)}]
+       (core) at ($(wrapper) + (0,-50)$)
+       {AES Core\\[-2pt]\hline[-2pt]
+        Kết quả mã hóa/giải mã\\[-2pt]
+        (không hiển thị bit-width)};
+
+  % ════════════════════════════════════════════════════════════════
+  %  SECURITY MODULES (left column, below core)
+  % ════════════════════════════════════════════════════════════════
+  \node[box-klg, left=4pt of core, yshift=-30pt,
+        minimum width=105pt, minimum height=68pt,
+        label={[font=\sffamily\small, cKLG!80!black]below:\itshape P1}]
+       (klg) {KLG\\Key-Leak Guard\\[-4pt]\hline[-2pt]
+              Phát hiện rò rỉ khóa\\(3 tier kiểm tra)};
+
+  \node[box-fic, left=4pt of core, yshift=-30pt,
+        below=72pt of klg,
+        minimum width=105pt, minimum height=52pt,
+        label={[font=\sffamily\small, cFIC!80!black]below:\itshape P4}]
+       (fic) {FIC\\FSM Integrity Checker\\[-4pt]\hline[-2pt]
+              Kiểm tra tính toàn vẹn FSM};
+
+  \node[box-rcm, left=4pt of core, yshift=-30pt,
+        below=56pt of fic,
+        minimum width=105pt, minimum height=52pt,
+        label={[font=\sffamily\small, cRCM!80!black]below:\itshape P3}]
+       (rcm) {RCM\\Round Consistency Monitor\\[-4pt]\hline[-2pt]
+              Giám sát số vòng AES};
+
+  \node[box-red, left=4pt of core, yshift=-30pt,
+        below=56pt of rcm,
+        minimum width=105pt, minimum height=52pt,
+        label={[font=\sffamily\small, cRED!80!black]below:\itshape T1/T2/T3}]
+       (red) {RED\\Rare-Event Detector\\[-4pt]\hline[-2pt]
+              Phát hiện sự kiện hiếm};
+
+  % ════════════════════════════════════════════════════════════════
+  %  ORC (right of core)
+  % ════════════════════════════════════════════════════════════════
+  \node[box-orc, right=4pt of core, yshift=10pt,
+        minimum width=105pt, minimum height=62pt,
+        label={[font=\sffamily\small, cORC!80!black]below:\itshape P2}]
+       (orc) {ORC\\Output Redundancy Checker\\[-4pt]\hline[-2pt]
+              Kiểm tra dư thừa đầu ra};
+
+  % ════════════════════════════════════════════════════════════════
+  %  TRU (center-bottom)
+  % ════════════════════════════════════════════════════════════════
+  \node[box-tru,
+        right=4pt of core, yshift=-40pt,
+        minimum width=230pt, minimum height=100pt,
+        label={[font=\sffamily\small, cTRU!80!black]below:\itshape Đề xuất}]
+       (tru) {TRU — Tamper Response Unit\\[-2pt]\hline[-2pt]
+              FSM 3 trạng thái (State-A $\rightarrow$ State-B $\rightarrow$ State-C)\\[-2pt]\hline[-2pt]
+              Khóa bảo vệ: \texttt{secure\_reset} $\cdot$ \texttt{block\_output}};
+
+  % ════════════════════════════════════════════════════════════════
+  %  OUTPUT BLOCKS
+  % ════════════════════════════════════════════════════════════════
+  \node[box-io, above=6pt of core,
+        minimum width=110pt, minimum height=32pt] (outData)
+       {\textbf{Data output}\\(ciphertext/plaintext)};
+
+  \node[box-secure,
+        right=6pt of tru,
+        minimum width=90pt, minimum height=32pt] (outSec)
+       {Security status output\\(\texttt{alarm\_out} $\cdot$ \texttt{warn\_out})};
+
+  % ════════════════════════════════════════════════════════════════
+  %  ARROWS — Inputs → Wrapper
+  % ════════════════════════════════════════════════════════════════
+  \draw[arr] (inKey) -- (wrapper);
+  \draw[arr] (inData) -- (wrapper);
+  \draw[arr] (inClk) -- (wrapper);
+
+  % ════════════════════════════════════════════════════════════════
+  %  ARROWS — Wrapper → Core (control)
+  % ════════════════════════════════════════════════════════════════
+  \draw[arr-ctrl] (wrapper) -- (core)
+    node[pos=0.5, left, font=\sffamily\tiny, darkgray] {control signals};
+
+  % ════════════════════════════════════════════════════════════════
+  %  ARROWS — Core → Security modules
+  % ════════════════════════════════════════════════════════════════
+  \draw[arr] (core) -- (klg)
+    node[pos=0.4, above, font=\sffamily\tiny, darkgray] {output};
+  \draw[arr-ctrl] (core) -- (fic)
+    node[pos=0.35, above, font=\sffamily\tiny, darkgray] {internal state};
+  \draw[arr] (core) -- (rcm)
+    node[pos=0.35, above, font=\sffamily\tiny, darkgray] {round count};
+  \draw[arr] (core) -- (orc)
+    node[pos=0.5, above, font=\sffamily\tiny, darkgray] {output};
+
+  % ════════════════════════════════════════════════════════════════
+  %  ARROWS — Security modules → TRU (alarms)
+  % ════════════════════════════════════════════════════════════════
+  \draw[arr-alarm, color=cKLG] (klg) -| ($(klg -| tru.west) + (0,0)$)
+    coordinate[midway] (k2t) -- (tru)
+    node[pos=0.0, above, font=\sffamily\small\bfseries, cKLG] {alarm\_P1};
+  \draw[arr-alarm, color=cFIC] (fic) -| ($(fic -| tru.west) + (0,0)$) -- (tru)
+    node[pos=0.0, above, font=\sffamily\small\bfseries, cFIC] {alarm\_P4};
+  \draw[arr-alarm, color=cRCM] (rcm) -| ($(rcm -| tru.west) + (0,0)$) -- (tru)
+    node[pos=0.0, above, font=\sffamily\small\bfseries, cRCM] {alarm\_P3};
+  \draw[arr-alarm, color=cRED] (red) -| ($(red -| tru.west) + (0,0)$) -- (tru)
+    node[pos=0.0, above, font=\sffamily\small\bfseries, cRED] {warning\_Tx};
+
+  % ════════════════════════════════════════════════════════════════
+  %  ARROWS — ORC → TRU
+  % ════════════════════════════════════════════════════════════════
+  \draw[arr-alarm, color=cORC] (orc) -| ($(orc -| tru.east) + (0,0)$) -- (tru)
+    node[pos=0.0, above, font=\sffamily\small\bfseries, cORC] {alarm\_P2};
+
+  % ════════════════════════════════════════════════════════════════
+  %  ARROWS — TRU → Core (secure reset)
+  % ════════════════════════════════════════════════════════════════
+  \draw[arr-secure] (tru.north) -- ++(0,14pt) -| (core)
+    node[pos=0.5, right, font=\sffamily\small\bfseries, cTRU] {secure\_reset};
+
+  % ════════════════════════════════════════════════════════════════
+  %  ARROWS — Core → Data output
+  % ════════════════════════════════════════════════════════════════
+  \draw[arr-ctrl] (core.north) -- (outData)
+    node[pos=0.5, right, font=\sffamily\tiny, darkgray] {};
+
+  % ════════════════════════════════════════════════════════════════
+  %  ARROWS — TRU → Security output
+  % ════════════════════════════════════════════════════════════════
+  \draw[arr-ctrl] (tru) -- (outSec);
+
+  % ════════════════════════════════════════════════════════════════
+  %  LEGEND (bottom)
+  % ════════════════════════════════════════════════════════════════
+  \node[draw, fill=cLegend, rounded corners,
+        line width=0.8pt, outer sep=6pt,
+        fit=(k2t |- red), yshift=-68pt,
+        inner xsep=10pt, inner ysep=8pt] (legend) {};
+
+  \node[font=\sffamily\small\bfseries, darkgray!60!black,
+        below=2pt of legend.north west, anchor=north west]
+       {Chú thích · Legend};
+
+  % Color swatches
+  \node[sw=cWrapper, right=4pt of legend.north west,
+        yshift=-20pt, anchor=north west] {};
+  \node[font=\sffamily\small, anchor=north west,
+        right=4pt] at (legend.north west) {\texttt{Wrapper}};
+
+  \node[sw=cCore, anchor=north west] at ($(legend.north west) + (80pt,0)$) {};
+  \node[font=\sffamily\small, anchor=north west] at ($(legend.north west) + (84pt,0)$) {AES Core (golden)};
+
+  \node[sw=cKLG, anchor=north west] at ($(legend.north west) + (195pt,0)$) {};
+  \node[font=\sffamily\small, anchor=north west] at ($(legend.north west) + (199pt,0)$) {KLG (P1)};
+
+  \node[sw=cFIC, anchor=north west] at ($(legend.north west) + (255pt,0)$) {};
+  \node[font=\sffamily\small, anchor=north west] at ($(legend.north west) + (259pt,0)$) {FIC (P4)};
+
+  \node[sw=cRCM, anchor=north west] at ($(legend.north west) + (310pt,0)$) {};
+  \node[font=\sffamily\small, anchor=north west] at ($(legend.north west) + (314pt,0)$) {RCM (P3)};
+
+  \node[sw=cRED, anchor=north west] at ($(legend.north west) + (360pt,0)$) {};
+  \node[font=\sffamily\small, anchor=north west] at ($(legend.north west) + (364pt,0)$) {RED (T1–T3)};
+
+  \node[sw=cORC, anchor=north west] at ($(legend.north west) + (430pt,0)$) {};
+  \node[font=\sffamily\small, anchor=north west] at ($(legend.north west) + (434pt,0)$) {ORC (P2)};
+
+  \node[sw=cTRU, anchor=north west] at ($(legend.north west) + (485pt,0)$) {};
+  \node[font=\sffamily\small\bfseries, anchor=north west] at ($(legend.north west) + (489pt,0)$) {TRU (Đề xuất)};
+
+  % Line styles
+  \node[anchor=north west] at ($(legend.south west) + (0,8pt)$) {
+    \begin{tikzpicture}[>=Stealth, scale=0.7, transform shape]
+      \draw[-Stealth, thick, darkgray] (0,0) -- (1,0)
+        node[right] {\sffamily\tiny Dòng dữ liệu};
+      \draw[-Stealth, thick, darkgray, dashed] (2,0) -- (3,0)
+        node[right] {\sffamily\tiny Tín hiệu điều khiển};
+      \draw[-Stealth, thick, cTRU, dashed] (4,0) -- (5,0)
+        node[right] {\sffamily\tiny secure\_reset};
+    \end{tikzpicture}
+  };
+
+\end{tikzpicture}
+\end{document}

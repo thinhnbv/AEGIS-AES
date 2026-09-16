@@ -1,0 +1,59 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'fontSize': '13px'}}}%%
+flowchart LR
+    subgraph PC_HOST["🖥️ PC Host (Python CLI)"]
+        PY_REQ["Build Request<br/>36 bytes"]
+        PY_RESP["Parse Response<br/>37 bytes"]
+    end
+
+    subgraph UART_WIRE["📡 UART Link (115200, 8N1)"]
+        TX_LINE["TX ────────────────────► RX"]
+        RX_LINE["RX ◄──────────────────── TX"]
+    end
+
+    subgraph FPGA["⚡ FPGA (ACG525 Board)"]
+        subgraph UART_MOD["UART Module"]
+            UART_RX["uart_rx<br/>Deserializer"]
+            UART_TX["uart_tx<br/>Serializer"]
+        end
+
+        subgraph CMD_PROC["Command Processor"]
+            CMD_FSM["uart_cmd_fsm<br/>36-byte parser"]
+            CHECKSUM["Checksum<br/>Verify"]
+            DECODE["Command<br/>Decode"]
+        end
+
+        subgraph AEGIS["AEGIS-AES Core"]
+            TOP["aegis_aes_top"]
+            SEC["Security Monitors"]
+            AES["AES Core"]
+        end
+
+        subgraph RESP_PROC["Response Builder"]
+            BUILD["Build Response<br/>37 bytes"]
+            ENCODE["Status Encode"]
+            ADD_CHK["Add Checksum"]
+        end
+    end
+
+    %% PC to FPGA
+    PY_REQ -->|36 bytes| TX_LINE
+    TX_LINE --> UART_RX
+    UART_RX --> CHECKSUM
+    CHECKSUM --> DECODE
+    DECODE -->|key, data_in| TOP
+
+    %% FPGA to PC
+    AEGIS -->|data_out, sec_status| ENCODE
+    ENCODE --> BUILD
+    BUILD --> ADD_CHK
+    ADD_CHK --> UART_TX
+    UART_TX --> RX_LINE
+    RX_LINE --> PY_RESP
+
+    style PC_HOST fill:#E8F5E9,stroke:#2E7D32
+    style FPGA fill:#E3F2FD,stroke:#1565C0
+    style UART_WIRE fill:#FFF8E1,stroke:#F57F17
+    style UART_MOD fill:#BBDEFB,stroke:#1976D2
+    style CMD_PROC fill:#C8E6C9,stroke:#388E3C
+    style AEGIS fill:#E1BEE7,stroke:#7B1FA2
+    style RESP_PROC fill:#FFE0B2,stroke:#F57C00

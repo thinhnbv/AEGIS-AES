@@ -1,0 +1,59 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#E3F2FD', 'primaryTextColor': '#0D47A1', 'fontSize': '12px'}}}%%
+flowchart TB
+    subgraph HOST["PC HOST"]
+        CLI["demo_cli.py<br/>Python UART Client"]
+    end
+
+    subgraph FPGA["FPGA ACG525 (GW5A-25)"]
+        subgraph IF["GIAO DIỆN"]
+            UART["UART Interface<br/>115200 baud"]
+            CMD["CMD FSM"]
+        end
+
+        subgraph WRAP["AEGIS WRAPPER"]
+            FSM["AES Top FSM<br/>(6 states)"]
+            KREG["Key Reg<br/>[127:0]"]
+            BREG["Block Reg<br/>[127:0]"]
+        end
+
+        subgraph CORE["AES-128 DATAPATH"]
+            KMEM["Key Memory<br/>11 × 128-bit"]
+            AESC["AES Core<br/>10 rounds"]
+        end
+
+        subgraph SEC["SECURITY MONITORS [PROPOSED]"]
+            KLG["KLG<br/>Key Leak Guard"]
+            RCM["RCM<br/>Round Counter"]
+            ORC["ORC<br/>Output Check"]
+            TRU["TRU<br/>Tamper Response"]
+        end
+    end
+
+    %% Data flow
+    CLI -->|36B request| UART
+    UART --> CMD --> FSM
+    FSM --> KREG
+    FSM --> BREG
+    KREG -->|key| KMEM
+    BREG -->|block| AESC
+    KMEM --> AESC
+    AESC -->|result| UART
+    UART -->|37B response| CLI
+
+    %% Security monitoring
+    AESC -->|round_nr| RCM
+    AESC -->|dout| KLG
+    AESC -->|dout| ORC
+    KMEM -->|rkeys| KLG
+    KLG --> TRU
+    RCM --> TRU
+    ORC --> TRU
+    TRU -->|zeroize| KREG
+    TRU -->|sec_alarm| UART
+
+    style HOST fill:#E8F5E9,stroke:#2E7D32
+    style FPGA fill:#E3F2FD,stroke:#1565C0
+    style IF fill:#C8E6C9,stroke:#388E3C
+    style WRAP fill:#F3E5F5,stroke:#7B1FA2
+    style CORE fill:#FFEBEE,stroke:#C62828
+    style SEC fill:#FFF8E1,stroke:#F57F17,stroke-width:3px

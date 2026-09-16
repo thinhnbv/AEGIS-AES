@@ -1,0 +1,103 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#E3F2FD', 'primaryTextColor': '#0D47A1', 'primaryBorderColor': '#1976D2', 'lineColor': '#424242', 'secondaryColor': '#FFF3E0', 'tertiaryColor': '#F3E5F5'}}}%%
+flowchart TB
+    subgraph "=== INTERFACE LAYER ==="
+        UART["🖥️ UART Interface<br/>(115200 baud, 8N1)"]
+        CMD_FSM["📋 UART Command FSM<br/>uart_cmd_fsm"]
+    end
+
+    subgraph "=== CONTROL / FSM LAYER ===":::control
+        TRU["🔒 TRU - Tamper Response Unit<br/>(Zeroize, Lockdown)"]
+        TOP_FSM["⚡ AES Top FSM<br/>(6 states)"]
+        FIC["🛡️ FIC - FSM Integrity Checker<br/>[PROPOSED]"]
+        RED["📊 RED - Rare-Event Detector<br/>[PROPOSED]"]
+    end
+
+    subgraph "=== DATAPATH LAYER ===":::datapath
+        AES_CORE["🔐 AES Core (Tapped)<br/>10-round AES-128"]
+        KEY_MEM["🔑 AES Key Memory<br/>(11 round keys)"]
+        ENCIPHER["🔄 AES Encipher Block<br/>(SubBytes, ShiftRows,<br/>MixColumns, AddRoundKey)"]
+    end
+
+    subgraph "=== SECURITY CORE LAYER ===":::security
+        KLG["🔍 KLG - Key Leak Guard<br/>[PROPOSED]"]
+        RCM["📏 RCM - Round Counter Monitor<br/>[PROPOSED]"]
+        ORC["✅ ORC - Output Consistency Checker<br/>[PROPOSED]"]
+    end
+
+    subgraph "=== MEMORY LAYER ===":::memory
+        KEY_REG["📝 Key Register<br/>[127:0]"]
+        BLOCK_REG["📝 Block Register<br/>[127:0]"]
+    end
+
+    %% External Inputs
+    KEY_EXT["KEY_IN<br/>[127:0]"]
+    DATA_EXT["DATA_IN<br/>[127:0]"]
+    CLK["CLK"]
+    RST_N["RESET_N"]
+
+    %% External Outputs
+    DATA_OUT["DATA_OUT<br/>[127:0]"]
+    BUSY["BUSY"]
+    SEC_ALARM["SEC_ALARM"]
+    SEC_WARNING["SEC_WARNING"]
+    SEC_STATUS["SEC_STATUS<br/>[7:0]"]
+
+    %% Connections - Interface to FSM
+    UART --> CMD_FSM
+    CMD_FSM --> KEY_EXT
+    CMD_FSM --> DATA_EXT
+    CMD_FSM -->|key_valid, data_in_valid| TOP_FSM
+
+    %% Control Flow
+    TOP_FSM -->|core_init| AES_CORE
+    TOP_FSM -->|core_next| AES_CORE
+    TOP_FSM --> KEY_REG
+    TOP_FSM --> BLOCK_REG
+
+    %% Data Flow
+    KEY_REG -->|key| AES_CORE
+    KEY_REG -->|round_keys_flat| KEY_MEM
+    BLOCK_REG -->|block| AES_CORE
+    AES_CORE -->|result| DATA_OUT
+    KEY_MEM -->|round_keys_flat| KLG
+
+    %% Security Monitor Connections
+    KLG -->|klg_alarm, klg_code| TRU
+    RCM -->|rcm_alarm, rcm_code| TRU
+    ORC -->|orc_alarm, orc_code| TRU
+    FIC -->|fic_alarm| TRU
+    RED -->|red_warning| TRU
+
+    AES_CORE -->|core_round_nr| RCM
+    AES_CORE -->|state_before_final| ORC
+    AES_CORE -->|core_dout, core_dvalid| ORC
+    AES_CORE -->|core_dout| KLG
+
+    TRU -->|zeroize| AES_CORE
+    TRU -->|zeroize| KEY_REG
+    TRU -->|zeroize| BLOCK_REG
+    TRU --> SEC_ALARM
+    TRU --> SEC_WARNING
+    TRU --> SEC_STATUS
+
+    TOP_FSM --> BUSY
+
+    style UART fill:#E8F5E9,stroke:#2E7D32
+    style CMD_FSM fill:#E8F5E9,stroke:#2E7D32
+    style KLG fill:#FFECB3,stroke:#FF8F00
+    style RCM fill:#FFECB3,stroke:#FF8F00
+    style ORC fill:#FFECB3,stroke:#FF8F00
+    style FIC fill:#FFECB3,stroke:#FF8F00
+    style RED fill:#FFECB3,stroke:#FF8F00
+    style TRU fill:#FFECB3,stroke:#FF8F00
+    style AES_CORE fill:#E3F2FD,stroke:#1565C0
+    style KEY_MEM fill:#E3F2FD,stroke:#1565C0
+    style ENCIPHER fill:#E3F2FD,stroke:#1565C0
+
+    classDef control fill:#FCE4EC,stroke:#AD1457
+    classDef datapath fill:#E3F2FD,stroke:#1565C0
+    classDef security fill:#FFF8E1,stroke:#F57F17,stroke-width:2px
+    classDef memory fill:#F3E5F5,stroke:#7B1FA2
+
+    %% Legend for proposed blocks
+    legend1["[PROPOSED] = Khối đề xuất mới"]
