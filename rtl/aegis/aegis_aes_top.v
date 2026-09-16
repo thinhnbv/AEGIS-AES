@@ -79,10 +79,21 @@ module aegis_aes_top #(
     .state_before_final(state_before_final)
   );
 
+  // Tap FSM state tu aes_core de FIC kiem tra
+  assign core_fsm_state = u_core.aes_core_ctrl_reg;
+
   wire       klg_alarm;
   wire [3:0] klg_code;
   wire       klg_verdict_valid;
   wire       klg_verdict_block;
+
+  // FIC signals
+  wire       fic_alarm;
+  wire [1:0] core_fsm_state;
+
+  // RED signals
+  wire       red_warning;
+  wire [7:0] red_code;
 
   // Tao mot xung lay mau cho moi ket qua moi cua AES core.
   // FSM roi ST_WAIT_RESULT_HIGH ngay sau canh nhan ket qua dau tien.
@@ -107,6 +118,18 @@ module aegis_aes_top #(
   // Final round key (round 10 for AES-128)
   assign final_round_key = round_keys_flat[`AEGIS_NUM_RKEY*128 - 1 -: 128];
 
+  // RED - Rare-Event Detector
+  red_rare_event #(
+    .RARE_THRESHOLD(16'hFFFF)
+  ) u_red (
+    .clk(clk),
+    .rst_n(rst_n),
+    .block(block_reg),
+    .block_valid(core_next),
+    .red_warning(red_warning),
+    .red_code(red_code)
+  );
+
   // RCM - Round Consistency Monitor
   rcm_round_monitor #(
     .NUM_ROUNDS(10)
@@ -120,6 +143,14 @@ module aegis_aes_top #(
     .round_nr(core_round_nr),
     .rcm_alarm(rcm_alarm),
     .rcm_code(rcm_code)
+  );
+
+  // FIC - FSM Integrity Checker
+  fic_fsm_integrity u_fic (
+    .clk(clk),
+    .rst_n(rst_n),
+    .fsm_state(core_fsm_state),
+    .fic_alarm(fic_alarm)
   );
 
   // ORC - Output Redundancy Checker
@@ -156,10 +187,10 @@ module aegis_aes_top #(
     .klg_alarm(klg_alarm),
     .klg_verdict_valid(klg_verdict_valid),
     .klg_verdict_block(klg_verdict_block),
-    .fic_alarm(1'b0),
+    .fic_alarm(fic_alarm),
     .rcm_alarm(rcm_alarm),
     .orc_alarm(orc_alarm),
-    .red_warning(1'b0),
+    .red_warning(red_warning),
     .sec_alarm(sec_alarm_int),
     .sec_warning(sec_warning_int),
     .sec_status(sec_status_int),
