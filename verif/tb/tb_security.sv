@@ -457,14 +457,7 @@ module tb_security;
       join_any
       disable fork;
 
-      // Doi them 1 chu ky de sec_status cap nhat day du
-      repeat(2) @(posedge clk);
-      #1;
-
       // Kiem tra FIC da phat hien (FSM illegal state)
-      $display("      [DEBUG T04] sec_status=%b (FIC=%b ORC=%b KLG=%b)",
-               sec_status, sec_status[`AEGIS_ST_FIC],
-               sec_status[`AEGIS_ST_ORC], sec_status[`AEGIS_ST_KLG]);
       if (sec_status[`AEGIS_ST_FIC]) begin
         $display("[PASS] FIC da phat hien Trojan T04");
       end else if (sec_status[`AEGIS_ST_ORC]) begin
