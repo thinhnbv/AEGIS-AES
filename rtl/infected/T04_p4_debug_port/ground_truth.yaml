@@ -1,0 +1,31 @@
+case_id: T04_p4_debug_port
+base_design: aes_golden
+author: team
+created: 2026-09-15
+
+trigger:
+  class: T2
+  description: Chuoi 3 plaintext lien tiep voi byte dau 0xA5, 0x5A, 0xFF
+  activation: "Sequence of 3 plaintexts with first bytes A5, 5A, FF"
+  rarity: "2^-24"
+
+payload:
+  class: P4
+  description: Mo cong debug xuat state noi bo (FSM state, round counter, key material)
+  asset: aes_key, aes_internal_state
+  observable: logic
+
+location:
+  file: aes_core.v
+  module: aes_core
+  line_start: 64
+  line_end: 110
+  always_block: reg_update
+
+detection:
+  expected_checker: FIC, RED
+  expected_latency: 1
+
+verification:
+  silent_under_nist: true
+  activation_seq: verif/vectors/trigger_T04.txt
