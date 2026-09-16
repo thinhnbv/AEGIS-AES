@@ -85,6 +85,8 @@ module tb_security;
       $display("DEBUG: klg_alarm=%b rcm_alarm=%b klg_verdict_valid=%b klg_verdict_block=%b",
                dut.u_klg.klg_alarm, dut.u_rcm.rcm_alarm,
                dut.u_klg.klg_verdict_valid, dut.u_klg.klg_verdict_block);
+      $display("DEBUG: fic_alarm=%b red_warning=%b",
+               dut.u_fic.fic_alarm, dut.u_red.red_warning);
       $display("DEBUG: result=%h", dut.core_dout);
       prev_state <= dut.state;
     end
@@ -364,10 +366,11 @@ module tb_security;
         fail_count = fail_count + 1;
       end
     end else if ((`CASE == "T02_p2_slow_leak") || (`CASE == "T02") ||
-                 (`CASE == "T03_p3_skip_mixcol") || (`CASE == "T03")) begin
-      // T02/T03: ORC/RCM phat hien Trojan
+                 (`CASE == "T03_p3_skip_mixcol") || (`CASE == "T03") ||
+                 (`CASE == "T05_dos_trojan") || (`CASE == "T05")) begin
+      // T02/T03/T05: ORC/RCM phat hien Trojan
       // ORC/RCM trigger zeroize ngay khi phat hien bat thuong
-      $display("[DEBUG] Bat dau test T02/T03");
+      $display("[DEBUG] Bat dau test T02/T03/T05");
       fork
         begin
           #10000;
@@ -421,6 +424,71 @@ module tb_security;
       end
 
       if ((data_out_valid === 1'b0) && (data_out === 128'd0))
+        $display("[PASS] Output bi chan trong khi zeroization");
+      else begin
+        $display("[FAIL] Output khong an toan trong khi zeroization");
+        fail_count = fail_count + 1;
+      end
+    end else if ((`CASE == "T04_p4_debug_port") || (`CASE == "T04")) begin
+      // T04: KLG phat hien key leak
+      // Trigger: plaintext voi byte dau = 0xA5
+      $display("[DEBUG T04] Bat dau test T04 - Debug port bypass");
+
+      // Gui plaintext de kich hoat trigger
+      @(negedge clk);
+      data_in = 128'hA5A5A5A5A5A5A5A5A5A5A5A5A5A5A5A5;
+      data_in_valid = 1'b1;
+      @(negedge clk);
+      data_in_valid = 1'b0;
+
+      // Doi sec_alarm voi timeout
+      fork
+        begin
+          #10000;
+          $display("[FAIL] T04 TIMEOUT: sec_alarm khong bao gio = 1");
+          $display("       FSM state=%d busy=%b zeroize=%b",
+                   dut.state, busy, dut.zeroize);
+          fail_count = fail_count + 1;
+        end
+        begin
+          wait(sec_alarm == 1'b1);
+          $display("[DEBUG T04] sec_alarm=1 tai cycle %0d", cycle_count);
+        end
+      join_any
+      disable fork;
+
+      // Kiem tra FIC da phat hien (FSM illegal state)
+      if (sec_status[`AEGIS_ST_FIC]) begin
+        $display("[PASS] FIC da phat hien Trojan T04");
+      end else if (sec_status[`AEGIS_ST_ORC]) begin
+        $display("[PASS] ORC da phat hien Trojan T04");
+      end else if (sec_status[`AEGIS_ST_KLG]) begin
+        $display("[PASS] KLG da phat hien Trojan T04");
+      end else begin
+        $display("[FAIL] Khong co monitor nao phat hien Trojan");
+        $display("       sec_status=%b", sec_status);
+        fail_count = fail_count + 1;
+      end
+
+      if (dut.zeroize == 1'b1)
+        $display("[PASS] TRU da phat yeu cau zeroize");
+      else begin
+        $display("[FAIL] TRU chua phat yeu cau zeroize");
+        fail_count = fail_count + 1;
+      end
+
+      // Doi zeroize hoan tat
+      repeat(5) @(posedge clk);
+      #1;
+
+      if (dut.key_reg === 128'd0)
+        $display("[PASS] Wrapper da xoa key_reg");
+      else begin
+        $display("[FAIL] Wrapper chua xoa key_reg: %h", dut.key_reg);
+        fail_count = fail_count + 1;
+      end
+
+      if ((data_out === 128'd0) || (data_out_valid === 1'b0))
         $display("[PASS] Output bi chan trong khi zeroization");
       else begin
         $display("[FAIL] Output khong an toan trong khi zeroization");
