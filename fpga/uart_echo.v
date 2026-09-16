@@ -1,6 +1,6 @@
 //======================================================================
 // uart_echo.v
-// UART Echo - receives 'A' and sends 'X'
+// UART Echo - echoes any received byte
 //======================================================================
 `default_nettype none
 
@@ -14,23 +14,22 @@ module uart_echo (
 
     wire [7:0] rx_data;
     wire rx_valid;
-    wire rx_error;
     wire tx_busy;
     reg tx_start;
     reg [7:0] tx_data;
 
     // UART Receiver
-    uart_rx_core uart_rx_inst (
+    uart_rx_core rx (
         .clk(clk),
         .rst_n(rst_n),
         .rx_serial(uart_rx),
         .rx_data(rx_data),
         .rx_valid(rx_valid),
-        .rx_error(rx_error)
+        .rx_error()
     );
 
     // UART Transmitter
-    uart_tx_core uart_tx_inst (
+    uart_tx_core tx (
         .clk(clk),
         .rst_n(rst_n),
         .tx_data(tx_data),
@@ -39,7 +38,7 @@ module uart_echo (
         .tx_busy(tx_busy)
     );
 
-    // Echo logic
+    // Echo logic - echo any received byte
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             tx_start <= 1'b0;
@@ -48,12 +47,11 @@ module uart_echo (
         end else begin
             tx_start <= 1'b0;
 
-            // When 'A' received, send 'X'
-            if (rx_valid && rx_data == 8'h41 && !tx_busy) begin
-                tx_data <= 8'h58;  // 'X'
+            if (rx_valid && !tx_busy) begin
+                tx_data <= rx_data;
                 tx_start <= 1'b1;
                 led <= 1'b1;
-            end else if (!tx_busy) begin
+            end else begin
                 led <= 1'b0;
             end
         end
