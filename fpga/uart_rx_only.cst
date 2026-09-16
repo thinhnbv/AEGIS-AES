@@ -1,0 +1,13 @@
+// Constraints for uart_rx_only
+
+IO_LOC "clk" T9;
+IO_PORT "clk" PULL_MODE=UP;
+
+IO_LOC "rst_n" B16;
+IO_PORT "rst_n" PULL_MODE=UP;
+
+IO_LOC "uart_rx" U8;
+IO_PORT "uart_rx" PULL_MODE=UP;
+
+IO_LOC "led" C14;
+IO_PORT "led" PULL_MODE=UP DRIVE=8;
