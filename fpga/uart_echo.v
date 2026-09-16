@@ -1,6 +1,6 @@
 //---------------------------------------------------------------
 // uart_echo.v
-// UART RX + TX - send 'X' when 'A' received
+// Complete UART echo - LED on when 'A' received, send 'X'
 //---------------------------------------------------------------
 `default_nettype none
 
@@ -13,43 +13,53 @@ module uart_echo (
 );
 
     // RX
-    reg [3:0] rx_state;
-    reg [3:0] rx_bit_cnt;
-    reg [7:0] rx_data;
-    reg [15:0] rx_baud_cnt;
-    localparam RX_IDLE = 4'd0;
-    localparam RX_DATA = 4'd1;
-    localparam RX_DONE = 4'd2;
+    reg [7:0] rx_byte;
+    reg rx_done;
 
     // TX
-    reg [3:0] tx_state;
-    reg [3:0] tx_bit_cnt;
+    reg [7:0] tx_byte;
+    reg tx_start;
+    reg [4:0] tx_bit_cnt;
     reg [15:0] tx_baud_cnt;
-    localparam TX_IDLE = 4'd0;
-    localparam TX_DATA = 4'd1;
-    localparam TX_DONE = 4'd2;
     localparam BAUD = 16'd434;
+
+    // FSM
+    reg [2:0] state;
+    localparam RX_IDLE = 3'd0;
+    localparam RX_DATA = 3'd1;
+    localparam TX_IDLE = 3'd2;
+    localparam TX_START = 3'd3;
+    localparam TX_DATA = 3'd4;
+    localparam TX_STOP = 3'd5;
+
+    // RX state
+    reg [4:0] rx_bit_cnt;
+    reg [15:0] rx_baud_cnt;
 
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            rx_state <= RX_IDLE;
-            rx_bit_cnt <= 4'd0;
-            rx_data <= 8'h00;
+            state <= RX_IDLE;
+            rx_byte <= 8'h00;
+            rx_done <= 1'b0;
+            rx_bit_cnt <= 5'd0;
             rx_baud_cnt <= 16'd0;
-
-            tx_state <= TX_IDLE;
-            tx_bit_cnt <= 4'd0;
+            tx_byte <= 8'h58;  // 'X'
+            tx_start <= 1'b0;
+            tx_bit_cnt <= 5'd0;
             tx_baud_cnt <= 16'd0;
             uart_tx <= 1'b1;
             led <= 1'b0;
         end else begin
-            // RX
-            case (rx_state)
+            tx_start <= 1'b0;
+
+            case (state)
+                // Receive
                 RX_IDLE: begin
-                    rx_bit_cnt <= 4'd0;
+                    led <= 1'b0;
+                    rx_bit_cnt <= 5'd0;
                     rx_baud_cnt <= 16'd0;
                     if (uart_rx == 1'b0) begin
-                        rx_state <= RX_DATA;
+                        state <= RX_DATA;
                     end
                 end
 
@@ -58,62 +68,63 @@ module uart_echo (
                     if (rx_baud_cnt >= BAUD - 1) begin
                         rx_baud_cnt <= 16'd0;
                         rx_bit_cnt <= rx_bit_cnt + 1'b1;
-                        if (rx_bit_cnt >= 4'd1 && rx_bit_cnt <= 4'd8) begin
-                            rx_data[rx_bit_cnt - 1] <= uart_rx;
+                        if (rx_bit_cnt >= 5'd1 && rx_bit_cnt <= 5'd8) begin
+                            rx_byte[rx_bit_cnt - 1] <= uart_rx;
                         end
-                        if (rx_bit_cnt == 4'd9) begin
-                            rx_state <= RX_DONE;
+                        if (rx_bit_cnt == 5'd9) begin
+                            rx_done <= 1'b1;
+                            if (rx_byte == 8'h41) begin  // 'A'
+                                led <= 1'b1;
+                                tx_start <= 1'b1;
+                            end
+                            state <= TX_IDLE;
                         end
                     end
                 end
 
-                RX_DONE: begin
-                    rx_state <= RX_IDLE;
-                end
-            endcase
-
-            // TX - only start when 'A' received
-            case (tx_state)
+                // Transmit
                 TX_IDLE: begin
-                    tx_bit_cnt <= 4'd0;
-                    tx_baud_cnt <= 16'd0;
-                    uart_tx <= 1'b1;
-                    if (rx_state == RX_DONE && rx_data == 8'h41) begin  // 'A'
-                        led <= 1'b1;
-                        tx_state <= TX_DATA;
-                    end else begin
-                        led <= 1'b0;
+                    if (tx_start) begin
+                        tx_bit_cnt <= 5'd0;
+                        tx_baud_cnt <= 16'd0;
+                        state <= TX_START;
                     end
                 end
 
-                TX_DATA: begin
-                    led <= 1'b1;
+                TX_START: begin
+                    uart_tx <= 1'b0;  // Start bit
                     tx_baud_cnt <= tx_baud_cnt + 1'b1;
                     if (tx_baud_cnt >= BAUD - 1) begin
                         tx_baud_cnt <= 16'd0;
                         tx_bit_cnt <= tx_bit_cnt + 1'b1;
+                        state <= TX_DATA;
+                    end
+                end
 
-                        // Send 'X' = 0x58
-                        if (tx_bit_cnt == 4'd0) uart_tx <= 1'b0;  // Start
-                        else if (tx_bit_cnt == 4'd1) uart_tx <= 1'b0;  // 0
-                        else if (tx_bit_cnt == 4'd2) uart_tx <= 1'b0;  // 0
-                        else if (tx_bit_cnt == 4'd3) uart_tx <= 1'b1;  // 1
-                        else if (tx_bit_cnt == 4'd4) uart_tx <= 1'b0;  // 0
-                        else if (tx_bit_cnt == 4'd5) uart_tx <= 1'b1;  // 1
-                        else if (tx_bit_cnt == 4'd6) uart_tx <= 1'b0;  // 0
-                        else if (tx_bit_cnt == 4'd7) uart_tx <= 1'b1;  // 1
-                        else if (tx_bit_cnt == 4'd8) uart_tx <= 1'b1;  // 1
-                        else if (tx_bit_cnt == 4'd9) uart_tx <= 1'b0;  // 0
-                        else begin
-                            uart_tx <= 1'b1;  // Stop
-                            tx_state <= TX_DONE;
+                TX_DATA: begin
+                    tx_baud_cnt <= tx_baud_cnt + 1'b1;
+                    if (tx_baud_cnt >= BAUD - 1) begin
+                        tx_baud_cnt <= 16'd0;
+                        tx_bit_cnt <= tx_bit_cnt + 1'b1;
+                        if (tx_bit_cnt <= 5'd7) begin
+                            uart_tx <= tx_byte[tx_bit_cnt];
+                        end
+                        if (tx_bit_cnt == 5'd8) begin
+                            uart_tx <= 1'b1;  // Stop bit
+                        end
+                        if (tx_bit_cnt == 5'd9) begin
+                            state <= TX_STOP;
                         end
                     end
                 end
 
-                TX_DONE: begin
-                    tx_state <= TX_IDLE;
-                    led <= 1'b0;
+                TX_STOP: begin
+                    uart_tx <= 1'b1;
+                    tx_baud_cnt <= tx_baud_cnt + 1'b1;
+                    if (tx_baud_cnt >= BAUD - 1) begin
+                        rx_done <= 1'b0;
+                        state <= RX_IDLE;
+                    end
                 end
             endcase
         end
