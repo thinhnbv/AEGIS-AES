@@ -23,7 +23,7 @@ location:
   always_block: reg_update
 
 detection:
-  expected_checker: FIC, RED
+  expected_checker: ORC, KLG
   expected_latency: 1
 
 verification:
