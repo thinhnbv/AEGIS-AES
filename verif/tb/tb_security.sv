@@ -85,6 +85,8 @@ module tb_security;
       $display("DEBUG: klg_alarm=%b rcm_alarm=%b klg_verdict_valid=%b klg_verdict_block=%b",
                dut.u_klg.klg_alarm, dut.u_rcm.rcm_alarm,
                dut.u_klg.klg_verdict_valid, dut.u_klg.klg_verdict_block);
+      $display("DEBUG: fic_alarm=%b red_warning=%b",
+               dut.u_fic.fic_alarm, dut.u_red.red_warning);
       $display("DEBUG: result=%h", dut.core_dout);
       prev_state <= dut.state;
     end
@@ -455,8 +457,10 @@ module tb_security;
       join_any
       disable fork;
 
-      // Kiem tra ORC da phat hien (vi output khac voi golden)
-      if (sec_status[`AEGIS_ST_ORC]) begin
+      // Kiem tra FIC da phat hien (FSM illegal state)
+      if (sec_status[`AEGIS_ST_FIC]) begin
+        $display("[PASS] FIC da phat hien Trojan T04");
+      end else if (sec_status[`AEGIS_ST_ORC]) begin
         $display("[PASS] ORC da phat hien Trojan T04");
       end else if (sec_status[`AEGIS_ST_KLG]) begin
         $display("[PASS] KLG da phat hien Trojan T04");
