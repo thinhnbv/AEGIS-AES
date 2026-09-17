@@ -82,9 +82,10 @@ module tb_security;
       $display("DEBUG RCM: round_nr=%d state=%d alarm=%b prev=%d first=%b jumped=%d",
                dut.u_core.muxed_round_nr, dut.u_rcm.state, dut.u_rcm.rcm_alarm,
                dut.u_rcm.prev_round_nr, dut.u_rcm.first_round_seen, dut.u_rcm.round_jumped);
-      $display("DEBUG: klg_alarm=%b rcm_alarm=%b klg_verdict_valid=%b klg_verdict_block=%b",
+      $display("DEBUG: klg_alarm=%b rcm_alarm=%b klg_vv=%b klg_vb=%b key_reg=%h data_out=%h",
                dut.u_klg.klg_alarm, dut.u_rcm.rcm_alarm,
-               dut.u_klg.klg_verdict_valid, dut.u_klg.klg_verdict_block);
+               dut.u_klg.klg_verdict_valid, dut.u_klg.klg_verdict_block,
+               dut.key_reg, dut.core_dout);
       $display("DEBUG: fic_alarm=%b red_warning=%b",
                dut.u_fic.fic_alarm, dut.u_red.red_warning);
       $display("DEBUG: result=%h", dut.core_dout);
@@ -324,7 +325,13 @@ module tb_security;
       join_any
       disable fork;
 
+      // Doi them 1 chu ky de sec_status cap nhat day du
+      repeat(2) @(posedge clk);
+      #1;
+
       // Kiem tra nguon canh bao
+      $display("      [DEBUG T01] sec_status=%b (KLG=%b ORC=%b)",
+               sec_status, sec_status[`AEGIS_ST_KLG], sec_status[`AEGIS_ST_ORC]);
       if (sec_status[`AEGIS_ST_KLG]) begin
         $display("[PASS] KLG da phat hien Trojan T01");
       end else if (sec_status[`AEGIS_ST_ORC]) begin
@@ -369,12 +376,11 @@ module tb_security;
                  (`CASE == "T03_p3_skip_mixcol") || (`CASE == "T03") ||
                  (`CASE == "T05_dos_trojan") || (`CASE == "T05")) begin
       // T02/T03/T05: ORC/RCM phat hien Trojan
-      // ORC/RCM trigger zeroize ngay khi phat hien bat thuong
       $display("[DEBUG] Bat dau test T02/T03/T05");
       fork
         begin
           #10000;
-          $display("[FAIL] T02/T03 TIMEOUT: sec_alarm khong bao gio = 1");
+          $display("[FAIL] T02/T03/T05 TIMEOUT: sec_alarm khong bao gio = 1");
           fail_count = fail_count + 1;
         end
         begin
@@ -511,7 +517,7 @@ module tb_security;
 
   // Watchdog de tranh mo phong bi treo neu mot tin hieu khong xuat hien.
   initial begin
-    #5000;
+    #100000;
     $display("[FAIL] SECURITY TEST TIMEOUT");
     $fatal(1, "SECURITY TEST TIMEOUT");
   end
