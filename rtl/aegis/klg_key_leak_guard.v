@@ -15,7 +15,7 @@ module klg_key_leak_guard #(
     input  wire                     clk,
     input  wire                     rst_n,
     input  wire [127:0]             key_reg,
-    input  wire [NUM_RKEY*128-1:0]  round_keys_flat,
+    input  wire [NUM_RKEY*128-1:0] round_keys_flat,
     input  wire [127:0]             data_out,
     input  wire                     data_out_valid,
     input  wire [3:0]              round_nr,  // Round counter for edge detection
@@ -56,8 +56,17 @@ module klg_key_leak_guard #(
   end
   wire hit_ham = (ham < HAM_THRESH);
 
-  // --- Gom canh bao ---
-  // Check moi output, block neu phat hien leak
+  // --- Edge detection for data_out_valid ---
+  reg prev_valid;
+  always @(posedge clk or negedge rst_n) begin
+    if (!rst_n)
+      prev_valid <= 1'b0;
+    else
+      prev_valid <= data_out_valid;
+  end
+  wire valid_falling = prev_valid && !data_out_valid;
+
+  // --- Gom canh bao va capture ---
   // Alarm la sticky: mot khi set, giu nguyen den reset
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
@@ -89,6 +98,71 @@ module klg_key_leak_guard #(
         end else if (!klg_alarm) begin
           // Khong phat hien leak va chua co alarm - cho phep output sach
           klg_verdict_block <= 1'b0;
+        end
+      end else if (valid_falling && !klg_alarm) begin
+        // Check the output that just ended (when valid falls)
+        // This handles the case where valid is high for only 1 cycle
+        // and drops before KLG can check
+        if (data_out == key_reg) begin
+          klg_alarm         <= 1'b1;
+          klg_code          <= 4'd1;
+          klg_verdict_valid <= 1'b1;
+          klg_verdict_block <= 1'b1;
+        end else if (data_out == round_keys_flat[0*128 +: 128]) begin
+          klg_alarm         <= 1'b1;
+          klg_code          <= 4'd1;
+          klg_verdict_valid <= 1'b1;
+          klg_verdict_block <= 1'b1;
+        end else if (data_out == round_keys_flat[1*128 +: 128]) begin
+          klg_alarm         <= 1'b1;
+          klg_code          <= 4'd1;
+          klg_verdict_valid <= 1'b1;
+          klg_verdict_block <= 1'b1;
+        end else if (data_out == round_keys_flat[2*128 +: 128]) begin
+          klg_alarm         <= 1'b1;
+          klg_code          <= 4'd1;
+          klg_verdict_valid <= 1'b1;
+          klg_verdict_block <= 1'b1;
+        end else if (data_out == round_keys_flat[3*128 +: 128]) begin
+          klg_alarm         <= 1'b1;
+          klg_code          <= 4'd1;
+          klg_verdict_valid <= 1'b1;
+          klg_verdict_block <= 1'b1;
+        end else if (data_out == round_keys_flat[4*128 +: 128]) begin
+          klg_alarm         <= 1'b1;
+          klg_code          <= 4'd1;
+          klg_verdict_valid <= 1'b1;
+          klg_verdict_block <= 1'b1;
+        end else if (data_out == round_keys_flat[5*128 +: 128]) begin
+          klg_alarm         <= 1'b1;
+          klg_code          <= 4'd1;
+          klg_verdict_valid <= 1'b1;
+          klg_verdict_block <= 1'b1;
+        end else if (data_out == round_keys_flat[6*128 +: 128]) begin
+          klg_alarm         <= 1'b1;
+          klg_code          <= 4'd1;
+          klg_verdict_valid <= 1'b1;
+          klg_verdict_block <= 1'b1;
+        end else if (data_out == round_keys_flat[7*128 +: 128]) begin
+          klg_alarm         <= 1'b1;
+          klg_code          <= 4'd1;
+          klg_verdict_valid <= 1'b1;
+          klg_verdict_block <= 1'b1;
+        end else if (data_out == round_keys_flat[8*128 +: 128]) begin
+          klg_alarm         <= 1'b1;
+          klg_code          <= 4'd1;
+          klg_verdict_valid <= 1'b1;
+          klg_verdict_block <= 1'b1;
+        end else if (data_out == round_keys_flat[9*128 +: 128]) begin
+          klg_alarm         <= 1'b1;
+          klg_code          <= 4'd1;
+          klg_verdict_valid <= 1'b1;
+          klg_verdict_block <= 1'b1;
+        end else if (data_out == round_keys_flat[10*128 +: 128]) begin
+          klg_alarm         <= 1'b1;
+          klg_code          <= 4'd1;
+          klg_verdict_valid <= 1'b1;
+          klg_verdict_block <= 1'b1;
         end
       end
     end
