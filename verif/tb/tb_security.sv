@@ -77,15 +77,17 @@ module tb_security;
                dut.u_core.muxed_round_nr, dut.u_rcm.state, dut.u_rcm.rcm_alarm,
                dut.u_rcm.prev_round_nr, dut.u_rcm.first_round_seen,
                dut.u_rcm.next);
-      $display("DEBUG: core_ready=%b core_dvalid=%b busy=%b zeroize=%b sec_alarm=%b",
-               dut.u_core.ready, dut.core_dvalid, busy, dut.zeroize, sec_alarm);
+      $display("DEBUG: core_ready=%b core_dv=%b busy=%b zeroize=%b sec_alarm=%b klg_dov=%b",
+               dut.u_core.ready, dut.core_dvalid, busy, dut.zeroize, sec_alarm,
+               dut.u_klg.data_out_valid);
       $display("DEBUG RCM: round_nr=%d state=%d alarm=%b prev=%d first=%b jumped=%d",
                dut.u_core.muxed_round_nr, dut.u_rcm.state, dut.u_rcm.rcm_alarm,
                dut.u_rcm.prev_round_nr, dut.u_rcm.first_round_seen, dut.u_rcm.round_jumped);
-      $display("DEBUG: klg_alarm=%b rcm_alarm=%b klg_vv=%b klg_vb=%b key_reg=%h data_out=%h",
+      $display("DEBUG: klg_alarm=%b rcm_alarm=%b klg_vv=%b klg_vb=%b key=%h data_out=%h hit=%b vg=%b dov=%b",
                dut.u_klg.klg_alarm, dut.u_rcm.rcm_alarm,
                dut.u_klg.klg_verdict_valid, dut.u_klg.klg_verdict_block,
-               dut.key_reg, dut.core_dout);
+               dut.key_reg, dut.core_dout, (dut.core_dout == dut.key_reg),
+               dut.u_klg.verdict_given, dut.u_klg.data_out_valid);
       $display("DEBUG: fic_alarm=%b red_warning=%b",
                dut.u_fic.fic_alarm, dut.u_red.red_warning);
       $display("DEBUG: result=%h", dut.core_dout);
