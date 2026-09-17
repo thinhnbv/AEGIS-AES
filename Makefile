@@ -71,9 +71,10 @@ else ifeq ($(CASE),clean)
 else
 	# Infected case: aegis RTL (filtered) + infected RTL + golden support
 	# Filter out aes_core_tapped.v from aegis since infected provides its own
+	# Use infected aes_core_tapped.v for security tests (has tapped ports for monitors)
 	iverilog -g2012 -I$(RTL_AEGIS) -DCASE=\"$(CASE)\" -o $(BUILD)/$(CASE)/sec.out \
-		$(filter-out $(RTL_AEGIS)/aes_core_tapped.v,$(filter-out $(addprefix $(RTL_AEGIS)/,$(notdir $(SRC_CASE))),$(SRC_AEGIS))) \
-		$(SRC_CASE) \
+		$(filter-out $(RTL_AEGIS)/aes_core_tapped.v,$(SRC_AEGIS)) \
+		$(filter-out $(RTL_CASE)/aes_core.v,$(wildcard $(RTL_CASE)/*_tapped.v)) \
 		$(SEC_GOLD_SUPPORT) \
 		$(TB)/tb_security.sv
 endif
