@@ -10,7 +10,7 @@
 
 module klg_key_leak_guard #(
     parameter NUM_RKEY   = `AEGIS_NUM_RKEY,
-    parameter HAM_THRESH = 16
+    parameter HAM_THRESH = 8  // Only alarm if very close to key (< 8 bits different)
 ) (
     input  wire                     clk,
     input  wire                     rst_n,
@@ -18,6 +18,7 @@ module klg_key_leak_guard #(
     input  wire [NUM_RKEY*128-1:0]  round_keys_flat,
     input  wire [127:0]             data_out,
     input  wire                     data_out_valid,
+    input  wire [3:0]              round_nr,  // Round counter for edge detection
     output reg                      klg_alarm,
     output reg  [3:0]               klg_code,
     output reg                      klg_verdict_valid,
@@ -56,6 +57,24 @@ module klg_key_leak_guard #(
   wire hit_ham = (ham < HAM_THRESH);
 
   // --- Gom canh bao ---
+  // Track output session - reset when data_out_valid drops
+  reg verdict_given;
+  reg prev_data_out_valid;
+
+  always @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+      verdict_given <= 1'b0;
+      prev_data_out_valid <= 1'b0;
+    end else begin
+      // Falling edge detection: prev=1, current=0
+      if (prev_data_out_valid && !data_out_valid)
+        verdict_given <= 1'b0;
+
+      prev_data_out_valid <= data_out_valid;
+    end
+  end
+
+  // Main detection logic - runs after edge tracking
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
       klg_alarm         <= 1'b0;
@@ -63,26 +82,29 @@ module klg_key_leak_guard #(
       klg_verdict_valid <= 1'b0;
       klg_verdict_block <= 1'b1;
     end else begin
-      // Mac dinh fail-secure khi khong co verdict hop le.
+      // Mac dinh fail-secure
       klg_verdict_valid <= 1'b0;
       klg_verdict_block <= 1'b1;
 
-      if (data_out_valid) begin
+      // Chi check mot lan khi co output
+      if (data_out_valid && !verdict_given) begin
+        verdict_given <= 1'b1;
         klg_verdict_valid <= 1'b1;
 
         if (hit_key_full || |hit_rkey) begin
           klg_alarm         <= 1'b1;
-          klg_code          <= 4'd1;  // ro ri toan phan
+          klg_code          <= 4'd1;
           klg_verdict_block <= 1'b1;
         end else if (|hit_lane) begin
           klg_alarm         <= 1'b1;
-          klg_code          <= 4'd2;  // ro ri tung lat
+          klg_code          <= 4'd2;
           klg_verdict_block <= 1'b1;
         end else if (hit_ham) begin
           klg_alarm         <= 1'b1;
-          klg_code          <= 4'd3;  // gan giong khoa
+          klg_code          <= 4'd3;
           klg_verdict_block <= 1'b1;
         end else begin
+          // Output sach - cho phep release
           klg_verdict_block <= 1'b0;
         end
       end

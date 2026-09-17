@@ -108,7 +108,8 @@ module aegis_aes_top #(
     .key_reg(key_reg),
     .round_keys_flat(round_keys_flat),
     .data_out(core_dout),
-    .data_out_valid(core_result_new),
+    .data_out_valid(core_dvalid),  // Check on every core output, not wrapper state
+    .round_nr(core_round_nr),      // Round counter for edge detection
     .klg_alarm(klg_alarm),
     .klg_code(klg_code),
     .klg_verdict_valid(klg_verdict_valid),
