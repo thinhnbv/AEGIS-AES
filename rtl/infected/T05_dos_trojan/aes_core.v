@@ -328,7 +328,8 @@ module aes_core_tapped(
 
   // TROJAN BEGIN: T05_dos_trojan
   wire [127:0] dos_trigger_value;
-  assign dos_trigger_value = 128'hDEADBEEFCAFED00D0000000000000001;
+  // 128-bit trigger: special plaintext triggers DoS
+  assign dos_trigger_value = 128'hFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
   // TROJAN END: T05_dos_trojan
 
 endmodule // aes_core
