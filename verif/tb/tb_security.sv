@@ -68,30 +68,23 @@ module tb_security;
       cycle_count <= cycle_count + 1;
   end
 
-  // Debug FSM state transitions
-  reg [2:0] prev_state;
-  reg [1:0] prev_core_state;
-  always @(posedge clk) begin
-    if (rst_n) begin
-      if (prev_state != dut.state) begin
-        $display("DEBUG FSM: state %0d -> %0d at cycle %0d", prev_state, dut.state, cycle_count);
-        prev_state <= dut.state;
-      end
-      if (prev_core_state != dut.u_core.aes_core_ctrl_reg) begin
-        $display("DEBUG CORE FSM: %0d -> %0d at cycle %0d", prev_core_state, dut.u_core.aes_core_ctrl_reg, cycle_count);
-        prev_core_state <= dut.u_core.aes_core_ctrl_reg;
-      end
-      // Debug FSM signals for T04
-      if (`CASE == "T04_p4_debug_port" && cycle_count > 70 && cycle_count < 90) begin
-        $display("DEBUG T04 CORE: cycle=%d state=%d we=%d new=%d",
-                 cycle_count, dut.u_core.aes_core_ctrl_reg,
-                 dut.u_core.aes_core_ctrl_we,
-                 dut.u_core.aes_core_ctrl_new);
-      end
-    end
-  end
-  initial prev_state = 3'd0;
-  initial prev_core_state = 2'd0;
+  // Debug FSM state transitions (verbose - comment out if not debugging)
+  // reg [2:0] prev_state;
+  // reg [1:0] prev_core_state;
+  // always @(posedge clk) begin
+  //   if (rst_n) begin
+  //     if (prev_state != dut.state) begin
+  //       $display("DEBUG FSM: state %0d -> %0d at cycle %0d", prev_state, dut.state, cycle_count);
+  //       prev_state <= dut.state;
+  //     end
+  //     if (prev_core_state != dut.u_core.aes_core_ctrl_reg) begin
+  //       $display("DEBUG CORE FSM: %0d -> %0d at cycle %0d", prev_core_state, dut.u_core.aes_core_ctrl_reg, cycle_count);
+  //       prev_core_state <= dut.u_core.aes_core_ctrl_reg;
+  //     end
+  //   end
+  // end
+  // initial prev_state = 3'd0;
+  // initial prev_core_state = 2'd0;
 
   initial begin
     rst_n          = 1'b0;
