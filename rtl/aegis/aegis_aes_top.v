@@ -31,6 +31,7 @@ module aegis_aes_top #(
   localparam ST_WAIT_RESULT_HIGH = 3'd5;
 
   reg [2:0] state;
+  reg [15:0] wait_result_counter;  // Timeout counter for stuck states
 
   reg [127:0] key_reg;
   reg [127:0] block_reg;
@@ -80,6 +81,7 @@ module aegis_aes_top #(
   );
 
   // Tap FSM state tu aes_core de FIC kiem tra
+  wire [1:0] core_fsm_state;
   assign core_fsm_state = u_core.aes_core_ctrl_reg;
 
   wire       klg_alarm;
@@ -89,7 +91,6 @@ module aegis_aes_top #(
 
   // FIC signals
   wire       fic_alarm;
-  wire [1:0] core_fsm_state;
 
   // RED signals
   wire       red_warning;
@@ -207,6 +208,7 @@ module aegis_aes_top #(
       core_init  <= 1'b0;
       core_next  <= 1'b0;
       busy_reg   <= 1'b0;
+      wait_result_counter <= 16'd0;
     end else if (zeroize) begin
       state      <= ST_IDLE;
       key_reg    <= 128'd0;
@@ -272,10 +274,22 @@ module aegis_aes_top #(
 
         ST_WAIT_RESULT_HIGH: begin
           busy_reg <= 1'b1;
+          wait_result_counter <= wait_result_counter + 16'd1;
 
           if (core_dvalid) begin
             busy_reg <= 1'b0;
             state    <= ST_READY;
+            wait_result_counter <= 16'd0;
+          end else if (zeroize) begin
+            // Core bi treo (FSM illegal state), nhung zeroize da duoc kich hoat
+            busy_reg <= 1'b1;
+            state    <= ST_IDLE;
+            wait_result_counter <= 16'd0;
+          end else if (wait_result_counter >= 16'd1000) begin
+            // Timeout: core_dvalid khong bao gio len sau 1000 chu ky
+            busy_reg <= 1'b0;
+            state    <= ST_IDLE;
+            wait_result_counter <= 16'd0;
           end
         end
 
