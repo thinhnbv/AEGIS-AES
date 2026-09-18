@@ -51,6 +51,9 @@ module red_rare_event #(
   reg  [15:0] enc_counter;           // Dem so lan ma hoa
   reg  [1:0]  fsm_state;            // FSM cho T2 pattern detection
   reg  [127:0] pt_history [0:2];    // Lưu 3 plaintext truoc
+  reg  [127:0] prev_pt0;            // Saved pt_history[0] before shift
+  reg  [127:0] prev_pt1;            // Saved pt_history[1] before shift
+  reg  [127:0] prev_pt2;            // Saved pt_history[2] before shift
   integer j;
 
   // --- Wires cho T1 detection ---
@@ -83,14 +86,18 @@ module red_rare_event #(
   //==============================================================
   // T2: Sequential Trigger - Detects plaintext sequence patterns
   //==============================================================
-  // Check incrementing sequence: PT[i] == PT[i-1] + 1
-  wire [127:0] pt_minus_one;
-  wire         pt_overflow;
-  assign {pt_overflow, pt_minus_one} = {1'b0, pt_history[0]} - 128'd1;
-  assign t2_incrementing_seq = (block == pt_history[0] + 128'd1) && !pt_overflow;
+  // These wires use saved history values (captured in always block before shift)
+  // For incrementing: compare block with (pt_history[0] + 1)
+  wire [127:0] pt_plus_one;
+  wire         pt_no_overflow;
+  assign {pt_no_overflow, pt_plus_one} = {1'b0, pt_history[0]} + 128'd1;
+  assign t2_incrementing_seq = (block == pt_plus_one) && pt_no_overflow;
 
   // Check decrementing sequence: PT[i] == PT[i-1] - 1
-  assign t2_decrementing_seq = (block == pt_minus_one);
+  wire [127:0] pt_minus_one;
+  wire         pt_no_underflow;
+  assign {pt_no_underflow, pt_minus_one} = {1'b0, pt_history[0]} - 128'd1;
+  assign t2_decrementing_seq = (block == pt_minus_one) && pt_no_underflow;
 
   // Check repeating sequence: PT[i] == PT[i-2] (every other same)
   assign t2_repeating_seq = (block == pt_history[2]);
@@ -113,26 +120,21 @@ module red_rare_event #(
       red_code     <= 8'd0;
       enc_counter <= 16'd0;
       fsm_state   <= FSM_IDLE;
+      prev_pt0     <= 128'd0;
+      prev_pt1     <= 128'd0;
+      prev_pt2     <= 128'd0;
 
       // Clear history
       for (j = 0; j < 3; j = j + 1) begin
         pt_history[j] <= 128'd0;
       end
     end else begin
-      // Default: clear warning, keep counter
-      red_warning <= 1'b0;
-      red_code    <= 8'd0;
+      // Default: keep warning sticky until reset
+      // red_warning <= 1'b0;  // Removed: warning is sticky
+      // red_code <= 8'd0;     // Removed: code is sticky
 
       // Update plaintext history when new block arrives
       if (block_valid) begin
-        // Shift history: pt_history[2] <- pt_history[1] <- pt_history[0] <- block
-        pt_history[2] <= pt_history[1];
-        pt_history[1] <= pt_history[0];
-        pt_history[0] <= block;
-
-        // Increment counter on each encryption
-        enc_counter <= enc_counter + 16'd1;
-
         //==============================================================
         // T1: Check for rare constant plaintext values
         //==============================================================
@@ -151,16 +153,20 @@ module red_rare_event #(
         end
         //==============================================================
         // T2: Check for sequential patterns
+        // Uses pt_history[0] which holds the previous plaintext
         //==============================================================
-        else if (t2_incrementing_seq) begin
+        else if (block == (pt_history[0] + 128'd1)) begin
+          // Incrementing: block = pt_history[0] + 1
           red_warning <= 1'b1;
           red_code    <= CODE_T2_SEQ_PATTERN;
           fsm_state   <= FSM_SEQ1;
-        end else if (t2_decrementing_seq) begin
+        end else if (block == (pt_history[0] - 128'd1)) begin
+          // Decrementing: block = pt_history[0] - 1
           red_warning <= 1'b1;
           red_code    <= CODE_T2_SEQ_PATTERN;
           fsm_state   <= FSM_SEQ2;
-        end else if (t2_repeating_seq) begin
+        end else if (block == pt_history[2]) begin
+          // Repeating: block = pt_history[2] (every other same)
           red_warning <= 1'b1;
           red_code    <= CODE_T2_SEQ_PATTERN;
           fsm_state   <= FSM_SEQ3;
@@ -175,6 +181,14 @@ module red_rare_event #(
           // Reset FSM on normal input
           fsm_state <= FSM_IDLE;
         end
+
+        // Shift history: pt_history[2] <- pt_history[1] <- pt_history[0] <- block
+        pt_history[2] <= pt_history[1];
+        pt_history[1] <= pt_history[0];
+        pt_history[0] <= block;
+
+        // Increment counter on each encryption
+        enc_counter <= enc_counter + 16'd1;
       end
     end
   end

