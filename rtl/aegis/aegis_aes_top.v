@@ -77,7 +77,8 @@ module aegis_aes_top #(
     .result_valid(core_dvalid),
     .round_keys_flat(round_keys_flat),
     .muxed_round_nr(core_round_nr),
-    .state_before_final(state_before_final)
+    .state_before_final(state_before_final),
+    .red_code(red_code)
   );
 
   // Tap FSM state tu aes_core de FIC kiem tra

