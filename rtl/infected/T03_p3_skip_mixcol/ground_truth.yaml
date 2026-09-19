@@ -4,27 +4,33 @@ author: team
 
 trigger:
   class: T4
-  description: Plaintext dac biet kich hoat FSM hien
+  description: >
+    Plaintext hiem chi dung de arm Trojan. Trojan chi fire tai
+    trang thai noi bo CTRL_SBOX, round=5, sword_ctr=3.
   activation: "128'h12345678_9ABCDEF0_00000000_00000001"
-  rarity: "2^-128"
+  internal_condition: "enc_ctrl_reg==CTRL_SBOX && round_ctr_reg==5 && sword_ctr_reg==3"
+  rarity: "2^-128 input arm + internal round/FSM condition"
 
 payload:
   class: P3
-  description: Bo 2 round cuoi, tra ket qua round 8
+  description: >
+    Bo qua MixColumns tai round 5. Van thuc hien SubBytes,
+    ShiftRows va AddRoundKey, sau do tiep tuc round 6..10.
   asset: aes_correctness
   observable: logic
 
 location:
-  file: aes_core.v
-  module: aes_core
-  line_start: 77
-  line_end: 83
-  always_block: null
+  file: rtl/aegis/aes_encipher_block.v
+  module: aes_encipher_block_tapped
+  mechanism: T03_BYPASS_UPDATE
 
 detection:
   expected_checker: ORC, RCM
-  expected_latency: 1-10
+  expected_latency: result-time
+  rationale:
+    ORC: "shadow pre-final checkpoint tao ciphertext tham chieu sach va so sanh voi output nhiem"
+    RCM: "round 5 ngan hon 1 chu ky do CTRL_MAIN/MixColumns bi bypass"
 
 verification:
-  silent_under_nist: false
-  activation_seq: verif/vectors/trigger_T03.txt
+  silent_under_nist: true
+  activation_seq: verif/vectors/trigger_T03_p3_skip_mixcol.txt

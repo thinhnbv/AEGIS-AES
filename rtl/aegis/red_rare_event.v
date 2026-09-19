@@ -1,197 +1,296 @@
 //---------------------------------------------------------------
 // red_rare_event.v
-// Rare-Event Detector - Phat hien cac trigger "hiem" trong plaintext
 //
-// RED giám sát các tín hiệu "hiếm" dựa trên heuristic:
-//   T1 - Trigger tổ hợp: Plaintext bằng hằng số đặc biệt
-//   T2 - Trigger tuần tự: Chuỗi plaintext theo pattern
-//   T3 - Trigger bộ đếm: Counter đạt ngưỡng threshold
+// Rare-Event Detector (RED)
 //
-// Output:
-//   red_warning (1-bit) - cảnh báo mềm, đưa TRU vào SUSPECT
-//   red_code[7:0] - mã định danh loại rare event
+// RED observes rare plaintext conditions and produces a ONE-CYCLE
+// warning pulse. red_code is sticky and records the latest detected
+// rare-event class.
+//
+// Supported events:
+//   T1: rare constant plaintext patterns.
+//   T2: benchmark sequence A5 -> 5A -> FF on block[127:120].
+//   T3: encryption counter reaches RARE_THRESHOLD.
+//
+// RED is a soft-warning monitor. A single red_warning must not be
+// counted repeatedly by TRU on subsequent clock cycles.
 //---------------------------------------------------------------
+
 `default_nettype none
 `include "aegis_defs.vh"
 
 module red_rare_event #(
-    parameter [15:0] RARE_THRESHOLD = 16'hFFFF  // 2^16 - 1 = 65535
+    parameter [15:0] RARE_THRESHOLD = 16'hFFFF
 ) (
-    input  wire clk,
-    input  wire rst_n,
-    input  wire [127:0] block,           // plaintext input
-    input  wire block_valid,            // valid khi có plaintext mới
-    output reg  red_warning,
-    output reg  [7:0] red_code           // mã loại rare event
+    input  wire         clk,
+    input  wire         rst_n,
+    input  wire [127:0] block,
+    input  wire         block_valid,
+
+    output reg          red_warning,
+    output reg  [7:0]   red_code
 );
 
-  // --- Cac hang so cho cac gia tri plaintext hiếm ---
-  localparam RARE_ALL_ZEROS = 128'h0000_0000_0000_0000_0000_0000_0000_0000;
-  localparam RARE_ALL_ONES  = 128'hFFFF_FFFF_FFFF_FFFF_FFFF_FFFF_FFFF_FFFF;
-  localparam RARE_ALT_ZEROS = 128'h5555_5555_5555_5555_5555_5555_5555_5555;  // 0x55...
-  localparam RARE_ALT_ONES  = 128'hAAAA_AAAA_AAAA_AAAA_AAAA_AAAA_AAAA_AAAA;  // 0xAA...
-  localparam RARE_LOWER_HALF_ZEROS = 128'h0000_0000_0000_0000_FFFF_FFFF_FFFF_FFFF;
-  localparam RARE_UPPER_HALF_ZEROS = 128'hFFFF_FFFF_FFFF_FFFF_0000_0000_0000_0000;
+  //-------------------------------------------------------------
+  // T1 rare constants.
+  //-------------------------------------------------------------
+  localparam [127:0] RARE_ALL_ZEROS =
+      128'h0000_0000_0000_0000_0000_0000_0000_0000;
 
-  // --- Cac ma loi rare event ---
-  localparam CODE_T1_ALL_ZEROS       = 8'h01;  // T1: all zeros
-  localparam CODE_T1_ALL_ONES        = 8'h02;  // T1: all ones
-  localparam CODE_T1_ALT_PATTERN     = 8'h03;  // T1: alternating pattern
-  localparam CODE_T1_HALF_PATTERN    = 8'h04;  // T1: half zeros
-  localparam CODE_T2_SEQ_PATTERN     = 8'h10;  // T2: sequential pattern
-  localparam CODE_T3_THRESHOLD       = 8'h20;  // T3: counter threshold
+  localparam [127:0] RARE_ALL_ONES =
+      128'hFFFF_FFFF_FFFF_FFFF_FFFF_FFFF_FFFF_FFFF;
 
-  // --- FSM states ---
-  localparam FSM_IDLE  = 2'd0;
-  localparam FSM_SEQ1 = 2'd1;
-  localparam FSM_SEQ2 = 2'd2;
-  localparam FSM_SEQ3 = 2'd3;
+  localparam [127:0] RARE_ALT_ZEROS =
+      128'h5555_5555_5555_5555_5555_5555_5555_5555;
 
-  // --- Internal registers ---
-  reg  [15:0] enc_counter;           // Dem so lan ma hoa
-  reg  [1:0]  fsm_state;            // FSM cho T2 pattern detection
-  reg  [127:0] pt_history [0:2];    // Lưu 3 plaintext truoc
-  reg  [127:0] prev_pt0;            // Saved pt_history[0] before shift
-  reg  [127:0] prev_pt1;            // Saved pt_history[1] before shift
-  reg  [127:0] prev_pt2;            // Saved pt_history[2] before shift
+  localparam [127:0] RARE_ALT_ONES =
+      128'hAAAA_AAAA_AAAA_AAAA_AAAA_AAAA_AAAA_AAAA;
+
+  localparam [127:0] RARE_LOWER_HALF_ZEROS =
+      128'h0000_0000_0000_0000_FFFF_FFFF_FFFF_FFFF;
+
+  localparam [127:0] RARE_UPPER_HALF_ZEROS =
+      128'hFFFF_FFFF_FFFF_FFFF_0000_0000_0000_0000;
+
+
+  //-------------------------------------------------------------
+  // RED codes.
+  //-------------------------------------------------------------
+  localparam [7:0] CODE_T1_ALL_ZEROS    = 8'h01;
+  localparam [7:0] CODE_T1_ALL_ONES     = 8'h02;
+  localparam [7:0] CODE_T1_ALT_PATTERN  = 8'h03;
+  localparam [7:0] CODE_T1_HALF_PATTERN = 8'h04;
+
+  localparam [7:0] CODE_T2_SEQ_PATTERN  = 8'h10;
+  localparam [7:0] CODE_T3_THRESHOLD    = 8'h20;
+
+
+  //-------------------------------------------------------------
+  // T2 sequence state:
+  //
+  //   WAIT_A5 --A5--> WAIT_5A
+  //   WAIT_5A --5A--> WAIT_FF
+  //   WAIT_FF --FF--> warning
+  //-------------------------------------------------------------
+  localparam [1:0] FSM_WAIT_A5 = 2'd0;
+  localparam [1:0] FSM_WAIT_5A = 2'd1;
+  localparam [1:0] FSM_WAIT_FF = 2'd2;
+
+
+  //-------------------------------------------------------------
+  // Internal state.
+  //-------------------------------------------------------------
+  reg [15:0] enc_counter;
+  reg        t3_reported;
+
+  // Keep the old internal name for hierarchical debug compatibility.
+  reg [1:0] fsm_state;
+
+  // Keep a short plaintext history for debug/verification visibility.
+  reg [127:0] pt_history [0:2];
+
   integer j;
 
-  // --- Wires cho T1 detection ---
+
+  //-------------------------------------------------------------
+  // T1 predicates.
+  //-------------------------------------------------------------
   wire t1_all_zeros;
   wire t1_all_ones;
-  wire t1_alt_zeros;
-  wire t1_alt_ones;
-  wire t1_half_zeros_low;
-  wire t1_half_zeros_high;
+  wire t1_alt_pattern;
+  wire t1_half_pattern;
 
-  // --- Wires cho T2 detection ---
-  wire t2_incrementing_seq;    // PT[i] = PT[i-1] + 1
-  wire t2_decrementing_seq;    // PT[i] = PT[i-1] - 1
-  wire t2_repeating_seq;      // PT[i] = PT[i-2]
-  wire t2_any_pattern;
+  assign t1_all_zeros =
+      (block == RARE_ALL_ZEROS);
 
-  // --- Wire cho T3 detection ---
+  assign t1_all_ones =
+      (block == RARE_ALL_ONES);
+
+  assign t1_alt_pattern =
+      (block == RARE_ALT_ZEROS) ||
+      (block == RARE_ALT_ONES);
+
+  assign t1_half_pattern =
+      (block == RARE_LOWER_HALF_ZEROS) ||
+      (block == RARE_UPPER_HALF_ZEROS);
+
+
+  //-------------------------------------------------------------
+  // T2 predicates.
+  //
+  // The benchmark specifies the first byte sequence:
+  //   A5 -> 5A -> FF
+  //-------------------------------------------------------------
+  wire t2_seen_a5;
+  wire t2_seen_5a;
+  wire t2_seen_ff;
+  wire t2_fire;
+
+  assign t2_seen_a5 =
+      (block[127:120] == 8'hA5);
+
+  assign t2_seen_5a =
+      (block[127:120] == 8'h5A);
+
+  assign t2_seen_ff =
+      (block[127:120] == 8'hFF);
+
+  assign t2_fire =
+      (fsm_state == FSM_WAIT_FF) &&
+      t2_seen_ff;
+
+
+  //-------------------------------------------------------------
+  // T3 predicate.
+  //-------------------------------------------------------------
   wire t3_threshold_reached;
 
-  //==============================================================
-  // T1: Combinational Trigger - Detects rare constant values
-  //==============================================================
-  assign t1_all_zeros = (block == RARE_ALL_ZEROS);
-  assign t1_all_ones  = (block == RARE_ALL_ONES);
-  assign t1_alt_zeros = (block == RARE_ALT_ZEROS);
-  assign t1_alt_ones  = (block == RARE_ALT_ONES);
-  assign t1_half_zeros_low  = (block == RARE_LOWER_HALF_ZEROS);
-  assign t1_half_zeros_high = (block == RARE_UPPER_HALF_ZEROS);
+  assign t3_threshold_reached =
+      (enc_counter >= RARE_THRESHOLD);
 
-  //==============================================================
-  // T2: Sequential Trigger - Detects plaintext sequence patterns
-  //==============================================================
-  // These wires use saved history values (captured in always block before shift)
-  // For incrementing: compare block with (pt_history[0] + 1)
-  wire [127:0] pt_plus_one;
-  wire         pt_no_overflow;
-  assign {pt_no_overflow, pt_plus_one} = {1'b0, pt_history[0]} + 128'd1;
-  assign t2_incrementing_seq = (block == pt_plus_one) && pt_no_overflow;
 
-  // Check decrementing sequence: PT[i] == PT[i-1] - 1
-  wire [127:0] pt_minus_one;
-  wire         pt_no_underflow;
-  assign {pt_no_underflow, pt_minus_one} = {1'b0, pt_history[0]} - 128'd1;
-  assign t2_decrementing_seq = (block == pt_minus_one) && pt_no_underflow;
-
-  // Check repeating sequence: PT[i] == PT[i-2] (every other same)
-  assign t2_repeating_seq = (block == pt_history[2]);
-
-  // Any T2 pattern detected
-  assign t2_any_pattern = t2_incrementing_seq || t2_decrementing_seq || t2_repeating_seq;
-
-  //==============================================================
-  // T3: Counter Trigger - Threshold-based detection
-  //==============================================================
-  assign t3_threshold_reached = (enc_counter >= RARE_THRESHOLD[15:0]);
-
-  //==============================================================
-  // Main detection logic
-  //==============================================================
+  //-------------------------------------------------------------
+  // Main RED logic.
+  //
+  // red_warning is explicitly cleared every normal clock so each
+  // detected rare event creates exactly one pulse.
+  //
+  // red_code remains sticky until reset.
+  //-------------------------------------------------------------
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-      // Reset all outputs and internal state
-      red_warning  <= 1'b0;
-      red_code     <= 8'd0;
+
+      red_warning <= 1'b0;
+      red_code    <= 8'd0;
+
       enc_counter <= 16'd0;
-      fsm_state   <= FSM_IDLE;
-      prev_pt0     <= 128'd0;
-      prev_pt1     <= 128'd0;
-      prev_pt2     <= 128'd0;
+      t3_reported <= 1'b0;
 
-      // Clear history
-      for (j = 0; j < 3; j = j + 1) begin
+      fsm_state   <= FSM_WAIT_A5;
+
+      for (j = 0; j < 3; j = j + 1)
         pt_history[j] <= 128'd0;
-      end
-    end else begin
-      // Default: keep warning sticky until reset
-      // red_warning <= 1'b0;  // Removed: warning is sticky
-      // red_code <= 8'd0;     // Removed: code is sticky
 
-      // Update plaintext history when new block arrives
+    end
+    else begin
+
+      //---------------------------------------------------------
+      // Default: warning is a pulse, not a sticky level.
+      //---------------------------------------------------------
+      red_warning <= 1'b0;
+
+
+      //---------------------------------------------------------
+      // Evaluate only accepted plaintext requests.
+      //---------------------------------------------------------
       if (block_valid) begin
-        //==============================================================
-        // T1: Check for rare constant plaintext values
-        //==============================================================
-        if (t1_all_zeros) begin
+
+        //-------------------------------------------------------
+        // Detection priority:
+        //   1) Exact T2 benchmark sequence
+        //   2) T1 rare constants
+        //   3) T3 counter threshold
+        //-------------------------------------------------------
+        if (t2_fire) begin
+
+          red_warning <= 1'b1;
+          red_code    <= CODE_T2_SEQ_PATTERN;
+
+        end
+        else if (t1_all_zeros) begin
+
           red_warning <= 1'b1;
           red_code    <= CODE_T1_ALL_ZEROS;
-        end else if (t1_all_ones) begin
+
+        end
+        else if (t1_all_ones) begin
+
           red_warning <= 1'b1;
           red_code    <= CODE_T1_ALL_ONES;
-        end else if (t1_alt_zeros || t1_alt_ones) begin
+
+        end
+        else if (t1_alt_pattern) begin
+
           red_warning <= 1'b1;
           red_code    <= CODE_T1_ALT_PATTERN;
-        end else if (t1_half_zeros_low || t1_half_zeros_high) begin
+
+        end
+        else if (t1_half_pattern) begin
+
           red_warning <= 1'b1;
           red_code    <= CODE_T1_HALF_PATTERN;
+
         end
-        //==============================================================
-        // T2: Check for sequential patterns
-        // Uses pt_history[0] which holds the previous plaintext
-        //==============================================================
-        else if (block == (pt_history[0] + 128'd1)) begin
-          // Incrementing: block = pt_history[0] + 1
-          red_warning <= 1'b1;
-          red_code    <= CODE_T2_SEQ_PATTERN;
-          fsm_state   <= FSM_SEQ1;
-        end else if (block == (pt_history[0] - 128'd1)) begin
-          // Decrementing: block = pt_history[0] - 1
-          red_warning <= 1'b1;
-          red_code    <= CODE_T2_SEQ_PATTERN;
-          fsm_state   <= FSM_SEQ2;
-        end else if (block == pt_history[2]) begin
-          // Repeating: block = pt_history[2] (every other same)
-          red_warning <= 1'b1;
-          red_code    <= CODE_T2_SEQ_PATTERN;
-          fsm_state   <= FSM_SEQ3;
-        end
-        //==============================================================
-        // T3: Check counter threshold
-        //==============================================================
-        else if (t3_threshold_reached) begin
+        else if (t3_threshold_reached &&
+                 !t3_reported) begin
+
           red_warning <= 1'b1;
           red_code    <= CODE_T3_THRESHOLD;
-        end else begin
-          // Reset FSM on normal input
-          fsm_state <= FSM_IDLE;
+
         end
 
-        // Shift history: pt_history[2] <- pt_history[1] <- pt_history[0] <- block
+
+        //-------------------------------------------------------
+        // T2 sequence-state update.
+        //
+        // Overlap handling:
+        // if A5 appears again while waiting for 5A/FF, it becomes
+        // the start of a new candidate sequence.
+        //-------------------------------------------------------
+        case (fsm_state)
+
+          FSM_WAIT_A5: begin
+            if (t2_seen_a5)
+              fsm_state <= FSM_WAIT_5A;
+            else
+              fsm_state <= FSM_WAIT_A5;
+          end
+
+          FSM_WAIT_5A: begin
+            if (t2_seen_5a)
+              fsm_state <= FSM_WAIT_FF;
+            else if (t2_seen_a5)
+              fsm_state <= FSM_WAIT_5A;
+            else
+              fsm_state <= FSM_WAIT_A5;
+          end
+
+          FSM_WAIT_FF: begin
+            if (t2_seen_ff)
+              fsm_state <= FSM_WAIT_A5;
+            else if (t2_seen_a5)
+              fsm_state <= FSM_WAIT_5A;
+            else
+              fsm_state <= FSM_WAIT_A5;
+          end
+
+          default: begin
+            fsm_state <= FSM_WAIT_A5;
+          end
+
+        endcase
+
+
+        //-------------------------------------------------------
+        // T3 counter.
+        //-------------------------------------------------------
+        enc_counter <= enc_counter + 16'd1;
+
+        if (t3_threshold_reached)
+          t3_reported <= 1'b1;
+
+
+        //-------------------------------------------------------
+        // Plaintext history for debug/verification.
+        //-------------------------------------------------------
         pt_history[2] <= pt_history[1];
         pt_history[1] <= pt_history[0];
         pt_history[0] <= block;
 
-        // Increment counter on each encryption
-        enc_counter <= enc_counter + 16'd1;
       end
     end
   end
 
 endmodule
+
 `default_nettype wire
