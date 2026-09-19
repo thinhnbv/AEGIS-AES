@@ -133,11 +133,19 @@ module aegis_aes_top #(
   );
 
   // RCM - Round Consistency Monitor
+  //
+  // RCM observes the AES core round/handshake behavior. When TRU
+  // asserts zeroize, the AES core is asynchronously reset through
+  // core_reset_n. RCM must use the same reset domain so that the
+  // defensive reset itself is not misclassified as a new round fault.
+  //
+  // Any genuine RCM cause is latched by TRU before zeroize is asserted,
+  // so resetting RCM here does not lose the original security cause.
   rcm_round_monitor #(
     .NUM_ROUNDS(10)
   ) u_rcm (
     .clk(clk),
-    .rst_n(rst_n),
+    .rst_n(core_reset_n),
     .init(core_init),
     .next(core_next),
     .ready(core_ready),
