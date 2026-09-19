@@ -447,78 +447,109 @@ module tb_security;
     // T04 xu ly rieng - khong gui trigger
     if ((`CASE == "T04_p4_debug_port") || (`CASE == "T04")) begin
       // T04: FIC/RED phat hien FSM illegal state
-      // Trigger: sequential counter (after 2nd encryption)
+      // Trigger: RED T2 sequential pattern (PT[i] = PT[i-1] + 1)
       // Payload: P4 - FSM illegal state injection
-      // Detected by: FIC, ORC, KLG, RCM (and RED if sequential pattern detected)
+      // Detected by: FIC, RED
       $display("[INFO T04] Bat dau test T04 - FSM illegal state injection");
 
-      // Hard reset de clear tat ca cac trang thai truoc khi bat dau T04
-      rst_n = 1'b0;
-      data_in_valid = 1'b0;
-      key_valid = 1'b0;
-      repeat(10) @(posedge clk);
-      rst_n = 1'b1;
-      repeat(20) @(posedge clk);
-
-      // Reload key
-      $display("      [INFO T04] Reload key...");
-      @(negedge clk);
-      key       = clean_key;
-      key_valid = 1'b1;
-
-      @(negedge clk);
-      key_valid = 1'b0;
-
-      wait(busy == 1'b1);
-      wait(busy == 1'b0);
-      repeat(10) @(posedge clk);
-
       // Doi wrapper FSM tro ve ST_READY
-      wait(dut.state == 3'd3);
-      repeat(2) @(posedge clk);
+      if (dut.state != 3'd3) begin
+        wait(dut.state == 3'd3);
+      end
+      repeat(5) @(posedge clk);
 
-      // Plaintext 1 - set o posedge de wrapper nhan duoc
-      @(posedge clk);
-      data_in = 128'hA5A5A5A5A5A5A5A5A5A5A5A5A5A5A5A5;
+      // === Giai doan 1: Gui clean_pt de set RED history ===
+      $display("      [INFO T04] Giai doan 1: Gui clean_pt de set RED history");
+      $display("      [DEBUG T04] clean_pt = %h", clean_pt);
+      @(negedge clk);
+      data_in = clean_pt;
       data_in_valid = 1'b1;
       @(negedge clk);
       data_in_valid = 1'b0;
 
-      // Doi encryption 1 hoan tat
-      repeat(60) @(posedge clk);
-
-      // Kiem tra neu Trojan da kich hoat sau PT1
-      repeat(10) @(posedge clk);
+      repeat(70) @(posedge clk);
       #1;
+      $display("      [DEBUG T04] Sau GD1: RED hist[0]=%h hist[1]=%h red_code=%h",
+               dut.u_red.pt_history[0], dut.u_red.pt_history[1], dut.u_red.red_code);
+
+      // === Giai doan 2: Gui PT1 = clean_pt + 1 (RED phat hien T2) ===
+      $display("      [INFO T04] Giai doan 2: Gui PT1 = clean_pt + 1");
+
+      // Doi zeroize reset va wrapper tro ve ST_READY truoc khi gui PT1
+      $display("      [DEBUG T04] Cho zeroize reset: state=%d busy=%d zeroize=%d",
+               dut.state, busy, dut.zeroize);
+      if (dut.zeroize) begin
+        wait(dut.zeroize == 1'b0);
+      end
+      repeat(10) @(posedge clk);
+      $display("      [DEBUG T04] Sau khi zeroize reset: state=%d busy=%d", dut.state, busy);
+
+      $display("      [DEBUG T04] PT1 = %h", clean_pt + 128'd1);
+      @(negedge clk);
+      data_in = clean_pt + 128'd1;
+      data_in_valid = 1'b1;
+      $display("      [DEBUG T04] Sau khi gui: state=%d busy=%d", dut.state, busy);
+      @(negedge clk);
+      data_in_valid = 1'b0;
+
+      repeat(5) @(posedge clk);
+      #1;
+      $display("      [DEBUG T04] GD2 cycle+5: state=%d busy=%d core_next=%b block_reg=%h",
+               dut.state, busy, dut.u_core.next, dut.u_red.block);
+
+      repeat(25) @(posedge clk);
+      #1;
+      $display("      [DEBUG T04] GD2 cycle+30: saw_red=%b red_code=%h hist[0]=%h",
+               dut.u_core.saw_red_t2, dut.u_red.red_code, dut.u_red.pt_history[0]);
 
       if (sec_alarm) begin
-        $display("      [INFO T04] Trojan kich hoat sau PT1, bo qua PT2");
+        $display("      [INFO T04] Trojan da kich hoat sau PT1!");
       end else begin
-        // Doi wrapper FSM tro ve ST_READY truoc PT2
-        if (dut.state != 3'd3) begin
-          wait(dut.state == 3'd3);
-        end
-        repeat(2) @(posedge clk);
-
-        // Plaintext 2 - 2nd encryption se trigger Trojan
+        // === Giai doan 3: Gui PT2 = clean_pt + 2 ===
+        $display("      [INFO T04] Giai doan 3: Gui PT2 = clean_pt + 2");
+        repeat(40) @(posedge clk);
         @(negedge clk);
-        data_in = 128'hA5A5A5A5A5A5A5A5A5A5A5A5A5A5A5A5;
+        data_in = clean_pt + 128'd2;
         data_in_valid = 1'b1;
         @(negedge clk);
         data_in_valid = 1'b0;
 
-        repeat(100) @(posedge clk);
+        repeat(30) @(posedge clk);
         #1;
+        $display("      [DEBUG T04] Sau PT2: saw_red=%b red_code=%h core_fsm=%d sec_alarm=%b",
+                 dut.u_core.saw_red_t2, dut.u_red.red_code, dut.u_core.aes_core_ctrl_reg, sec_alarm);
+
+        if (sec_alarm) begin
+          $display("      [INFO T04] Trojan da kich hoat sau PT2!");
+        end else begin
+          // === Giai doan 4: Gui PT3 = clean_pt + 3 ===
+          $display("      [INFO T04] Giai doan 4: Gui PT3 = clean_pt + 3");
+          repeat(40) @(posedge clk);
+          @(negedge clk);
+          data_in = clean_pt + 128'd3;
+          data_in_valid = 1'b1;
+          @(negedge clk);
+          data_in_valid = 1'b0;
+
+          repeat(30) @(posedge clk);
+          #1;
+          $display("      [DEBUG T04] Sau PT3: saw_red=%b red_code=%h core_fsm=%d sec_alarm=%b",
+                   dut.u_core.saw_red_t2, dut.u_red.red_code, dut.u_core.aes_core_ctrl_reg, sec_alarm);
+        end
       end
 
       $display("      [INFO T04] sec_status=%b (KLG=%b ORC=%b RCM=%b FIC=%b RED=%b)",
                sec_status, sec_status[`AEGIS_ST_KLG], sec_status[`AEGIS_ST_ORC],
                sec_status[`AEGIS_ST_RCM], sec_status[`AEGIS_ST_FIC], sec_status[`AEGIS_ST_RED]);
-      $display("      [INFO T04] FIC fic_alarm=%b", dut.u_fic.fic_alarm);
+      $display("      [INFO T04] FIC fic_alarm=%b RED red_warning=%b",
+               dut.u_fic.fic_alarm, dut.u_red.red_warning);
 
-      // Chi can 1 trong 5 monitor phat hien la du - FIC la primary
+      // T04 duoc thiet ke de FIC va RED phat hien
       if (sec_status[`AEGIS_ST_FIC]) begin
         $display("[PASS] FIC da phat hien Trojan T04 (FSM illegal state)");
+      end
+      if (sec_status[`AEGIS_ST_RED]) begin
+        $display("[PASS] RED da phat hien Trojan T04 (T2 sequential pattern)");
       end
       if (sec_status[`AEGIS_ST_ORC]) begin
         $display("[PASS] ORC da phat hien Trojan T04");
@@ -529,9 +560,6 @@ module tb_security;
       if (sec_status[`AEGIS_ST_RCM]) begin
         $display("[PASS] RCM da phat hien Trojan T04");
       end
-      if (sec_status[`AEGIS_ST_RED]) begin
-        $display("[PASS] RED da phat hien Trojan T04 (T2 sequential pattern)");
-      end
 
       //sec_alarm phai = 1
       if (sec_alarm == 1'b0) begin
@@ -541,10 +569,9 @@ module tb_security;
         fail_count = fail_count + 1;
       end
 
-      // Chi can 1 monitor phat hien
-      if (!sec_status[`AEGIS_ST_FIC] && !sec_status[`AEGIS_ST_ORC] &&
-          !sec_status[`AEGIS_ST_KLG] && !sec_status[`AEGIS_ST_RCM]) begin
-        $display("[FAIL] Khong co monitor nao phat hien Trojan (chi can 1 trong 5)");
+      // Chi can FIC hoac RED phat hien (theo thiet ke)
+      if (!sec_status[`AEGIS_ST_FIC] && !sec_status[`AEGIS_ST_RED]) begin
+        $display("[FAIL] Khong co monitor nao phat hien Trojan (can FIC hoac RED)");
         fail_count = fail_count + 1;
       end
 

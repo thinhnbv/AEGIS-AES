@@ -91,7 +91,7 @@ formal:
 all-cases:
 	@for c in $$(ls rtl/infected); do \
 	echo "=== $$c ==="; \
-	$$(MAKE) --no-print-directory security CASE=$$c || true; \
+	$(MAKE) --no-print-directory security CASE=$$c || true; \
 	done
 
 campaign:
