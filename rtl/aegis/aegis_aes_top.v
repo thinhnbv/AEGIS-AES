@@ -31,6 +31,7 @@ module aegis_aes_top #(
   localparam ST_WAIT_RESULT_HIGH = 3'd5;
 
   reg [2:0] state;
+  reg [15:0] wait_result_counter;  // Timeout counter for stuck states
 
   reg [127:0] key_reg;
   reg [127:0] block_reg;
@@ -80,6 +81,7 @@ module aegis_aes_top #(
   );
 
   // Tap FSM state tu aes_core de FIC kiem tra
+  wire [1:0] core_fsm_state;
   assign core_fsm_state = u_core.aes_core_ctrl_reg;
 
   wire       klg_alarm;
@@ -89,7 +91,6 @@ module aegis_aes_top #(
 
   // FIC signals
   wire       fic_alarm;
-  wire [1:0] core_fsm_state;
 
   // RED signals
   wire       red_warning;
@@ -108,7 +109,8 @@ module aegis_aes_top #(
     .key_reg(key_reg),
     .round_keys_flat(round_keys_flat),
     .data_out(core_dout),
-    .data_out_valid(core_result_new),
+    .data_out_valid(core_dvalid),  // Check on every core output, not wrapper state
+    .round_nr(core_round_nr),      // Round counter for edge detection
     .klg_alarm(klg_alarm),
     .klg_code(klg_code),
     .klg_verdict_valid(klg_verdict_valid),
@@ -131,11 +133,19 @@ module aegis_aes_top #(
   );
 
   // RCM - Round Consistency Monitor
+  //
+  // RCM observes the AES core round/handshake behavior. When TRU
+  // asserts zeroize, the AES core is asynchronously reset through
+  // core_reset_n. RCM must use the same reset domain so that the
+  // defensive reset itself is not misclassified as a new round fault.
+  //
+  // Any genuine RCM cause is latched by TRU before zeroize is asserted,
+  // so resetting RCM here does not lose the original security cause.
   rcm_round_monitor #(
     .NUM_ROUNDS(10)
   ) u_rcm (
     .clk(clk),
-    .rst_n(rst_n),
+    .rst_n(core_reset_n),
     .init(core_init),
     .next(core_next),
     .ready(core_ready),
@@ -206,6 +216,7 @@ module aegis_aes_top #(
       core_init  <= 1'b0;
       core_next  <= 1'b0;
       busy_reg   <= 1'b0;
+      wait_result_counter <= 16'd0;
     end else if (zeroize) begin
       state      <= ST_IDLE;
       key_reg    <= 128'd0;
@@ -271,10 +282,22 @@ module aegis_aes_top #(
 
         ST_WAIT_RESULT_HIGH: begin
           busy_reg <= 1'b1;
+          wait_result_counter <= wait_result_counter + 16'd1;
 
           if (core_dvalid) begin
             busy_reg <= 1'b0;
             state    <= ST_READY;
+            wait_result_counter <= 16'd0;
+          end else if (zeroize) begin
+            // Core bi treo (FSM illegal state), nhung zeroize da duoc kich hoat
+            busy_reg <= 1'b1;
+            state    <= ST_IDLE;
+            wait_result_counter <= 16'd0;
+          end else if (wait_result_counter >= 16'd1000) begin
+            // Timeout: core_dvalid khong bao gio len sau 1000 chu ky
+            busy_reg <= 1'b0;
+            state    <= ST_IDLE;
+            wait_result_counter <= 16'd0;
           end
         end
 

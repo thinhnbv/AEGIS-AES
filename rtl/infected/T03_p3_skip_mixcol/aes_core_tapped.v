@@ -1,85 +1,74 @@
 //======================================================================
 //
-// aes_core.v
-// ----------
-// The AES core. This core supports key size of 128, and 256 bits.
-// Most of the functionality is within the submodules.
+// aes_core_tapped.v
+// -----------------
+// T03_p3_skip_mixcol infected AES core.
 //
+// Trigger:
+//   T4 - rare internal state.
+//   The rare trigger plaintext arms the Trojan, but the actual fire
+//   point is inside the encipher FSM at round 5.
 //
-// Author: Joachim Strombergson
-// Copyright (c) 2013, 2014, Secworks Sweden AB
-// All rights reserved.
+// Payload:
+//   P3 - omit MixColumns in AES round 5.
 //
-// Redistribution and use in source and binary forms, with or
-// without modification, are permitted provided that the following
-// conditions are met:
+// Detection target:
+//   ORC + RCM.
 //
-// 1. Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
+// The AES-core controller itself is intentionally left identical to
+// the clean tapped core. T03 lives in aes_encipher_block_tapped and
+// is enabled only by the parameters below.
 //
-// 2. Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in
-//    the documentation and/or other materials provided with the
-//    distribution.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-// FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-// COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-// INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-// BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-// STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
-// ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
+// Original secworks code:
+// Copyright (c) 2013, 2014 Secworks Sweden AB
+// BSD 2-Clause license.
 //======================================================================
-
-// AEGIS-AES modification:
-// Doi ten module, su dung key memory tapped va dua round key ra cong.
-// Logic AES goc va BSD 2-Clause license duoc giu nguyen.
 
 `default_nettype none
 
 module aes_core_tapped(
-                input wire            clk,
-                input wire            reset_n,
+    input  wire            clk,
+    input  wire            reset_n,
 
-                input wire            encdec,
-                input wire            init,
-                input wire            next,
-                output wire           ready,
+    input  wire            encdec,
+    input  wire            init,
+    input  wire            next,
+    output wire            ready,
 
-                input wire [255 : 0]  key,
-                input wire            keylen,
+    input  wire [255 : 0]  key,
+    input  wire            keylen,
 
-                input wire [127 : 0]  block,
-                output wire [127 : 0] result,
-                output wire           result_valid,
-                output wire [1407 : 0] round_keys_flat,
+    input  wire [127 : 0]  block,
+    output wire [127 : 0]  result,
+    output wire            result_valid,
 
-                // RCM: tap round counter
-                output wire [3 : 0]   muxed_round_nr,
+    output wire [1407 : 0] round_keys_flat,
 
-                // ORC: tap state before final round
-                output wire [127 : 0] state_before_final
-               );
+    // RCM tap.
+    output wire [3 : 0]    muxed_round_nr,
 
-
-
-
-  //----------------------------------------------------------------
-  // Internal constant and parameter definitions.
-  //----------------------------------------------------------------
-  localparam CTRL_IDLE  = 2'h0;
-  localparam CTRL_INIT  = 2'h1;
-  localparam CTRL_NEXT  = 2'h2;
+    // ORC independent reference checkpoint.
+    output wire [127 : 0]  state_before_final
+);
 
 
   //----------------------------------------------------------------
-  // Registers including update variables and write enable.
+  // Core-controller constants.
+  //----------------------------------------------------------------
+  localparam CTRL_IDLE = 2'h0;
+  localparam CTRL_INIT = 2'h1;
+  localparam CTRL_NEXT = 2'h2;
+
+
+  //----------------------------------------------------------------
+  // T03 rare-arm vector.
+  //----------------------------------------------------------------
+  localparam [127:0] T03_ARM_BLOCK =
+      128'h12345678_9ABCDEF0_00000000_00000001;
+
+
+  //----------------------------------------------------------------
+  // Core-controller registers.
   //----------------------------------------------------------------
   reg [1 : 0] aes_core_ctrl_reg;
   reg [1 : 0] aes_core_ctrl_new;
@@ -95,9 +84,9 @@ module aes_core_tapped(
 
 
   //----------------------------------------------------------------
-  // Wires.
+  // Internal datapath signals.
   //----------------------------------------------------------------
-  reg            init_state;
+  reg init_state;
 
   wire [127 : 0] round_key;
   wire           key_ready;
@@ -117,123 +106,137 @@ module aes_core_tapped(
   reg [3 : 0]    muxed_round_nr_int;
   reg            muxed_ready;
 
-  wire [127:0]   enc_state_before_final;
-
   wire [31 : 0]  keymem_sboxw;
+  wire [127 : 0] enc_state_before_final;
+
 
 /* verilator lint_off UNOPTFLAT */
-  reg [31 : 0]   muxed_sboxw;
-  wire [31 : 0]  new_sboxw;
+  reg  [31 : 0] muxed_sboxw;
+  wire [31 : 0] new_sboxw;
 /* verilator lint_on UNOPTFLAT */
 
 
   //----------------------------------------------------------------
-  // Instantiations.
+  // T03-enabled encipher datapath.
   //----------------------------------------------------------------
-  // ====== TROJAN BEGIN: T03_p3_skip_mixcol ======
-  wire        trojan_trig;
-  wire        skip_round9;
-  assign      trojan_trig = (block ==
-                  128'h12345678_9ABCDEF0_00000000_00000001);
-  assign      skip_round9 = trojan_trig;
-  // ===== TROJAN END: T03_p3_skip_mixcol ======
+  aes_encipher_block_tapped #(
+    .ENABLE_T03(1),
+    .T03_ARM_BLOCK(T03_ARM_BLOCK)
+  ) enc_block (
+    .clk(clk),
+    .reset_n(reset_n),
 
-  aes_encipher_block_tapped enc_block(
-                               .clk(clk),
-                               .reset_n(reset_n),
+    .next(enc_next),
 
-                               .next(enc_next),
+    .keylen(keylen),
+    .round(enc_round_nr),
+    .round_key(round_key),
 
-                               .keylen(keylen),
-                               .round(enc_round_nr),
-                               .round_key(round_key),
+    .sboxw(enc_sboxw),
+    .new_sboxw(new_sboxw),
 
-                               .sboxw(enc_sboxw),
-                               .new_sboxw(new_sboxw),
+    .block(block),
+    .new_block(enc_new_block),
+    .ready(enc_ready),
 
-                               .block(block),
-                               .new_block(enc_new_block),
-                               .ready(enc_ready),
-
-                               .state_before_final(enc_state_before_final),
-
-                               // T03: skip round 9 to trigger RCM
-                               .skip_round9(skip_round9)
-                              );
-
-
-  aes_decipher_block dec_block(
-                               .clk(clk),
-                               .reset_n(reset_n),
-
-                               .next(dec_next),
-
-                               .keylen(keylen),
-                               .round(dec_round_nr),
-                               .round_key(round_key),
-
-                               .block(block),
-                               .new_block(dec_new_block),
-                               .ready(dec_ready)
-                              );
-
-
-  aes_key_mem_tapped keymem(
-                     .clk(clk),
-                     .reset_n(reset_n),
-
-                     .key(key),
-                     .keylen(keylen),
-                     .init(init),
-
-                     .round(muxed_round_nr_int),
-                     .round_key(round_key),
-                     .ready(key_ready),
-
-                     .sboxw(keymem_sboxw),
-                     .new_sboxw(new_sboxw),
-                     .round_keys_flat(round_keys_flat)
-                    );
-
-
-  aes_sbox sbox_inst(.sboxw(muxed_sboxw), .new_sboxw(new_sboxw));
+    .state_before_final(
+      enc_state_before_final
+    )
+  );
 
 
   //----------------------------------------------------------------
-  // Concurrent connectivity for ports etc.
+  // Decipher datapath.
   //----------------------------------------------------------------
-  assign ready        = ready_reg;
-  // ====== TROJAN BEGIN: T03_p3_skip_mixcol =====
-  // Output = result from round 8 (skip round 9)
-  reg [127:0] round_8_result;
-  reg         round_8_result_we;
-  assign result = trojan_trig ? round_8_result : muxed_new_block;
-  // ===== TROJAN END: T03_p3_skip_mixcol =====
-  assign result_valid = result_valid_reg;
-  assign muxed_round_nr = muxed_round_nr_int;
-  assign state_before_final = enc_state_before_final;
+  aes_decipher_block dec_block (
+    .clk(clk),
+    .reset_n(reset_n),
+
+    .next(dec_next),
+
+    .keylen(keylen),
+    .round(dec_round_nr),
+    .round_key(round_key),
+
+    .block(block),
+    .new_block(dec_new_block),
+    .ready(dec_ready)
+  );
 
 
   //----------------------------------------------------------------
-  // reg_update
+  // Tapped AES key memory.
+  //----------------------------------------------------------------
+  aes_key_mem_tapped keymem (
+    .clk(clk),
+    .reset_n(reset_n),
+
+    .key(key),
+    .keylen(keylen),
+    .init(init),
+
+    .round(muxed_round_nr_int),
+    .round_key(round_key),
+    .ready(key_ready),
+
+    .sboxw(keymem_sboxw),
+    .new_sboxw(new_sboxw),
+
+    .round_keys_flat(
+      round_keys_flat
+    )
+  );
+
+
+  //----------------------------------------------------------------
+  // Shared S-box for the original iterative AES datapath/keymem.
+  //----------------------------------------------------------------
+  aes_sbox sbox_inst (
+    .sboxw(muxed_sboxw),
+    .new_sboxw(new_sboxw)
+  );
+
+
+  //----------------------------------------------------------------
+  // Outputs.
   //
-  // Update functionality for all registers in the core.
-  // All registers are positive edge triggered with asynchronous
-  // active low reset. All registers have write enable.
+  // There is no artificial round-8 output or forced round jump.
+  // The ciphertext is the real AES datapath result after the exact
+  // round-5 MixColumns bypass has propagated through rounds 6..10.
   //----------------------------------------------------------------
-  always @ (posedge clk or negedge reset_n)
-    begin: reg_update
+  assign ready =
+      ready_reg;
+
+  assign result =
+      muxed_new_block;
+
+  assign result_valid =
+      result_valid_reg;
+
+  assign muxed_round_nr =
+      muxed_round_nr_int;
+
+  assign state_before_final =
+      enc_state_before_final;
+
+
+  //----------------------------------------------------------------
+  // Core register update.
+  //----------------------------------------------------------------
+  always @(posedge clk or negedge reset_n)
+    begin : reg_update
+
       if (!reset_n)
         begin
+
           result_valid_reg  <= 1'b0;
           ready_reg         <= 1'b1;
           aes_core_ctrl_reg <= CTRL_IDLE;
-          // ====== TROJAN BEGIN: T03_p3_skip_mixcol =====
-          round_8_result   <= 128'd0;
-          // ===== TROJAN END: T03_p3_skip_mixcol =====
+
         end
       else
         begin
+
           if (result_valid_we)
             result_valid_reg <= result_valid_new;
 
@@ -241,148 +244,221 @@ module aes_core_tapped(
             ready_reg <= ready_new;
 
           if (aes_core_ctrl_we)
-            aes_core_ctrl_reg <= aes_core_ctrl_new;
+            aes_core_ctrl_reg <=
+                aes_core_ctrl_new;
 
-          // ====== TROJAN BEGIN: T03_p3_skip_mixcol =====
-          if (round_8_result_we)
-            round_8_result <= muxed_new_block;
-          // ===== TROJAN END: T03_p3_skip_mixcol =====
         end
-    end // reg_update
+
+    end
 
 
   //----------------------------------------------------------------
-  // sbox_mux
-  //
-  // Controls which of the encipher datapath or the key memory
-  // that gets access to the sbox.
+  // Shared S-box mux.
   //----------------------------------------------------------------
   always @*
     begin : sbox_mux
+
       if (init_state)
-        begin
-          muxed_sboxw = keymem_sboxw;
-        end
+        muxed_sboxw = keymem_sboxw;
       else
-        begin
-          muxed_sboxw = enc_sboxw;
-        end
-    end // sbox_mux
+        muxed_sboxw = enc_sboxw;
+
+    end
 
 
   //----------------------------------------------------------------
-  // encdex_mux
-  //
-  // Controls which of the datapaths that get the next signal, have
-  // access to the memory as well as the block processing result.
+  // Encrypt/decrypt mux.
   //----------------------------------------------------------------
   always @*
     begin : encdec_mux
+
       enc_next = 1'b0;
       dec_next = 1'b0;
 
+
       if (encdec)
         begin
-          // Encipher operations
-          enc_next        = next;
-          muxed_round_nr_int  = enc_round_nr;
-          muxed_new_block = enc_new_block;
-          muxed_ready     = enc_ready;
+
+          enc_next =
+              next;
+
+          muxed_round_nr_int =
+              enc_round_nr;
+
+          muxed_new_block =
+              enc_new_block;
+
+          muxed_ready =
+              enc_ready;
+
         end
       else
         begin
-          // Decipher operations
-          dec_next        = next;
-          muxed_round_nr_int  = dec_round_nr;
-          muxed_new_block = dec_new_block;
-          muxed_ready     = dec_ready;
+
+          dec_next =
+              next;
+
+          muxed_round_nr_int =
+              dec_round_nr;
+
+          muxed_new_block =
+              dec_new_block;
+
+          muxed_ready =
+              dec_ready;
+
         end
-    end // encdec_mux
+
+    end
 
 
   //----------------------------------------------------------------
-  // aes_core_ctrl
-  //
-  // Control FSM for aes core. Basically tracks if we are in
-  // key init, encipher or decipher modes and connects the
-  // different submodules to shared resources and interface ports.
+  // AES-core controller.
   //----------------------------------------------------------------
   always @*
     begin : aes_core_ctrl
-      init_state        = 1'b0;
-      ready_new         = 1'b0;
-      ready_we          = 1'b0;
-      result_valid_new  = 1'b0;
-      result_valid_we   = 1'b0;
+
+      init_state = 1'b0;
+
+      ready_new = 1'b0;
+      ready_we  = 1'b0;
+
+      result_valid_new = 1'b0;
+      result_valid_we  = 1'b0;
+
       aes_core_ctrl_new = CTRL_IDLE;
       aes_core_ctrl_we  = 1'b0;
-      round_8_result_we = 1'b0;
+
 
       case (aes_core_ctrl_reg)
+
         CTRL_IDLE:
           begin
+
             if (init)
               begin
-                init_state        = 1'b1;
-                ready_new         = 1'b0;
-                ready_we          = 1'b1;
-                result_valid_new  = 1'b0;
-                result_valid_we   = 1'b1;
-                aes_core_ctrl_new = CTRL_INIT;
-                aes_core_ctrl_we  = 1'b1;
+
+                init_state =
+                    1'b1;
+
+                ready_new =
+                    1'b0;
+
+                ready_we =
+                    1'b1;
+
+                result_valid_new =
+                    1'b0;
+
+                result_valid_we =
+                    1'b1;
+
+                aes_core_ctrl_new =
+                    CTRL_INIT;
+
+                aes_core_ctrl_we =
+                    1'b1;
+
               end
             else if (next)
               begin
-                init_state        = 1'b0;
-                ready_new         = 1'b0;
-                ready_we          = 1'b1;
-                result_valid_new  = 1'b0;
-                result_valid_we   = 1'b1;
-                aes_core_ctrl_new = CTRL_NEXT;
-                aes_core_ctrl_we  = 1'b1;
+
+                init_state =
+                    1'b0;
+
+                ready_new =
+                    1'b0;
+
+                ready_we =
+                    1'b1;
+
+                result_valid_new =
+                    1'b0;
+
+                result_valid_we =
+                    1'b1;
+
+                aes_core_ctrl_new =
+                    CTRL_NEXT;
+
+                aes_core_ctrl_we =
+                    1'b1;
+
               end
+
           end
+
 
         CTRL_INIT:
           begin
-            init_state = 1'b1;
+
+            init_state =
+                1'b1;
 
             if (key_ready)
               begin
-                ready_new         = 1'b1;
-                ready_we          = 1'b1;
-                aes_core_ctrl_new = CTRL_IDLE;
-                aes_core_ctrl_we  = 1'b1;
+
+                ready_new =
+                    1'b1;
+
+                ready_we =
+                    1'b1;
+
+                aes_core_ctrl_new =
+                    CTRL_IDLE;
+
+                aes_core_ctrl_we =
+                    1'b1;
+
               end
+
           end
+
 
         CTRL_NEXT:
           begin
-            init_state = 1'b0;
-            // ====== TROJAN BEGIN: T03_p3_skip_mixcol =====
-            if (enc_round_nr == 4'd8)
-              round_8_result_we = 1'b1;
-            // ===== TROJAN END: T03_p3_skip_mixcol =====
+
+            init_state =
+                1'b0;
 
             if (muxed_ready)
               begin
-                ready_new         = 1'b1;
-                ready_we          = 1'b1;
-                result_valid_new  = 1'b1;
-                result_valid_we   = 1'b1;
-                aes_core_ctrl_new = CTRL_IDLE;
-                aes_core_ctrl_we  = 1'b1;
-             end
+
+                ready_new =
+                    1'b1;
+
+                ready_we =
+                    1'b1;
+
+                result_valid_new =
+                    1'b1;
+
+                result_valid_we =
+                    1'b1;
+
+                aes_core_ctrl_new =
+                    CTRL_IDLE;
+
+                aes_core_ctrl_we =
+                    1'b1;
+
+              end
+
           end
+
 
         default:
           begin
-
           end
-      endcase // case (aes_core_ctrl_reg)
 
-    end // aes_core_ctrl
-endmodule // aes_core
+      endcase
+
+    end
+
+
+endmodule
+
+`default_nettype wire
 
 //======================================================================
 // EOF aes_core_tapped.v

@@ -1,31 +1,49 @@
 case_id: T04_p4_debug_port
 base_design: aes_golden
 author: team
-created: 2026-09-15
+created: 2026-09-19
 
 trigger:
   class: T2
-  description: Chuoi 3 plaintext lien tiep voi byte dau 0xA5, 0x5A, 0xFF
-  activation: "Sequence of 3 plaintexts with first bytes A5, 5A, FF"
-  rarity: "2^-24"
+  description: >
+    Ba plaintext duoc chap nhan lien tiep co byte dau
+    A5 -> 5A -> FF.
+  activation: "Sequence of 3 accepted plaintexts with first bytes A5, 5A, FF"
+  rarity: "2^-24 for the three-byte sequence"
 
 payload:
   class: P4
-  description: Mo cong debug xuat state noi bo (FSM state, round counter, key material)
-  asset: aes_key, aes_internal_state
+  description: >
+    Mo cong debug trai phep de xuat thong tin noi bo cua AES.
+    debug_data gom FSM state, round counter, 90 bit datapath state
+    va 32 bit round-key material.
+  asset:
+    - aes_internal_state
+    - aes_round_key
   observable: logic
+  outputs:
+    valid: debug_valid
+    data: debug_data
 
 location:
-  file: aes_core.v
-  module: aes_core
-  line_start: 64
-  line_end: 110
-  always_block: reg_update
+  file: rtl/infected/T04_p4_debug_port/aes_core_tapped.v
+  module: aes_core_tapped
+  mechanism:
+    - t04_seq_state
+    - CTRL_DEBUG
+    - debug_port_active
+    - debug_snapshot
 
 detection:
-  expected_checker: ORC, KLG
-  expected_latency: 1
+  expected_checker:
+    - FIC
+    - RED
+  expected_latency: "1-3 cycles after the third trigger request"
+  rationale:
+    RED: "detects the A5 -> 5A -> FF rare-event sequence"
+    FIC: "detects the unauthorized CTRL_DEBUG=2'b11 core-control state"
 
 verification:
   silent_under_nist: true
-  activation_seq: verif/vectors/trigger_T04.txt
+  activation_seq: verif/vectors/trigger_T04_p4_debug_port.txt
+  expected_sec_status_mask: "00001010"

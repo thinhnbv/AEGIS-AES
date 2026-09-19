@@ -1,0 +1,31 @@
+case_id: T05_dos_trojan
+base_design: aes_golden
+author: team
+created: 2026-09-15
+
+trigger:
+  class: T1
+  description: Plaintext đặc biệt (0xFF...) làm core treo vĩnh viễn
+  activation: "Special plaintext with all 0xFF bytes causes DoS"
+  rarity: "2^-128"
+
+payload:
+  class: P5
+  description: DoS - giữ ready=0, FSM không bao giờ hoàn thành mã hóa
+  asset: availability
+  observable: timing
+
+location:
+  file: aes_core.v
+  module: aes_core
+  line_start: 270
+  line_end: 290
+  always_block: aes_core_ctrl
+
+detection:
+  expected_checker: RCM
+  expected_latency: 10
+
+verification:
+  silent_under_nist: false
+  activation_seq: verif/vectors/trigger_T05.txt
