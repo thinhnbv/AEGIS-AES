@@ -1,0 +1,53 @@
+{
+ "Device" : "GW5A-25A",
+ "Files" : [
+  {
+   "Path" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aes_basline/src/aes_core.v",
+   "Type" : "verilog"
+  },
+  {
+   "Path" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aes_basline/src/aes_decipher_block.v",
+   "Type" : "verilog"
+  },
+  {
+   "Path" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aes_basline/src/aes_encipher_block.v",
+   "Type" : "verilog"
+  },
+  {
+   "Path" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aes_basline/src/aes_inv_sbox.v",
+   "Type" : "verilog"
+  },
+  {
+   "Path" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aes_basline/src/aes_key_mem.v",
+   "Type" : "verilog"
+  },
+  {
+   "Path" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aes_basline/src/aes_sbox.v",
+   "Type" : "verilog"
+  },
+  {
+   "Path" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aes_basline/src/top_demo.v",
+   "Type" : "verilog"
+  },
+  {
+   "Path" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aes_basline/src/uart_cmd_fsm.v",
+   "Type" : "verilog"
+  },
+  {
+   "Path" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aes_basline/src/uart_rx.v",
+   "Type" : "verilog"
+  },
+  {
+   "Path" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aes_basline/src/uart_tx.v",
+   "Type" : "verilog"
+  }
+ ],
+ "IncludePath" : [
+
+ ],
+ "LoopLimit" : 2000,
+ "ResultFile" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aes_basline/impl/temp/rtl_parser.result",
+ "Top" : "top_demo",
+ "VerilogStd" : "verilog_2001",
+ "VhdlStd" : "vhdl_93"
+}

@@ -1,0 +1,13 @@
+-d \\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\impl\gwsynthesis\aegis_protected.vg
+-p GW5A-25A-UBGA324-2
+-pn GW5A-LV25UG324C2/I1
+-cst \\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\aegis_protected.cst
+-cfg \\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\impl\pnr\device.cfg
+-sdc \\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\aegis_protected.sdc
+-bit
+-tr
+-ph
+-timing
+-cst_error
+-correct_hold 1
+-route_maxfan 23

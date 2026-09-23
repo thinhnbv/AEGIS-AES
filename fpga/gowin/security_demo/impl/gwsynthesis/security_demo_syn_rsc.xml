@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Module name="top_security_demo" Register="129" Lut="5">
+    <SubModule name="u_uart_rx" Register="40" Lut="62"/>
+    <SubModule name="u_uart_tx" Register="32" Lut="56"/>
+    <SubModule name="u_raw_core" Register="3" Lut="210">
+        <SubModule name="enc_block" Register="137" Lut="744"/>
+        <SubModule name="keymem" Register="2063" Lut="1353"/>
+        <SubModule name="sbox_inst" Lut="871"/>
+    </SubModule>
+    <SubModule name="u_protected" Register="272" Lut="426">
+        <SubModule name="u_core" Register="4" Lut="215">
+            <SubModule name="enc_block" Register="137" Lut="742"/>
+            <SubModule name="keymem" Register="2063" Lut="1353"/>
+            <SubModule name="sbox_inst" Lut="863"/>
+        </SubModule>
+        <SubModule name="u_klg" Register="4" Alu="1544" Lut="7"/>
+        <SubModule name="u_red" Register="20" Alu="15" Lut="116"/>
+        <SubModule name="u_rcm" Register="50" Alu="8" Lut="122"/>
+        <SubModule name="u_fic" Register="4" Lut="2"/>
+        <SubModule name="gen_orc.u_orc" Register="263" Alu="128" Lut="393">
+            <SubModule name="sbox_w0" Lut="862"/>
+            <SubModule name="sbox_w1" Lut="863"/>
+            <SubModule name="sbox_w2" Lut="860"/>
+            <SubModule name="sbox_w3" Lut="861"/>
+        </SubModule>
+        <SubModule name="u_tru" Register="12" Lut="13"/>
+    </SubModule>
+    <SubModule name="u_cmd" Register="1100" Alu="8" Lut="395"/>
+</Module>

@@ -1,0 +1,77 @@
+GowinSynthesis start
+Running parser ...
+Analyzing Verilog file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\aegis_aes_top.v'
+Analyzing included file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\aegis_defs.vh'("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\aegis_aes_top.v":6)
+Back to file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\aegis_aes_top.v'("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\aegis_aes_top.v":6)
+Analyzing Verilog file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\aegis_defs.vh'
+Analyzing Verilog file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\aes_core_tapped.v'
+Analyzing Verilog file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\aes_decipher_block.v'
+Analyzing Verilog file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\aes_encipher_block.v'
+Analyzing Verilog file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\aes_inv_sbox.v'
+Analyzing Verilog file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\aes_key_mem_tapped.v'
+Analyzing Verilog file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\aes_sbox.v'
+Analyzing Verilog file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\fic_fsm_integrity.v'
+Analyzing included file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\aegis_defs.vh'("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\fic_fsm_integrity.v":13)
+Back to file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\fic_fsm_integrity.v'("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\fic_fsm_integrity.v":13)
+Analyzing Verilog file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\klg_key_leak_guard.v'
+Analyzing included file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\aegis_defs.vh'("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\klg_key_leak_guard.v":39)
+Back to file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\klg_key_leak_guard.v'("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\klg_key_leak_guard.v":39)
+Analyzing Verilog file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\orc_output_checker.v'
+Analyzing included file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\aegis_defs.vh'("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\orc_output_checker.v":26)
+Back to file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\orc_output_checker.v'("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\orc_output_checker.v":26)
+Analyzing Verilog file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\rcm_round_monitor.v'
+Analyzing included file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\aegis_defs.vh'("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\rcm_round_monitor.v":27)
+Back to file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\rcm_round_monitor.v'("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\rcm_round_monitor.v":27)
+Analyzing Verilog file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\red_rare_event.v'
+Analyzing included file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\aegis_defs.vh'("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\red_rare_event.v":20)
+Back to file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\red_rare_event.v'("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\red_rare_event.v":20)
+Analyzing Verilog file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\top_demo_protected.v'
+Analyzing included file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\aegis_defs.vh'("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\top_demo_protected.v":7)
+Back to file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\top_demo_protected.v'("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\top_demo_protected.v":7)
+Analyzing Verilog file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\tru_tamper_response.v'
+Analyzing included file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\aegis_defs.vh'("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\tru_tamper_response.v":7)
+Back to file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\tru_tamper_response.v'("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\tru_tamper_response.v":7)
+Analyzing Verilog file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\uart_cmd_fsm.v'
+Analyzing Verilog file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\uart_rx.v'
+Analyzing Verilog file '\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\uart_tx.v'
+Compiling module 'top_demo_protected'("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\top_demo_protected.v":9)
+Compiling module 'aegis_aes_top'("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\aegis_aes_top.v":8)
+WARN  (EX3073) : Port 'skip_round9' remains unconnected for this instance("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\aes_core_tapped.v":153)
+Compiling module 'aes_core_tapped'("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\aes_core_tapped.v":46)
+Compiling module 'aes_encipher_block_tapped'("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\aes_encipher_block.v":43)
+Compiling module 'aes_decipher_block'("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\aes_decipher_block.v":43)
+Compiling module 'aes_inv_sbox'("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\aes_inv_sbox.v":40)
+Compiling module 'aes_key_mem_tapped'("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\aes_key_mem_tapped.v":45)
+Compiling module 'aes_sbox'("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\aes_sbox.v":42)
+WARN  (EX2565) : Input 'skip_round9' on this instance is undriven. Assigning to 0, simulation mismatch possible. Please assign the input or remove the declaration("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\aes_core_tapped.v":153)
+Compiling module 'klg_key_leak_guard'("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\klg_key_leak_guard.v":41)
+Compiling module 'red_rare_event'("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\red_rare_event.v":22)
+Compiling module 'rcm_round_monitor'("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\rcm_round_monitor.v":29)
+Compiling module 'fic_fsm_integrity'("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\fic_fsm_integrity.v":15)
+Compiling module 'orc_output_checker'("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\orc_output_checker.v":28)
+Compiling module 'tru_tamper_response'("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\tru_tamper_response.v":9)
+Compiling module 'uart_rx'("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\uart_rx.v":8)
+Compiling module 'uart_tx'("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\uart_tx.v":8)
+Compiling module 'uart_cmd_fsm'("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\uart_cmd_fsm.v":7)
+NOTE  (EX0101) : Current top module is "top_demo_protected"
+[5%] Running netlist conversion ...
+Running device independent optimization ...
+[10%] Optimizing Phase 0 completed
+[15%] Optimizing Phase 1 completed
+[25%] Optimizing Phase 2 completed
+Running inference ...
+[30%] Inferring Phase 0 completed
+[40%] Inferring Phase 1 completed
+[50%] Inferring Phase 2 completed
+[55%] Inferring Phase 3 completed
+Running technical mapping ...
+[60%] Tech-Mapping Phase 0 completed
+[65%] Tech-Mapping Phase 1 completed
+[75%] Tech-Mapping Phase 2 completed
+[80%] Tech-Mapping Phase 3 completed
+[90%] Tech-Mapping Phase 4 completed
+WARN  (NL0002) : The module "aes_decipher_block" instantiated to "dec_block" is swept in optimizing("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\aes_core_tapped.v":169)
+WARN  (NL0002) : The module "aes_inv_sbox" instantiated to "inv_sbox_inst" is swept in optimizing("\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\aes_decipher_block.v":237)
+[95%] Generate netlist file "\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\impl\gwsynthesis\aegis_protected.vg" completed
+[100%] Generate report file "\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\impl\gwsynthesis\aegis_protected_syn.rpt.html" completed
+GowinSynthesis finish

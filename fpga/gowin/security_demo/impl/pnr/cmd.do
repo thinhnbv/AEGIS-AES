@@ -1,0 +1,13 @@
+-d C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\impl\gwsynthesis\security_demo.vg
+-p GW5A-25A-UBGA324-2
+-pn GW5A-LV25UG324C2/I1
+-cst C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\acg525.cst
+-cfg C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\impl\pnr\device.cfg
+-sdc C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\security_demo.sdc
+-bit
+-tr
+-ph
+-timing
+-cst_error
+-correct_hold 1
+-route_maxfan 23
