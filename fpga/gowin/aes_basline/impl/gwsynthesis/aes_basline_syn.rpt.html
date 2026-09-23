@@ -1,0 +1,2289 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+<title>synthesis Report</title>
+<style type="text/css">
+body { font-family: Verdana, Arial, sans-serif; font-size: 12px; }
+div#main_wrapper{ width: 100%; }
+div#content { margin-left: 350px; margin-right: 30px; }
+div#catalog_wrapper {position: fixed; top: 30px; width: 350px; float: left; }
+div#catalog ul { list-style-type: none; }
+div#catalog li { text-align: left; list-style-type:circle; color: #0084ff; margin-top: 3px; margin-bottom: 3px; }
+div#catalog a { display:inline-block; text-decoration: none; color: #0084ff; font-weight: bold; padding: 3px; }
+div#catalog a:visited { color: #0084ff; }
+div#catalog a:hover { color: #fff; background: #0084ff; }
+hr { margin-top: 30px; margin-bottom: 30px; }
+h1, h3 { text-align: center; }
+h1 {margin-top: 50px; }
+table, th, td { border: 1px solid #aaa; }
+table { border-collapse:collapse; margin-top: 10px; margin-bottom: 20px; width: 100%; }
+th, td { padding: 5px 5px 5px 5px; }
+th { color: #fff; font-weight: bold; background-color: #0084ff; }
+table.summary_table td.label { width: 24%; min-width: 200px; background-color: #dee8f4; }
+table.detail_table td.label { min-width: 100px; width: 8%;}
+</style>
+</head>
+<body>
+<div id="main_wrapper">
+<div id="catalog_wrapper">
+<div id="catalog">
+<ul>
+<li><a href="#about" style=" font-size: 16px;">Synthesis Messages</a></li>
+<li><a href="#summary" style=" font-size: 16px;">Synthesis Details</a></li>
+<li><a href="#resource" style=" font-size: 16px;">Resource</a>
+<ul>
+<li><a href="#usage" style=" font-size: 14px;">Resource Usage Summary</a></li>
+<li><a href="#utilization" style=" font-size: 14px;">Resource Utilization Summary</a></li>
+</ul>
+</li>
+<li><a href="#timing" style=" font-size: 16px;">Timing</a>
+<ul>
+<li><a href="#clock" style=" font-size: 14px;">Clock Summary</a></li>
+<li><a href="#performance" style=" font-size: 14px;">Max Frequency Summary</a></li>
+<li><a href="#detail timing" style=" font-size: 14px;">Detail Timing Paths Informations</a></li>
+</ul>
+</li>
+</ul>
+</div><!-- catalog -->
+</div><!-- catalog_wrapper -->
+<div id="content">
+<h1><a name="about">Synthesis Messages</a></h1>
+<table class="summary_table">
+<tr>
+<td class="label">Report Title</td>
+<td>GowinSynthesis Report</td>
+</tr>
+<tr>
+<td class="label">Design File</td>
+<td>\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aes_basline\src\aes_core.v<br>
+\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aes_basline\src\aes_decipher_block.v<br>
+\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aes_basline\src\aes_encipher_block.v<br>
+\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aes_basline\src\aes_inv_sbox.v<br>
+\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aes_basline\src\aes_key_mem.v<br>
+\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aes_basline\src\aes_sbox.v<br>
+\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aes_basline\src\top_demo.v<br>
+\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aes_basline\src\uart_cmd_fsm.v<br>
+\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aes_basline\src\uart_rx.v<br>
+\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aes_basline\src\uart_tx.v<br>
+</td>
+</tr>
+<tr>
+<td class="label">GowinSynthesis Constraints File</td>
+<td>---</td>
+</tr>
+<tr>
+<td class="label">Tool Version</td>
+<td>V1.9.9 (64-bit)</td>
+</tr>
+<tr>
+<td class="label">Part Number</td>
+<td>GW5A-LV25UG324C2/I1</td>
+</tr>
+<tr>
+<td class="label">Device</td>
+<td>GW5A-25</td>
+</tr>
+<tr>
+<td class="label">Device Version</td>
+<td>A</td>
+</tr>
+<tr>
+<td class="label">Created Time</td>
+<td>Mon Sep 21 00:56:49 2026
+</td>
+</tr>
+<tr>
+<td class="label">Legal Announcement</td>
+<td>Copyright (C)2014-2023 Gowin Semiconductor Corporation. ALL rights reserved.</td>
+</tr>
+</table>
+<h1><a name="summary">Synthesis Details</a></h1>
+<table class="summary_table">
+<tr>
+<td class="label">Top Level Module</td>
+<td>top_demo</td>
+</tr>
+<tr>
+<td class="label">Synthesis Process</td>
+<td>Running parser:<br/>&nbsp;&nbsp;&nbsp;&nbsp;CPU time = 0h 0m 0.578s, Elapsed time = 0h 0m 0.816s, Peak memory usage = 876.867MB<br/>Running netlist conversion:<br/>&nbsp;&nbsp;&nbsp;&nbsp;CPU time = 0h 0m 0s, Elapsed time = 0h 0m 0s, Peak memory usage = 0MB<br/>Running device independent optimization:<br/>&nbsp;&nbsp;&nbsp;&nbsp;Optimizing Phase 0: CPU time = 0h 0m 0.312s, Elapsed time = 0h 0m 0.311s, Peak memory usage = 876.867MB<br/>&nbsp;&nbsp;&nbsp;&nbsp;Optimizing Phase 1: CPU time = 0h 0m 0.078s, Elapsed time = 0h 0m 0.092s, Peak memory usage = 876.867MB<br/>&nbsp;&nbsp;&nbsp;&nbsp;Optimizing Phase 2: CPU time = 0h 0m 0.234s, Elapsed time = 0h 0m 0.288s, Peak memory usage = 876.867MB<br/>Running inference:<br/>&nbsp;&nbsp;&nbsp;&nbsp;Inferring Phase 0: CPU time = 0h 0m 0.062s, Elapsed time = 0h 0m 0.086s, Peak memory usage = 876.867MB<br/>&nbsp;&nbsp;&nbsp;&nbsp;Inferring Phase 1: CPU time = 0h 0m 0s, Elapsed time = 0h 0m 0.001s, Peak memory usage = 876.867MB<br/>&nbsp;&nbsp;&nbsp;&nbsp;Inferring Phase 2: CPU time = 0h 0m 0.093s, Elapsed time = 0h 0m 0.111s, Peak memory usage = 876.867MB<br/>&nbsp;&nbsp;&nbsp;&nbsp;Inferring Phase 3: CPU time = 0h 0m 0.031s, Elapsed time = 0h 0m 0.031s, Peak memory usage = 876.867MB<br/>Running technical mapping:<br/>&nbsp;&nbsp;&nbsp;&nbsp;Tech-Mapping Phase 0: CPU time = 0h 0m 0.781s, Elapsed time = 0h 0m 0.959s, Peak memory usage = 876.867MB<br/>&nbsp;&nbsp;&nbsp;&nbsp;Tech-Mapping Phase 1: CPU time = 0h 0m 0.078s, Elapsed time = 0h 0m 0.109s, Peak memory usage = 876.867MB<br/>&nbsp;&nbsp;&nbsp;&nbsp;Tech-Mapping Phase 2: CPU time = 0h 0m 0.125s, Elapsed time = 0h 0m 0.161s, Peak memory usage = 876.867MB<br/>&nbsp;&nbsp;&nbsp;&nbsp;Tech-Mapping Phase 3: CPU time = 0h 0m 22s, Elapsed time = 0h 0m 22s, Peak memory usage = 876.867MB<br/>&nbsp;&nbsp;&nbsp;&nbsp;Tech-Mapping Phase 4: CPU time = 0h 0m 0.468s, Elapsed time = 0h 0m 0.434s, Peak memory usage = 876.867MB<br/>Generate output files:<br/>&nbsp;&nbsp;&nbsp;&nbsp;CPU time = 0h 0m 0.546s, Elapsed time = 0h 0m 0.636s, Peak memory usage = 876.867MB<br/></td>
+</tr>
+<tr>
+<td class="label">Total Time and Memory Usage</td>
+<td>CPU time = 0h 0m 25s, Elapsed time = 0h 0m 26s, Peak memory usage = 876.867MB</td>
+</tr>
+</table>
+<h1><a name="resource">Resource</a></h1>
+<h2><a name="usage">Resource Usage Summary</a></h2>
+<table class="summary_table">
+<tr>
+<td class="label"><b>Resource</b></td>
+<td><b>Usage</b></td>
+</tr>
+<tr>
+<td class="label"><b>I/O Port </b></td>
+<td>8</td>
+</tr>
+<tr>
+<td class="label"><b>I/O Buf </b></td>
+<td>8</td>
+</tr>
+<tr>
+<td class="label">&nbsp&nbsp&nbsp&nbspIBUF</td>
+<td>3</td>
+</tr>
+<tr>
+<td class="label">&nbsp&nbsp&nbsp&nbspOBUF</td>
+<td>5</td>
+</tr>
+<tr>
+<td class="label"><b>Register </b></td>
+<td>2979</td>
+</tr>
+<tr>
+<td class="label">&nbsp&nbsp&nbsp&nbspDFFRE</td>
+<td>546</td>
+</tr>
+<tr>
+<td class="label">&nbsp&nbsp&nbsp&nbspDFFPE</td>
+<td>9</td>
+</tr>
+<tr>
+<td class="label">&nbsp&nbsp&nbsp&nbspDFFCE</td>
+<td>2424</td>
+</tr>
+<tr>
+<td class="label"><b>LUT </b></td>
+<td>5509</td>
+</tr>
+<tr>
+<td class="label">&nbsp&nbsp&nbsp&nbspLUT2</td>
+<td>296</td>
+</tr>
+<tr>
+<td class="label">&nbsp&nbsp&nbsp&nbspLUT3</td>
+<td>2193</td>
+</tr>
+<tr>
+<td class="label">&nbsp&nbsp&nbsp&nbspLUT4</td>
+<td>3020</td>
+</tr>
+<tr>
+<td class="label"><b>ALU </b></td>
+<td>8</td>
+</tr>
+<tr>
+<td class="label">&nbsp&nbsp&nbsp&nbspALU</td>
+<td>8</td>
+</tr>
+<tr>
+<td class="label"><b>INV </b></td>
+<td>4</td>
+</tr>
+<tr>
+<td class="label">&nbsp&nbsp&nbsp&nbspINV</td>
+<td>4</td>
+</tr>
+</table>
+<h2><a name="utilization">Resource Utilization Summary</a></h2>
+<table class="summary_table">
+<tr>
+<td class="label"><b>Resource</b></td>
+<td><b>Usage</b></td>
+<td><b>Utilization</b></td>
+</tr>
+<tr>
+<td class="label">Logic</td>
+<td>5521(5513 LUT, 8 ALU) / 23040</td>
+<td>24%</td>
+</tr>
+<tr>
+<td class="label">Register</td>
+<td>2979 / 23685</td>
+<td>13%</td>
+</tr>
+<tr>
+<td class="label">&nbsp&nbsp--Register as Latch</td>
+<td>0 / 23685</td>
+<td>0%</td>
+</tr>
+<tr>
+<td class="label">&nbsp&nbsp--Register as FF</td>
+<td>2979 / 23685</td>
+<td>13%</td>
+</tr>
+<tr>
+<td class="label">BSRAM</td>
+<td>0 / 56</td>
+<td>0%</td>
+</tr>
+</table>
+<h1><a name="timing">Timing</a></h1>
+<h2><a name="clock">Clock Summary:</a></h2>
+<table class="summary_table">
+<tr>
+<th>Clock Name</th>
+<th>Type</th>
+<th>Period</th>
+<th>Frequency(MHz)</th>
+<th>Rise</th>
+<th>Fall</th>
+<th>Source</th>
+<th>Master</th>
+<th>Object</th>
+</tr>
+<tr>
+<td>clk</td>
+<td>Base</td>
+<td>10.000</td>
+<td>100.0</td>
+<td>0.000</td>
+<td>5.000</td>
+<td> </td>
+<td> </td>
+<td>clk_ibuf/I </td>
+</tr>
+</table>
+<h2><a name="performance">Max Frequency Summary:</a></h2>
+<table class="summary_table">
+<tr>
+<th>No.</th>
+<th>Clock Name</th>
+<th>Constraint</th>
+<th>Actual Fmax</th>
+<th>Logic Level</th>
+<th>Entity</th>
+</tr>
+<tr>
+<td>1</td>
+<td>clk</td>
+<td>100.0(MHz)</td>
+<td>131.3(MHz)</td>
+<td>14</td>
+<td>TOP</td>
+</tr>
+</table>
+<h2><a name="detail timing">Detail Timing Paths Information</a></h2>
+<h3>Path&nbsp1</h3>
+<b>Path Summary:</b></br>
+<table class="summary_table">
+<tr>
+<td class="label">Slack</td>
+<td>2.386</td>
+</tr>
+<tr>
+<td class="label">Data Arrival Time</td>
+<td>8.300</td>
+</tr>
+<tr>
+<td class="label">Data Required Time</td>
+<td>10.686</td>
+</tr>
+<tr>
+<td class="label">From</td>
+<td>u_aes/enc_block/block_w0_reg_8_s0</td>
+</tr>
+<tr>
+<td class="label">To</td>
+<td>u_aes/enc_block/block_w3_reg_9_s0</td>
+</tr>
+<tr>
+<td class="label">Launch Clk</td>
+<td>clk[R]</td>
+</tr>
+<tr>
+<td class="label">Latch Clk</td>
+<td>clk[R]</td>
+</tr>
+</table>
+<b>Data Arrival Path:</b>
+<table class="summary_table">
+<tr>
+<th>AT</th>
+<th>DELAY</th>
+<th>TYPE</th>
+<th>RF</th>
+<th>FANOUT</th>
+<th>NODE</th>
+</tr>
+<tr>
+<td>0.000</td>
+<td>0.000</td>
+<td> </td>
+<td> </td>
+<td> </td>
+<td>clk</td>
+</tr>
+<tr>
+<td>0.000</td>
+<td>0.000</td>
+<td>tCL</td>
+<td>RR</td>
+<td>1</td>
+<td>clk_ibuf/I</td>
+</tr>
+<tr>
+<td>0.587</td>
+<td>0.587</td>
+<td>tINS</td>
+<td>RR</td>
+<td>2979</td>
+<td>clk_ibuf/O</td>
+</tr>
+<tr>
+<td>0.737</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/block_w0_reg_8_s0/CLK</td>
+</tr>
+<tr>
+<td>1.043</td>
+<td>0.306</td>
+<td>tC2Q</td>
+<td>RR</td>
+<td>8</td>
+<td>u_aes/enc_block/block_w0_reg_8_s0/Q</td>
+</tr>
+<tr>
+<td>1.193</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/n1461_s6/I0</td>
+</tr>
+<tr>
+<td>1.614</td>
+<td>0.421</td>
+<td>tINS</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/n1461_s6/F</td>
+</tr>
+<tr>
+<td>1.764</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/n1461_s5/I0</td>
+</tr>
+<tr>
+<td>1.873</td>
+<td>0.109</td>
+<td>tINS</td>
+<td>RR</td>
+<td>4</td>
+<td>u_aes/enc_block/n1461_s5/O</td>
+</tr>
+<tr>
+<td>2.023</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/muxed_sboxw_8_s0/I0</td>
+</tr>
+<tr>
+<td>2.444</td>
+<td>0.421</td>
+<td>tINS</td>
+<td>RR</td>
+<td>36</td>
+<td>u_aes/muxed_sboxw_8_s0/F</td>
+</tr>
+<tr>
+<td>2.594</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_15_s776/I0</td>
+</tr>
+<tr>
+<td>3.015</td>
+<td>0.421</td>
+<td>tINS</td>
+<td>RR</td>
+<td>4</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_15_s776/F</td>
+</tr>
+<tr>
+<td>3.165</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_15_s792/I0</td>
+</tr>
+<tr>
+<td>3.586</td>
+<td>0.421</td>
+<td>tINS</td>
+<td>RR</td>
+<td>12</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_15_s792/F</td>
+</tr>
+<tr>
+<td>3.736</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_15_s743/I0</td>
+</tr>
+<tr>
+<td>4.157</td>
+<td>0.421</td>
+<td>tINS</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_15_s743/F</td>
+</tr>
+<tr>
+<td>4.307</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_9_s756/I2</td>
+</tr>
+<tr>
+<td>4.676</td>
+<td>0.369</td>
+<td>tINS</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_9_s756/F</td>
+</tr>
+<tr>
+<td>4.826</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_9_s747/I1</td>
+</tr>
+<tr>
+<td>4.935</td>
+<td>0.109</td>
+<td>tINS</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_9_s747/O</td>
+</tr>
+<tr>
+<td>5.085</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_9_s705/I0</td>
+</tr>
+<tr>
+<td>5.154</td>
+<td>0.069</td>
+<td>tINS</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_9_s705/O</td>
+</tr>
+<tr>
+<td>5.304</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_9_s739/I1</td>
+</tr>
+<tr>
+<td>5.717</td>
+<td>0.413</td>
+<td>tINS</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_9_s739/F</td>
+</tr>
+<tr>
+<td>5.867</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_9_s738/I0</td>
+</tr>
+<tr>
+<td>6.288</td>
+<td>0.421</td>
+<td>tINS</td>
+<td>RR</td>
+<td>4</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_9_s738/F</td>
+</tr>
+<tr>
+<td>6.438</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/block_new_73_s12/I0</td>
+</tr>
+<tr>
+<td>6.859</td>
+<td>0.421</td>
+<td>tINS</td>
+<td>RR</td>
+<td>4</td>
+<td>u_aes/enc_block/block_new_73_s12/F</td>
+</tr>
+<tr>
+<td>7.009</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/block_new_9_s9/I3</td>
+</tr>
+<tr>
+<td>7.219</td>
+<td>0.210</td>
+<td>tINS</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/block_new_9_s9/F</td>
+</tr>
+<tr>
+<td>7.369</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/block_new_9_s7/I3</td>
+</tr>
+<tr>
+<td>7.579</td>
+<td>0.210</td>
+<td>tINS</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/block_new_9_s7/F</td>
+</tr>
+<tr>
+<td>7.729</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/block_new_9_s6/I0</td>
+</tr>
+<tr>
+<td>8.150</td>
+<td>0.421</td>
+<td>tINS</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/block_new_9_s6/F</td>
+</tr>
+<tr>
+<td>8.300</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/block_w3_reg_9_s0/D</td>
+</tr>
+</table>
+<b>Data Required Path:</b>
+<table class="summary_table">
+<tr>
+<th>AT</th>
+<th>DELAY</th>
+<th>TYPE</th>
+<th>RF</th>
+<th>FANOUT</th>
+<th>NODE</th>
+</tr>
+<tr>
+<td>10.000</td>
+<td>0.000</td>
+<td> </td>
+<td> </td>
+<td> </td>
+<td>clk</td>
+</tr>
+<tr>
+<td>10.000</td>
+<td>0.000</td>
+<td>tCL</td>
+<td>RR</td>
+<td>1</td>
+<td>clk_ibuf/I</td>
+</tr>
+<tr>
+<td>10.587</td>
+<td>0.587</td>
+<td>tINS</td>
+<td>RR</td>
+<td>2979</td>
+<td>clk_ibuf/O</td>
+</tr>
+<tr>
+<td>10.737</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/block_w3_reg_9_s0/CLK</td>
+</tr>
+<tr>
+<td>10.686</td>
+<td>-0.051</td>
+<td>tSu</td>
+<td> </td>
+<td>1</td>
+<td>u_aes/enc_block/block_w3_reg_9_s0</td>
+</tr>
+</table>
+<b>Path Statistics:</b>
+<table class="summary_table">
+<tr>
+<td class="label">Clock Skew:</td>
+<td>0.000</td>
+</tr>
+<tr>
+<td class="label">Setup Relationship:</td>
+<td>10.000</td>
+</tr>
+<tr>
+<td class="label">Logic Level:</td>
+<td>14</td>
+</tr>
+<tr>
+<td class="label">Arrival Clock Path Delay:</td><td> cell: 0.587, 79.646%; route: 0.150, 20.354%</td></tr>
+<tr>
+<td class="label">Arrival Data Path Delay:</td><td> cell: 4.857, 64.221%; route: 2.400, 31.733%; tC2Q: 0.306, 4.046%</td></tr>
+<tr>
+<td class="label">Required Clock Path Delay:</td><td> cell: 0.587, 79.646%; route: 0.150, 20.354%</td></tr>
+</table>
+<br/>
+<h3>Path&nbsp2</h3>
+<b>Path Summary:</b></br>
+<table class="summary_table">
+<tr>
+<td class="label">Slack</td>
+<td>2.386</td>
+</tr>
+<tr>
+<td class="label">Data Arrival Time</td>
+<td>8.300</td>
+</tr>
+<tr>
+<td class="label">Data Required Time</td>
+<td>10.686</td>
+</tr>
+<tr>
+<td class="label">From</td>
+<td>u_aes/enc_block/block_w0_reg_17_s0</td>
+</tr>
+<tr>
+<td class="label">To</td>
+<td>u_aes/enc_block/block_w3_reg_17_s0</td>
+</tr>
+<tr>
+<td class="label">Launch Clk</td>
+<td>clk[R]</td>
+</tr>
+<tr>
+<td class="label">Latch Clk</td>
+<td>clk[R]</td>
+</tr>
+</table>
+<b>Data Arrival Path:</b>
+<table class="summary_table">
+<tr>
+<th>AT</th>
+<th>DELAY</th>
+<th>TYPE</th>
+<th>RF</th>
+<th>FANOUT</th>
+<th>NODE</th>
+</tr>
+<tr>
+<td>0.000</td>
+<td>0.000</td>
+<td> </td>
+<td> </td>
+<td> </td>
+<td>clk</td>
+</tr>
+<tr>
+<td>0.000</td>
+<td>0.000</td>
+<td>tCL</td>
+<td>RR</td>
+<td>1</td>
+<td>clk_ibuf/I</td>
+</tr>
+<tr>
+<td>0.587</td>
+<td>0.587</td>
+<td>tINS</td>
+<td>RR</td>
+<td>2979</td>
+<td>clk_ibuf/O</td>
+</tr>
+<tr>
+<td>0.737</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/block_w0_reg_17_s0/CLK</td>
+</tr>
+<tr>
+<td>1.043</td>
+<td>0.306</td>
+<td>tC2Q</td>
+<td>RR</td>
+<td>8</td>
+<td>u_aes/enc_block/block_w0_reg_17_s0/Q</td>
+</tr>
+<tr>
+<td>1.193</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/n1452_s6/I0</td>
+</tr>
+<tr>
+<td>1.614</td>
+<td>0.421</td>
+<td>tINS</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/n1452_s6/F</td>
+</tr>
+<tr>
+<td>1.764</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/n1452_s5/I0</td>
+</tr>
+<tr>
+<td>1.873</td>
+<td>0.109</td>
+<td>tINS</td>
+<td>RR</td>
+<td>4</td>
+<td>u_aes/enc_block/n1452_s5/O</td>
+</tr>
+<tr>
+<td>2.023</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/muxed_sboxw_17_s0/I0</td>
+</tr>
+<tr>
+<td>2.444</td>
+<td>0.421</td>
+<td>tINS</td>
+<td>RR</td>
+<td>43</td>
+<td>u_aes/muxed_sboxw_17_s0/F</td>
+</tr>
+<tr>
+<td>2.594</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_23_s767/I0</td>
+</tr>
+<tr>
+<td>3.015</td>
+<td>0.421</td>
+<td>tINS</td>
+<td>RR</td>
+<td>4</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_23_s767/F</td>
+</tr>
+<tr>
+<td>3.165</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_23_s780/I0</td>
+</tr>
+<tr>
+<td>3.586</td>
+<td>0.421</td>
+<td>tINS</td>
+<td>RR</td>
+<td>12</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_23_s780/F</td>
+</tr>
+<tr>
+<td>3.736</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_23_s743/I0</td>
+</tr>
+<tr>
+<td>4.157</td>
+<td>0.421</td>
+<td>tINS</td>
+<td>RR</td>
+<td>2</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_23_s743/F</td>
+</tr>
+<tr>
+<td>4.307</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_17_s753/I2</td>
+</tr>
+<tr>
+<td>4.676</td>
+<td>0.369</td>
+<td>tINS</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_17_s753/F</td>
+</tr>
+<tr>
+<td>4.826</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_17_s744/I1</td>
+</tr>
+<tr>
+<td>4.935</td>
+<td>0.109</td>
+<td>tINS</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_17_s744/O</td>
+</tr>
+<tr>
+<td>5.085</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_17_s705/I0</td>
+</tr>
+<tr>
+<td>5.154</td>
+<td>0.069</td>
+<td>tINS</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_17_s705/O</td>
+</tr>
+<tr>
+<td>5.304</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_17_s736/I1</td>
+</tr>
+<tr>
+<td>5.717</td>
+<td>0.413</td>
+<td>tINS</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_17_s736/F</td>
+</tr>
+<tr>
+<td>5.867</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_17_s735/I0</td>
+</tr>
+<tr>
+<td>6.288</td>
+<td>0.421</td>
+<td>tINS</td>
+<td>RR</td>
+<td>4</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_17_s735/F</td>
+</tr>
+<tr>
+<td>6.438</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/block_new_113_s12/I0</td>
+</tr>
+<tr>
+<td>6.859</td>
+<td>0.421</td>
+<td>tINS</td>
+<td>RR</td>
+<td>4</td>
+<td>u_aes/enc_block/block_new_113_s12/F</td>
+</tr>
+<tr>
+<td>7.009</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/block_new_17_s9/I3</td>
+</tr>
+<tr>
+<td>7.219</td>
+<td>0.210</td>
+<td>tINS</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/block_new_17_s9/F</td>
+</tr>
+<tr>
+<td>7.369</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/block_new_17_s7/I3</td>
+</tr>
+<tr>
+<td>7.579</td>
+<td>0.210</td>
+<td>tINS</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/block_new_17_s7/F</td>
+</tr>
+<tr>
+<td>7.729</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/block_new_17_s6/I0</td>
+</tr>
+<tr>
+<td>8.150</td>
+<td>0.421</td>
+<td>tINS</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/block_new_17_s6/F</td>
+</tr>
+<tr>
+<td>8.300</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/block_w3_reg_17_s0/D</td>
+</tr>
+</table>
+<b>Data Required Path:</b>
+<table class="summary_table">
+<tr>
+<th>AT</th>
+<th>DELAY</th>
+<th>TYPE</th>
+<th>RF</th>
+<th>FANOUT</th>
+<th>NODE</th>
+</tr>
+<tr>
+<td>10.000</td>
+<td>0.000</td>
+<td> </td>
+<td> </td>
+<td> </td>
+<td>clk</td>
+</tr>
+<tr>
+<td>10.000</td>
+<td>0.000</td>
+<td>tCL</td>
+<td>RR</td>
+<td>1</td>
+<td>clk_ibuf/I</td>
+</tr>
+<tr>
+<td>10.587</td>
+<td>0.587</td>
+<td>tINS</td>
+<td>RR</td>
+<td>2979</td>
+<td>clk_ibuf/O</td>
+</tr>
+<tr>
+<td>10.737</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/block_w3_reg_17_s0/CLK</td>
+</tr>
+<tr>
+<td>10.686</td>
+<td>-0.051</td>
+<td>tSu</td>
+<td> </td>
+<td>1</td>
+<td>u_aes/enc_block/block_w3_reg_17_s0</td>
+</tr>
+</table>
+<b>Path Statistics:</b>
+<table class="summary_table">
+<tr>
+<td class="label">Clock Skew:</td>
+<td>0.000</td>
+</tr>
+<tr>
+<td class="label">Setup Relationship:</td>
+<td>10.000</td>
+</tr>
+<tr>
+<td class="label">Logic Level:</td>
+<td>14</td>
+</tr>
+<tr>
+<td class="label">Arrival Clock Path Delay:</td><td> cell: 0.587, 79.646%; route: 0.150, 20.354%</td></tr>
+<tr>
+<td class="label">Arrival Data Path Delay:</td><td> cell: 4.857, 64.221%; route: 2.400, 31.733%; tC2Q: 0.306, 4.046%</td></tr>
+<tr>
+<td class="label">Required Clock Path Delay:</td><td> cell: 0.587, 79.646%; route: 0.150, 20.354%</td></tr>
+</table>
+<br/>
+<h3>Path&nbsp3</h3>
+<b>Path Summary:</b></br>
+<table class="summary_table">
+<tr>
+<td class="label">Slack</td>
+<td>2.386</td>
+</tr>
+<tr>
+<td class="label">Data Arrival Time</td>
+<td>8.300</td>
+</tr>
+<tr>
+<td class="label">Data Required Time</td>
+<td>10.686</td>
+</tr>
+<tr>
+<td class="label">From</td>
+<td>u_aes/enc_block/block_w0_reg_25_s0</td>
+</tr>
+<tr>
+<td class="label">To</td>
+<td>u_aes/enc_block/block_w3_reg_25_s0</td>
+</tr>
+<tr>
+<td class="label">Launch Clk</td>
+<td>clk[R]</td>
+</tr>
+<tr>
+<td class="label">Latch Clk</td>
+<td>clk[R]</td>
+</tr>
+</table>
+<b>Data Arrival Path:</b>
+<table class="summary_table">
+<tr>
+<th>AT</th>
+<th>DELAY</th>
+<th>TYPE</th>
+<th>RF</th>
+<th>FANOUT</th>
+<th>NODE</th>
+</tr>
+<tr>
+<td>0.000</td>
+<td>0.000</td>
+<td> </td>
+<td> </td>
+<td> </td>
+<td>clk</td>
+</tr>
+<tr>
+<td>0.000</td>
+<td>0.000</td>
+<td>tCL</td>
+<td>RR</td>
+<td>1</td>
+<td>clk_ibuf/I</td>
+</tr>
+<tr>
+<td>0.587</td>
+<td>0.587</td>
+<td>tINS</td>
+<td>RR</td>
+<td>2979</td>
+<td>clk_ibuf/O</td>
+</tr>
+<tr>
+<td>0.737</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/block_w0_reg_25_s0/CLK</td>
+</tr>
+<tr>
+<td>1.043</td>
+<td>0.306</td>
+<td>tC2Q</td>
+<td>RR</td>
+<td>8</td>
+<td>u_aes/enc_block/block_w0_reg_25_s0/Q</td>
+</tr>
+<tr>
+<td>1.193</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/n1444_s6/I0</td>
+</tr>
+<tr>
+<td>1.614</td>
+<td>0.421</td>
+<td>tINS</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/n1444_s6/F</td>
+</tr>
+<tr>
+<td>1.764</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/n1444_s5/I0</td>
+</tr>
+<tr>
+<td>1.873</td>
+<td>0.109</td>
+<td>tINS</td>
+<td>RR</td>
+<td>5</td>
+<td>u_aes/enc_block/n1444_s5/O</td>
+</tr>
+<tr>
+<td>2.023</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/muxed_sboxw_25_s0/I0</td>
+</tr>
+<tr>
+<td>2.444</td>
+<td>0.421</td>
+<td>tINS</td>
+<td>RR</td>
+<td>37</td>
+<td>u_aes/muxed_sboxw_25_s0/F</td>
+</tr>
+<tr>
+<td>2.594</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_31_s770/I0</td>
+</tr>
+<tr>
+<td>3.015</td>
+<td>0.421</td>
+<td>tINS</td>
+<td>RR</td>
+<td>3</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_31_s770/F</td>
+</tr>
+<tr>
+<td>3.165</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_31_s783/I0</td>
+</tr>
+<tr>
+<td>3.586</td>
+<td>0.421</td>
+<td>tINS</td>
+<td>RR</td>
+<td>11</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_31_s783/F</td>
+</tr>
+<tr>
+<td>3.736</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_31_s743/I0</td>
+</tr>
+<tr>
+<td>4.157</td>
+<td>0.421</td>
+<td>tINS</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_31_s743/F</td>
+</tr>
+<tr>
+<td>4.307</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_25_s753/I2</td>
+</tr>
+<tr>
+<td>4.676</td>
+<td>0.369</td>
+<td>tINS</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_25_s753/F</td>
+</tr>
+<tr>
+<td>4.826</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_25_s744/I1</td>
+</tr>
+<tr>
+<td>4.935</td>
+<td>0.109</td>
+<td>tINS</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_25_s744/O</td>
+</tr>
+<tr>
+<td>5.085</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_25_s705/I0</td>
+</tr>
+<tr>
+<td>5.154</td>
+<td>0.069</td>
+<td>tINS</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_25_s705/O</td>
+</tr>
+<tr>
+<td>5.304</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_25_s735/I1</td>
+</tr>
+<tr>
+<td>5.717</td>
+<td>0.413</td>
+<td>tINS</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_25_s735/F</td>
+</tr>
+<tr>
+<td>5.867</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_25_s734/I0</td>
+</tr>
+<tr>
+<td>6.288</td>
+<td>0.421</td>
+<td>tINS</td>
+<td>RR</td>
+<td>4</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_25_s734/F</td>
+</tr>
+<tr>
+<td>6.438</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/block_new_121_s12/I0</td>
+</tr>
+<tr>
+<td>6.859</td>
+<td>0.421</td>
+<td>tINS</td>
+<td>RR</td>
+<td>4</td>
+<td>u_aes/enc_block/block_new_121_s12/F</td>
+</tr>
+<tr>
+<td>7.009</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/block_new_25_s10/I3</td>
+</tr>
+<tr>
+<td>7.219</td>
+<td>0.210</td>
+<td>tINS</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/block_new_25_s10/F</td>
+</tr>
+<tr>
+<td>7.369</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/block_new_25_s7/I3</td>
+</tr>
+<tr>
+<td>7.579</td>
+<td>0.210</td>
+<td>tINS</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/block_new_25_s7/F</td>
+</tr>
+<tr>
+<td>7.729</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/block_new_25_s6/I0</td>
+</tr>
+<tr>
+<td>8.150</td>
+<td>0.421</td>
+<td>tINS</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/block_new_25_s6/F</td>
+</tr>
+<tr>
+<td>8.300</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/block_w3_reg_25_s0/D</td>
+</tr>
+</table>
+<b>Data Required Path:</b>
+<table class="summary_table">
+<tr>
+<th>AT</th>
+<th>DELAY</th>
+<th>TYPE</th>
+<th>RF</th>
+<th>FANOUT</th>
+<th>NODE</th>
+</tr>
+<tr>
+<td>10.000</td>
+<td>0.000</td>
+<td> </td>
+<td> </td>
+<td> </td>
+<td>clk</td>
+</tr>
+<tr>
+<td>10.000</td>
+<td>0.000</td>
+<td>tCL</td>
+<td>RR</td>
+<td>1</td>
+<td>clk_ibuf/I</td>
+</tr>
+<tr>
+<td>10.587</td>
+<td>0.587</td>
+<td>tINS</td>
+<td>RR</td>
+<td>2979</td>
+<td>clk_ibuf/O</td>
+</tr>
+<tr>
+<td>10.737</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/block_w3_reg_25_s0/CLK</td>
+</tr>
+<tr>
+<td>10.686</td>
+<td>-0.051</td>
+<td>tSu</td>
+<td> </td>
+<td>1</td>
+<td>u_aes/enc_block/block_w3_reg_25_s0</td>
+</tr>
+</table>
+<b>Path Statistics:</b>
+<table class="summary_table">
+<tr>
+<td class="label">Clock Skew:</td>
+<td>0.000</td>
+</tr>
+<tr>
+<td class="label">Setup Relationship:</td>
+<td>10.000</td>
+</tr>
+<tr>
+<td class="label">Logic Level:</td>
+<td>14</td>
+</tr>
+<tr>
+<td class="label">Arrival Clock Path Delay:</td><td> cell: 0.587, 79.646%; route: 0.150, 20.354%</td></tr>
+<tr>
+<td class="label">Arrival Data Path Delay:</td><td> cell: 4.857, 64.221%; route: 2.400, 31.733%; tC2Q: 0.306, 4.046%</td></tr>
+<tr>
+<td class="label">Required Clock Path Delay:</td><td> cell: 0.587, 79.646%; route: 0.150, 20.354%</td></tr>
+</table>
+<br/>
+<h3>Path&nbsp4</h3>
+<b>Path Summary:</b></br>
+<table class="summary_table">
+<tr>
+<td class="label">Slack</td>
+<td>2.386</td>
+</tr>
+<tr>
+<td class="label">Data Arrival Time</td>
+<td>8.300</td>
+</tr>
+<tr>
+<td class="label">Data Required Time</td>
+<td>10.686</td>
+</tr>
+<tr>
+<td class="label">From</td>
+<td>u_aes/enc_block/block_w0_reg_8_s0</td>
+</tr>
+<tr>
+<td class="label">To</td>
+<td>u_aes/enc_block/block_w2_reg_9_s0</td>
+</tr>
+<tr>
+<td class="label">Launch Clk</td>
+<td>clk[R]</td>
+</tr>
+<tr>
+<td class="label">Latch Clk</td>
+<td>clk[R]</td>
+</tr>
+</table>
+<b>Data Arrival Path:</b>
+<table class="summary_table">
+<tr>
+<th>AT</th>
+<th>DELAY</th>
+<th>TYPE</th>
+<th>RF</th>
+<th>FANOUT</th>
+<th>NODE</th>
+</tr>
+<tr>
+<td>0.000</td>
+<td>0.000</td>
+<td> </td>
+<td> </td>
+<td> </td>
+<td>clk</td>
+</tr>
+<tr>
+<td>0.000</td>
+<td>0.000</td>
+<td>tCL</td>
+<td>RR</td>
+<td>1</td>
+<td>clk_ibuf/I</td>
+</tr>
+<tr>
+<td>0.587</td>
+<td>0.587</td>
+<td>tINS</td>
+<td>RR</td>
+<td>2979</td>
+<td>clk_ibuf/O</td>
+</tr>
+<tr>
+<td>0.737</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/block_w0_reg_8_s0/CLK</td>
+</tr>
+<tr>
+<td>1.043</td>
+<td>0.306</td>
+<td>tC2Q</td>
+<td>RR</td>
+<td>8</td>
+<td>u_aes/enc_block/block_w0_reg_8_s0/Q</td>
+</tr>
+<tr>
+<td>1.193</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/n1461_s6/I0</td>
+</tr>
+<tr>
+<td>1.614</td>
+<td>0.421</td>
+<td>tINS</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/n1461_s6/F</td>
+</tr>
+<tr>
+<td>1.764</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/n1461_s5/I0</td>
+</tr>
+<tr>
+<td>1.873</td>
+<td>0.109</td>
+<td>tINS</td>
+<td>RR</td>
+<td>4</td>
+<td>u_aes/enc_block/n1461_s5/O</td>
+</tr>
+<tr>
+<td>2.023</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/muxed_sboxw_8_s0/I0</td>
+</tr>
+<tr>
+<td>2.444</td>
+<td>0.421</td>
+<td>tINS</td>
+<td>RR</td>
+<td>36</td>
+<td>u_aes/muxed_sboxw_8_s0/F</td>
+</tr>
+<tr>
+<td>2.594</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_15_s776/I0</td>
+</tr>
+<tr>
+<td>3.015</td>
+<td>0.421</td>
+<td>tINS</td>
+<td>RR</td>
+<td>4</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_15_s776/F</td>
+</tr>
+<tr>
+<td>3.165</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_15_s792/I0</td>
+</tr>
+<tr>
+<td>3.586</td>
+<td>0.421</td>
+<td>tINS</td>
+<td>RR</td>
+<td>12</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_15_s792/F</td>
+</tr>
+<tr>
+<td>3.736</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_15_s743/I0</td>
+</tr>
+<tr>
+<td>4.157</td>
+<td>0.421</td>
+<td>tINS</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_15_s743/F</td>
+</tr>
+<tr>
+<td>4.307</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_9_s756/I2</td>
+</tr>
+<tr>
+<td>4.676</td>
+<td>0.369</td>
+<td>tINS</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_9_s756/F</td>
+</tr>
+<tr>
+<td>4.826</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_9_s747/I1</td>
+</tr>
+<tr>
+<td>4.935</td>
+<td>0.109</td>
+<td>tINS</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_9_s747/O</td>
+</tr>
+<tr>
+<td>5.085</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_9_s705/I0</td>
+</tr>
+<tr>
+<td>5.154</td>
+<td>0.069</td>
+<td>tINS</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_9_s705/O</td>
+</tr>
+<tr>
+<td>5.304</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_9_s739/I1</td>
+</tr>
+<tr>
+<td>5.717</td>
+<td>0.413</td>
+<td>tINS</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_9_s739/F</td>
+</tr>
+<tr>
+<td>5.867</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_9_s738/I0</td>
+</tr>
+<tr>
+<td>6.288</td>
+<td>0.421</td>
+<td>tINS</td>
+<td>RR</td>
+<td>4</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_9_s738/F</td>
+</tr>
+<tr>
+<td>6.438</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/block_new_73_s12/I0</td>
+</tr>
+<tr>
+<td>6.859</td>
+<td>0.421</td>
+<td>tINS</td>
+<td>RR</td>
+<td>4</td>
+<td>u_aes/enc_block/block_new_73_s12/F</td>
+</tr>
+<tr>
+<td>7.009</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/block_new_41_s9/I3</td>
+</tr>
+<tr>
+<td>7.219</td>
+<td>0.210</td>
+<td>tINS</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/block_new_41_s9/F</td>
+</tr>
+<tr>
+<td>7.369</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/block_new_41_s7/I3</td>
+</tr>
+<tr>
+<td>7.579</td>
+<td>0.210</td>
+<td>tINS</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/block_new_41_s7/F</td>
+</tr>
+<tr>
+<td>7.729</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/block_new_41_s6/I0</td>
+</tr>
+<tr>
+<td>8.150</td>
+<td>0.421</td>
+<td>tINS</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/block_new_41_s6/F</td>
+</tr>
+<tr>
+<td>8.300</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/block_w2_reg_9_s0/D</td>
+</tr>
+</table>
+<b>Data Required Path:</b>
+<table class="summary_table">
+<tr>
+<th>AT</th>
+<th>DELAY</th>
+<th>TYPE</th>
+<th>RF</th>
+<th>FANOUT</th>
+<th>NODE</th>
+</tr>
+<tr>
+<td>10.000</td>
+<td>0.000</td>
+<td> </td>
+<td> </td>
+<td> </td>
+<td>clk</td>
+</tr>
+<tr>
+<td>10.000</td>
+<td>0.000</td>
+<td>tCL</td>
+<td>RR</td>
+<td>1</td>
+<td>clk_ibuf/I</td>
+</tr>
+<tr>
+<td>10.587</td>
+<td>0.587</td>
+<td>tINS</td>
+<td>RR</td>
+<td>2979</td>
+<td>clk_ibuf/O</td>
+</tr>
+<tr>
+<td>10.737</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/block_w2_reg_9_s0/CLK</td>
+</tr>
+<tr>
+<td>10.686</td>
+<td>-0.051</td>
+<td>tSu</td>
+<td> </td>
+<td>1</td>
+<td>u_aes/enc_block/block_w2_reg_9_s0</td>
+</tr>
+</table>
+<b>Path Statistics:</b>
+<table class="summary_table">
+<tr>
+<td class="label">Clock Skew:</td>
+<td>0.000</td>
+</tr>
+<tr>
+<td class="label">Setup Relationship:</td>
+<td>10.000</td>
+</tr>
+<tr>
+<td class="label">Logic Level:</td>
+<td>14</td>
+</tr>
+<tr>
+<td class="label">Arrival Clock Path Delay:</td><td> cell: 0.587, 79.646%; route: 0.150, 20.354%</td></tr>
+<tr>
+<td class="label">Arrival Data Path Delay:</td><td> cell: 4.857, 64.221%; route: 2.400, 31.733%; tC2Q: 0.306, 4.046%</td></tr>
+<tr>
+<td class="label">Required Clock Path Delay:</td><td> cell: 0.587, 79.646%; route: 0.150, 20.354%</td></tr>
+</table>
+<br/>
+<h3>Path&nbsp5</h3>
+<b>Path Summary:</b></br>
+<table class="summary_table">
+<tr>
+<td class="label">Slack</td>
+<td>2.386</td>
+</tr>
+<tr>
+<td class="label">Data Arrival Time</td>
+<td>8.300</td>
+</tr>
+<tr>
+<td class="label">Data Required Time</td>
+<td>10.686</td>
+</tr>
+<tr>
+<td class="label">From</td>
+<td>u_aes/enc_block/block_w0_reg_17_s0</td>
+</tr>
+<tr>
+<td class="label">To</td>
+<td>u_aes/enc_block/block_w2_reg_17_s0</td>
+</tr>
+<tr>
+<td class="label">Launch Clk</td>
+<td>clk[R]</td>
+</tr>
+<tr>
+<td class="label">Latch Clk</td>
+<td>clk[R]</td>
+</tr>
+</table>
+<b>Data Arrival Path:</b>
+<table class="summary_table">
+<tr>
+<th>AT</th>
+<th>DELAY</th>
+<th>TYPE</th>
+<th>RF</th>
+<th>FANOUT</th>
+<th>NODE</th>
+</tr>
+<tr>
+<td>0.000</td>
+<td>0.000</td>
+<td> </td>
+<td> </td>
+<td> </td>
+<td>clk</td>
+</tr>
+<tr>
+<td>0.000</td>
+<td>0.000</td>
+<td>tCL</td>
+<td>RR</td>
+<td>1</td>
+<td>clk_ibuf/I</td>
+</tr>
+<tr>
+<td>0.587</td>
+<td>0.587</td>
+<td>tINS</td>
+<td>RR</td>
+<td>2979</td>
+<td>clk_ibuf/O</td>
+</tr>
+<tr>
+<td>0.737</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/block_w0_reg_17_s0/CLK</td>
+</tr>
+<tr>
+<td>1.043</td>
+<td>0.306</td>
+<td>tC2Q</td>
+<td>RR</td>
+<td>8</td>
+<td>u_aes/enc_block/block_w0_reg_17_s0/Q</td>
+</tr>
+<tr>
+<td>1.193</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/n1452_s6/I0</td>
+</tr>
+<tr>
+<td>1.614</td>
+<td>0.421</td>
+<td>tINS</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/n1452_s6/F</td>
+</tr>
+<tr>
+<td>1.764</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/n1452_s5/I0</td>
+</tr>
+<tr>
+<td>1.873</td>
+<td>0.109</td>
+<td>tINS</td>
+<td>RR</td>
+<td>4</td>
+<td>u_aes/enc_block/n1452_s5/O</td>
+</tr>
+<tr>
+<td>2.023</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/muxed_sboxw_17_s0/I0</td>
+</tr>
+<tr>
+<td>2.444</td>
+<td>0.421</td>
+<td>tINS</td>
+<td>RR</td>
+<td>43</td>
+<td>u_aes/muxed_sboxw_17_s0/F</td>
+</tr>
+<tr>
+<td>2.594</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_23_s767/I0</td>
+</tr>
+<tr>
+<td>3.015</td>
+<td>0.421</td>
+<td>tINS</td>
+<td>RR</td>
+<td>4</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_23_s767/F</td>
+</tr>
+<tr>
+<td>3.165</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_23_s780/I0</td>
+</tr>
+<tr>
+<td>3.586</td>
+<td>0.421</td>
+<td>tINS</td>
+<td>RR</td>
+<td>12</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_23_s780/F</td>
+</tr>
+<tr>
+<td>3.736</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_23_s743/I0</td>
+</tr>
+<tr>
+<td>4.157</td>
+<td>0.421</td>
+<td>tINS</td>
+<td>RR</td>
+<td>2</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_23_s743/F</td>
+</tr>
+<tr>
+<td>4.307</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_17_s753/I2</td>
+</tr>
+<tr>
+<td>4.676</td>
+<td>0.369</td>
+<td>tINS</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_17_s753/F</td>
+</tr>
+<tr>
+<td>4.826</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_17_s744/I1</td>
+</tr>
+<tr>
+<td>4.935</td>
+<td>0.109</td>
+<td>tINS</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_17_s744/O</td>
+</tr>
+<tr>
+<td>5.085</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_17_s705/I0</td>
+</tr>
+<tr>
+<td>5.154</td>
+<td>0.069</td>
+<td>tINS</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_17_s705/O</td>
+</tr>
+<tr>
+<td>5.304</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_17_s736/I1</td>
+</tr>
+<tr>
+<td>5.717</td>
+<td>0.413</td>
+<td>tINS</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_17_s736/F</td>
+</tr>
+<tr>
+<td>5.867</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_17_s735/I0</td>
+</tr>
+<tr>
+<td>6.288</td>
+<td>0.421</td>
+<td>tINS</td>
+<td>RR</td>
+<td>4</td>
+<td>u_aes/sbox_inst/new_sboxw_Z_17_s735/F</td>
+</tr>
+<tr>
+<td>6.438</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/block_new_113_s12/I0</td>
+</tr>
+<tr>
+<td>6.859</td>
+<td>0.421</td>
+<td>tINS</td>
+<td>RR</td>
+<td>4</td>
+<td>u_aes/enc_block/block_new_113_s12/F</td>
+</tr>
+<tr>
+<td>7.009</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/block_new_49_s9/I3</td>
+</tr>
+<tr>
+<td>7.219</td>
+<td>0.210</td>
+<td>tINS</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/block_new_49_s9/F</td>
+</tr>
+<tr>
+<td>7.369</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/block_new_49_s7/I3</td>
+</tr>
+<tr>
+<td>7.579</td>
+<td>0.210</td>
+<td>tINS</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/block_new_49_s7/F</td>
+</tr>
+<tr>
+<td>7.729</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/block_new_49_s6/I0</td>
+</tr>
+<tr>
+<td>8.150</td>
+<td>0.421</td>
+<td>tINS</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/block_new_49_s6/F</td>
+</tr>
+<tr>
+<td>8.300</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/block_w2_reg_17_s0/D</td>
+</tr>
+</table>
+<b>Data Required Path:</b>
+<table class="summary_table">
+<tr>
+<th>AT</th>
+<th>DELAY</th>
+<th>TYPE</th>
+<th>RF</th>
+<th>FANOUT</th>
+<th>NODE</th>
+</tr>
+<tr>
+<td>10.000</td>
+<td>0.000</td>
+<td> </td>
+<td> </td>
+<td> </td>
+<td>clk</td>
+</tr>
+<tr>
+<td>10.000</td>
+<td>0.000</td>
+<td>tCL</td>
+<td>RR</td>
+<td>1</td>
+<td>clk_ibuf/I</td>
+</tr>
+<tr>
+<td>10.587</td>
+<td>0.587</td>
+<td>tINS</td>
+<td>RR</td>
+<td>2979</td>
+<td>clk_ibuf/O</td>
+</tr>
+<tr>
+<td>10.737</td>
+<td>0.150</td>
+<td>tNET</td>
+<td>RR</td>
+<td>1</td>
+<td>u_aes/enc_block/block_w2_reg_17_s0/CLK</td>
+</tr>
+<tr>
+<td>10.686</td>
+<td>-0.051</td>
+<td>tSu</td>
+<td> </td>
+<td>1</td>
+<td>u_aes/enc_block/block_w2_reg_17_s0</td>
+</tr>
+</table>
+<b>Path Statistics:</b>
+<table class="summary_table">
+<tr>
+<td class="label">Clock Skew:</td>
+<td>0.000</td>
+</tr>
+<tr>
+<td class="label">Setup Relationship:</td>
+<td>10.000</td>
+</tr>
+<tr>
+<td class="label">Logic Level:</td>
+<td>14</td>
+</tr>
+<tr>
+<td class="label">Arrival Clock Path Delay:</td><td> cell: 0.587, 79.646%; route: 0.150, 20.354%</td></tr>
+<tr>
+<td class="label">Arrival Data Path Delay:</td><td> cell: 4.857, 64.221%; route: 2.400, 31.733%; tC2Q: 0.306, 4.046%</td></tr>
+<tr>
+<td class="label">Required Clock Path Delay:</td><td> cell: 0.587, 79.646%; route: 0.150, 20.354%</td></tr>
+</table>
+<br/>
+</div><!-- content -->
+</div><!-- main_wrapper -->
+</body>
+</html>

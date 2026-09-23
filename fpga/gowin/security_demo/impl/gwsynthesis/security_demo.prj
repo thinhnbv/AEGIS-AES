@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE gowin-synthesis-project>
+<Project>
+    <Version>beta</Version>
+    <Device id="GW5A-25A" package="UBGA324" speed="2" partNumber="GW5A-LV25UG324C2/I1"/>
+    <FileList>
+        <File path="C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\aegis_defs.vh" type="verilog"/>
+        <File path="C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\aes_core_tapped.v" type="verilog"/>
+        <File path="C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\aes_decipher_block.v" type="verilog"/>
+        <File path="C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\aes_encipher_block.v" type="verilog"/>
+        <File path="C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\aes_inv_sbox.v" type="verilog"/>
+        <File path="C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\aes_key_mem_tapped.v" type="verilog"/>
+        <File path="C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\aes_sbox.v" type="verilog"/>
+        <File path="C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\aegis_aes_top.v" type="verilog"/>
+        <File path="C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\klg_key_leak_guard.v" type="verilog"/>
+        <File path="C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\tru_tamper_response.v" type="verilog"/>
+        <File path="C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\fic_fsm_integrity.v" type="verilog"/>
+        <File path="C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\rcm_round_monitor.v" type="verilog"/>
+        <File path="C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\red_rare_event.v" type="verilog"/>
+        <File path="C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\orc_output_checker.v" type="verilog"/>
+        <File path="C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\uart_rx.v" type="verilog"/>
+        <File path="C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\uart_tx.v" type="verilog"/>
+        <File path="C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\uart_cmd_fsm_security.v" type="verilog"/>
+        <File path="C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\top_security_demo.v" type="verilog"/>
+    </FileList>
+    <OptionList>
+        <Option type="disable_insert_pad" value="0"/>
+        <Option type="looplimit" value="2000"/>
+        <Option type="output_file" value="C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\impl\gwsynthesis\security_demo.vg"/>
+        <Option type="print_all_synthesis_warning" value="0"/>
+        <Option type="ram_rw_check" value="0"/>
+        <Option type="top_module" value="top_security_demo"/>
+        <Option type="verilog_language" value="verilog-2001"/>
+        <Option type="vhdl_language" value="vhdl-1993"/>
+    </OptionList>
+</Project>

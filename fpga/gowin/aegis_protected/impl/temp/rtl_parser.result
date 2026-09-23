@@ -1,0 +1,180 @@
+[
+ {
+  "InstFile" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aegis_protected/src/top_demo_protected.v",
+  "InstLine" : 9,
+  "InstName" : "top_demo_protected",
+  "ModuleFile" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aegis_protected/src/top_demo_protected.v",
+  "ModuleLine" : 9,
+  "ModuleName" : "top_demo_protected",
+  "SubInsts" : [
+   {
+    "InstFile" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aegis_protected/src/top_demo_protected.v",
+    "InstLine" : 62,
+    "InstName" : "u_aegis_aes",
+    "ModuleFile" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aegis_protected/src/aegis_aes_top.v",
+    "ModuleLine" : 8,
+    "ModuleName" : "aegis_aes_top",
+    "SubInsts" : [
+     {
+      "InstFile" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aegis_protected/src/aegis_aes_top.v",
+      "InstLine" : 66,
+      "InstName" : "u_core",
+      "ModuleFile" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aegis_protected/src/aes_core_tapped.v",
+      "ModuleLine" : 46,
+      "ModuleName" : "aes_core_tapped",
+      "SubInsts" : [
+       {
+        "InstFile" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aegis_protected/src/aes_core_tapped.v",
+        "InstLine" : 135,
+        "InstName" : "enc_block",
+        "ModuleFile" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aegis_protected/src/aes_encipher_block.v",
+        "ModuleLine" : 43,
+        "ModuleName" : "aes_encipher_block_tapped"
+       },
+       {
+        "InstFile" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aegis_protected/src/aes_core_tapped.v",
+        "InstLine" : 156,
+        "InstName" : "dec_block",
+        "ModuleFile" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aegis_protected/src/aes_decipher_block.v",
+        "ModuleLine" : 43,
+        "ModuleName" : "aes_decipher_block",
+        "SubInsts" : [
+         {
+          "InstFile" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aegis_protected/src/aes_decipher_block.v",
+          "InstLine" : 237,
+          "InstName" : "inv_sbox_inst",
+          "ModuleFile" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aegis_protected/src/aes_inv_sbox.v",
+          "ModuleLine" : 40,
+          "ModuleName" : "aes_inv_sbox"
+         }
+        ]
+       },
+       {
+        "InstFile" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aegis_protected/src/aes_core_tapped.v",
+        "InstLine" : 172,
+        "InstName" : "keymem",
+        "ModuleFile" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aegis_protected/src/aes_key_mem_tapped.v",
+        "ModuleLine" : 45,
+        "ModuleName" : "aes_key_mem_tapped"
+       },
+       {
+        "InstFile" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aegis_protected/src/aes_core_tapped.v",
+        "InstLine" : 190,
+        "InstName" : "sbox_inst",
+        "ModuleFile" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aegis_protected/src/aes_sbox.v",
+        "ModuleLine" : 42,
+        "ModuleName" : "aes_sbox"
+       }
+      ]
+     },
+     {
+      "InstFile" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aegis_protected/src/aegis_aes_top.v",
+      "InstLine" : 111,
+      "InstName" : "u_klg",
+      "ModuleFile" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aegis_protected/src/klg_key_leak_guard.v",
+      "ModuleLine" : 41,
+      "ModuleName" : "klg_key_leak_guard"
+     },
+     {
+      "InstFile" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aegis_protected/src/aegis_aes_top.v",
+      "InstLine" : 131,
+      "InstName" : "u_red",
+      "ModuleFile" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aegis_protected/src/red_rare_event.v",
+      "ModuleLine" : 22,
+      "ModuleName" : "red_rare_event"
+     },
+     {
+      "InstFile" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aegis_protected/src/aegis_aes_top.v",
+      "InstLine" : 151,
+      "InstName" : "u_rcm",
+      "ModuleFile" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aegis_protected/src/rcm_round_monitor.v",
+      "ModuleLine" : 29,
+      "ModuleName" : "rcm_round_monitor"
+     },
+     {
+      "InstFile" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aegis_protected/src/aegis_aes_top.v",
+      "InstLine" : 164,
+      "InstName" : "u_fic",
+      "ModuleFile" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aegis_protected/src/fic_fsm_integrity.v",
+      "ModuleLine" : 15,
+      "ModuleName" : "fic_fsm_integrity"
+     },
+     {
+      "InstFile" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aegis_protected/src/aegis_aes_top.v",
+      "InstLine" : 176,
+      "InstName" : "gen_orc.u_orc",
+      "ModuleFile" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aegis_protected/src/orc_output_checker.v",
+      "ModuleLine" : 28,
+      "ModuleName" : "orc_output_checker",
+      "SubInsts" : [
+       {
+        "InstFile" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aegis_protected/src/orc_output_checker.v",
+        "InstLine" : 69,
+        "InstName" : "sbox_w0",
+        "ModuleFile" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aegis_protected/src/aes_sbox.v",
+        "ModuleLine" : 42,
+        "ModuleName" : "aes_sbox"
+       },
+       {
+        "InstFile" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aegis_protected/src/orc_output_checker.v",
+        "InstLine" : 74,
+        "InstName" : "sbox_w1",
+        "ModuleFile" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aegis_protected/src/aes_sbox.v",
+        "ModuleLine" : 42,
+        "ModuleName" : "aes_sbox"
+       },
+       {
+        "InstFile" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aegis_protected/src/orc_output_checker.v",
+        "InstLine" : 79,
+        "InstName" : "sbox_w2",
+        "ModuleFile" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aegis_protected/src/aes_sbox.v",
+        "ModuleLine" : 42,
+        "ModuleName" : "aes_sbox"
+       },
+       {
+        "InstFile" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aegis_protected/src/orc_output_checker.v",
+        "InstLine" : 84,
+        "InstName" : "sbox_w3",
+        "ModuleFile" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aegis_protected/src/aes_sbox.v",
+        "ModuleLine" : 42,
+        "ModuleName" : "aes_sbox"
+       }
+      ]
+     },
+     {
+      "InstFile" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aegis_protected/src/aegis_aes_top.v",
+      "InstLine" : 199,
+      "InstName" : "u_tru",
+      "ModuleFile" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aegis_protected/src/tru_tamper_response.v",
+      "ModuleLine" : 9,
+      "ModuleName" : "tru_tamper_response"
+     }
+    ]
+   },
+   {
+    "InstFile" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aegis_protected/src/top_demo_protected.v",
+    "InstLine" : 78,
+    "InstName" : "u_uart_rx",
+    "ModuleFile" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aegis_protected/src/uart_rx.v",
+    "ModuleLine" : 8,
+    "ModuleName" : "uart_rx"
+   },
+   {
+    "InstFile" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aegis_protected/src/top_demo_protected.v",
+    "InstLine" : 88,
+    "InstName" : "u_uart_tx",
+    "ModuleFile" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aegis_protected/src/uart_tx.v",
+    "ModuleLine" : 8,
+    "ModuleName" : "uart_tx"
+   },
+   {
+    "InstFile" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aegis_protected/src/top_demo_protected.v",
+    "InstLine" : 98,
+    "InstName" : "u_cmd",
+    "ModuleFile" : "//wsl.localhost/Ubuntu/home/thinhnbv/aegis-aes/fpga/gowin/aegis_protected/src/uart_cmd_fsm.v",
+    "ModuleLine" : 7,
+    "ModuleName" : "uart_cmd_fsm"
+   }
+  ]
+ }
+]

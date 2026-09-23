@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE gowin-synthesis-project>
+<Project>
+    <Version>beta</Version>
+    <Device id="GW5A-25A" package="UBGA324" speed="2" partNumber="GW5A-LV25UG324C2/I1"/>
+    <FileList>
+        <File path="\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aes_basline\src\aes_core.v" type="verilog"/>
+        <File path="\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aes_basline\src\aes_decipher_block.v" type="verilog"/>
+        <File path="\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aes_basline\src\aes_encipher_block.v" type="verilog"/>
+        <File path="\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aes_basline\src\aes_inv_sbox.v" type="verilog"/>
+        <File path="\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aes_basline\src\aes_key_mem.v" type="verilog"/>
+        <File path="\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aes_basline\src\aes_sbox.v" type="verilog"/>
+        <File path="\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aes_basline\src\top_demo.v" type="verilog"/>
+        <File path="\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aes_basline\src\uart_cmd_fsm.v" type="verilog"/>
+        <File path="\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aes_basline\src\uart_rx.v" type="verilog"/>
+        <File path="\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aes_basline\src\uart_tx.v" type="verilog"/>
+    </FileList>
+    <OptionList>
+        <Option type="disable_insert_pad" value="0"/>
+        <Option type="looplimit" value="2000"/>
+        <Option type="output_file" value="\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aes_basline\impl\gwsynthesis\aes_basline.vg"/>
+        <Option type="print_all_synthesis_warning" value="0"/>
+        <Option type="ram_rw_check" value="0"/>
+        <Option type="top_module" value="top_demo"/>
+        <Option type="verilog_language" value="verilog-2001"/>
+        <Option type="vhdl_language" value="vhdl-1993"/>
+    </OptionList>
+</Project>

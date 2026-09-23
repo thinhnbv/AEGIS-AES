@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Module name="top_demo" Lut="2">
+    <SubModule name="u_aes" Register="4" Lut="178">
+        <SubModule name="enc_block" Register="137" Lut="688"/>
+        <SubModule name="dec_block" Register="137" Lut="1123">
+            <SubModule name="inv_sbox_inst" Lut="823"/>
+        </SubModule>
+        <SubModule name="keymem" Register="2063" Lut="1230"/>
+        <SubModule name="sbox_inst" Lut="974"/>
+    </SubModule>
+    <SubModule name="u_uart_rx" Register="40" Lut="65"/>
+    <SubModule name="u_uart_tx" Register="32" Lut="57"/>
+    <SubModule name="u_cmd" Register="566" Alu="8" Lut="373"/>
+</Module>

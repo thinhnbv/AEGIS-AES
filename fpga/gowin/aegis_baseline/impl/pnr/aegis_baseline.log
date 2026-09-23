@@ -1,0 +1,26 @@
+Reading netlist file: "\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_baseline\impl\gwsynthesis\aegis_baseline.vg"
+Parsing netlist file "\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_baseline\impl\gwsynthesis\aegis_baseline.vg" completed
+Processing netlist completed
+Reading constraint file: "\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_baseline\src\aes_basline.cst"
+Physical Constraint parsed completed
+Running placement......
+[10%] Placement Phase 0 completed
+[20%] Placement Phase 1 completed
+[30%] Placement Phase 2 completed
+[50%] Placement Phase 3 completed
+Running routing......
+[60%] Routing Phase 0 completed
+[70%] Routing Phase 1 completed
+[80%] Routing Phase 2 completed
+[90%] Routing Phase 3 completed
+Running timing analysis......
+[95%] Timing analysis completed
+Placement and routing completed
+Bitstream generation in progress......
+Bitstream generation completed
+Generate file "\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_baseline\impl\pnr\aegis_baseline.pin.html" completed
+Generate file "\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_baseline\impl\pnr\aegis_baseline.rpt.html" completed
+Generate file "\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_baseline\impl\pnr\aegis_baseline.rpt.txt" completed
+Generate file "\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_baseline\impl\pnr\aegis_baseline.tr.html" completed
+Mon Sep 21 02:12:29 2026
+

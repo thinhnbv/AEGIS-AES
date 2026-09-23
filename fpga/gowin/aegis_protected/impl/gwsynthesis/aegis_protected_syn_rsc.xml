@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Module name="top_demo_protected" Lut="3">
+    <SubModule name="u_aegis_aes" Register="272" Lut="301">
+        <SubModule name="u_core" Register="4" Lut="206">
+            <SubModule name="enc_block" Register="137" Lut="743"/>
+            <SubModule name="keymem" Register="2063" Lut="1353"/>
+            <SubModule name="sbox_inst" Lut="865"/>
+        </SubModule>
+        <SubModule name="u_klg" Register="4" Alu="1544" Lut="7"/>
+        <SubModule name="u_red" Register="20" Alu="15" Lut="125"/>
+        <SubModule name="u_rcm" Register="50" Alu="8" Lut="119"/>
+        <SubModule name="u_fic" Register="4" Lut="2"/>
+        <SubModule name="gen_orc.u_orc" Register="263" Alu="128" Lut="394">
+            <SubModule name="sbox_w0" Lut="865"/>
+            <SubModule name="sbox_w1" Lut="865"/>
+            <SubModule name="sbox_w2" Lut="861"/>
+            <SubModule name="sbox_w3" Lut="857"/>
+        </SubModule>
+        <SubModule name="u_tru" Register="7" Lut="13"/>
+    </SubModule>
+    <SubModule name="u_uart_rx" Register="40" Lut="62"/>
+    <SubModule name="u_uart_tx" Register="32" Lut="56"/>
+    <SubModule name="u_cmd" Register="821" Alu="7" Lut="407"/>
+</Module>

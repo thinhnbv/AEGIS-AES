@@ -51,7 +51,7 @@ module top_demo (
         .next              (cmd_start),
         .ready             (aes_ready),
 
-        .key               ({128'd0, cmd_key}),
+        .key               ({cmd_key, 128'd0}),
         .keylen            (1'b0),
 
         .block             (cmd_block),

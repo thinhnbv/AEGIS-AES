@@ -1,0 +1,21 @@
+<?xml version="1" encoding="UTF-8"?>
+<!DOCTYPE gowin-fpga-project>
+<Project>
+    <Template>FPGA</Template>
+    <Version>5</Version>
+    <Device name="GW5A-25A" pn="GW5A-LV25UG324C2/I1">gw5a25a-008</Device>
+    <FileList>
+        <File path="src/aes_core.v" type="file.verilog" enable="1"/>
+        <File path="src/aes_decipher_block.v" type="file.verilog" enable="1"/>
+        <File path="src/aes_encipher_block.v" type="file.verilog" enable="1"/>
+        <File path="src/aes_inv_sbox.v" type="file.verilog" enable="1"/>
+        <File path="src/aes_key_mem.v" type="file.verilog" enable="1"/>
+        <File path="src/aes_sbox.v" type="file.verilog" enable="1"/>
+        <File path="src/top_demo.v" type="file.verilog" enable="1"/>
+        <File path="src/uart_cmd_fsm.v" type="file.verilog" enable="1"/>
+        <File path="src/uart_rx.v" type="file.verilog" enable="1"/>
+        <File path="src/uart_tx.v" type="file.verilog" enable="1"/>
+        <File path="src/aes_basline.cst" type="file.cst" enable="1"/>
+        <File path="src/aes_basline.sdc" type="file.sdc" enable="1"/>
+    </FileList>
+</Project>

@@ -1,0 +1,77 @@
+GowinSynthesis start
+Running parser ...
+Analyzing Verilog file 'C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\aegis_defs.vh'
+Analyzing Verilog file 'C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\aes_core_tapped.v'
+Analyzing Verilog file 'C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\aes_decipher_block.v'
+Analyzing Verilog file 'C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\aes_encipher_block.v'
+Analyzing Verilog file 'C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\aes_inv_sbox.v'
+Analyzing Verilog file 'C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\aes_key_mem_tapped.v'
+Analyzing Verilog file 'C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\aes_sbox.v'
+Analyzing Verilog file 'C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\aegis_aes_top.v'
+Analyzing included file 'C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\aegis_defs.vh'("C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\aegis_aes_top.v":6)
+Back to file 'C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\aegis_aes_top.v'("C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\aegis_aes_top.v":6)
+Analyzing Verilog file 'C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\klg_key_leak_guard.v'
+Analyzing included file 'C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\aegis_defs.vh'("C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\klg_key_leak_guard.v":39)
+Back to file 'C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\klg_key_leak_guard.v'("C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\klg_key_leak_guard.v":39)
+Analyzing Verilog file 'C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\tru_tamper_response.v'
+Analyzing included file 'C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\aegis_defs.vh'("C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\tru_tamper_response.v":7)
+Back to file 'C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\tru_tamper_response.v'("C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\tru_tamper_response.v":7)
+Analyzing Verilog file 'C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\fic_fsm_integrity.v'
+Analyzing included file 'C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\aegis_defs.vh'("C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\fic_fsm_integrity.v":13)
+Back to file 'C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\fic_fsm_integrity.v'("C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\fic_fsm_integrity.v":13)
+Analyzing Verilog file 'C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\rcm_round_monitor.v'
+Analyzing included file 'C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\aegis_defs.vh'("C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\rcm_round_monitor.v":27)
+Back to file 'C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\rcm_round_monitor.v'("C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\rcm_round_monitor.v":27)
+Analyzing Verilog file 'C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\red_rare_event.v'
+Analyzing included file 'C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\aegis_defs.vh'("C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\red_rare_event.v":20)
+Back to file 'C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\red_rare_event.v'("C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\red_rare_event.v":20)
+Analyzing Verilog file 'C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\orc_output_checker.v'
+Analyzing included file 'C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\aegis_defs.vh'("C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\orc_output_checker.v":26)
+Back to file 'C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\orc_output_checker.v'("C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\orc_output_checker.v":26)
+Analyzing Verilog file 'C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\uart_rx.v'
+Analyzing Verilog file 'C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\uart_tx.v'
+Analyzing Verilog file 'C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\uart_cmd_fsm_security.v'
+Analyzing Verilog file 'C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\top_security_demo.v'
+Compiling module 'top_security_demo'("C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\top_security_demo.v":13)
+Compiling module 'uart_rx'("C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\uart_rx.v":8)
+Compiling module 'uart_tx'("C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\uart_tx.v":8)
+WARN  (EX3073) : Port 'skip_round9' remains unconnected for this instance("C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\aes_core_tapped.v":153)
+Compiling module 'aes_core_tapped'("C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\aes_core_tapped.v":46)
+Compiling module 'aes_encipher_block_tapped'("C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\aes_encipher_block.v":43)
+Compiling module 'aes_decipher_block'("C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\aes_decipher_block.v":43)
+Compiling module 'aes_inv_sbox'("C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\aes_inv_sbox.v":40)
+Compiling module 'aes_key_mem_tapped'("C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\aes_key_mem_tapped.v":45)
+Compiling module 'aes_sbox'("C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\aes_sbox.v":42)
+WARN  (EX2565) : Input 'skip_round9' on this instance is undriven. Assigning to 0, simulation mismatch possible. Please assign the input or remove the declaration("C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\aes_core_tapped.v":153)
+Compiling module 'aegis_aes_top'("C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\aegis_aes_top.v":8)
+Compiling module 'klg_key_leak_guard'("C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\klg_key_leak_guard.v":41)
+Compiling module 'red_rare_event'("C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\red_rare_event.v":22)
+Compiling module 'rcm_round_monitor'("C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\rcm_round_monitor.v":29)
+Compiling module 'fic_fsm_integrity'("C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\fic_fsm_integrity.v":15)
+Compiling module 'orc_output_checker'("C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\orc_output_checker.v":28)
+Compiling module 'tru_tamper_response'("C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\tru_tamper_response.v":9)
+Compiling module 'uart_cmd_fsm_security'("C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\uart_cmd_fsm_security.v":28)
+NOTE  (EX0101) : Current top module is "top_security_demo"
+[5%] Running netlist conversion ...
+Running device independent optimization ...
+[10%] Optimizing Phase 0 completed
+[15%] Optimizing Phase 1 completed
+[25%] Optimizing Phase 2 completed
+Running inference ...
+[30%] Inferring Phase 0 completed
+[40%] Inferring Phase 1 completed
+[50%] Inferring Phase 2 completed
+[55%] Inferring Phase 3 completed
+Running technical mapping ...
+[60%] Tech-Mapping Phase 0 completed
+[65%] Tech-Mapping Phase 1 completed
+[75%] Tech-Mapping Phase 2 completed
+[80%] Tech-Mapping Phase 3 completed
+[90%] Tech-Mapping Phase 4 completed
+WARN  (NL0002) : The module "aes_decipher_block" instantiated to "dec_block" is swept in optimizing("C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\aes_core_tapped.v":169)
+WARN  (NL0002) : The module "aes_inv_sbox" instantiated to "inv_sbox_inst" is swept in optimizing("C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\aes_decipher_block.v":237)
+WARN  (NL0002) : The module "aes_decipher_block" instantiated to "dec_block" is swept in optimizing("C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\aes_core_tapped.v":169)
+WARN  (NL0002) : The module "aes_inv_sbox" instantiated to "inv_sbox_inst" is swept in optimizing("C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\src\aes_decipher_block.v":237)
+[95%] Generate netlist file "C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\impl\gwsynthesis\security_demo.vg" completed
+[100%] Generate report file "C:\Users\nguye\Downloads\AEGIS-AES-main\AEGIS-AES-main\fpga\gowin\security_demo\impl\gwsynthesis\security_demo_syn.rpt.html" completed
+GowinSynthesis finish

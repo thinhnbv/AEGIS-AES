@@ -1,0 +1,85 @@
+{
+ "Device" : "GW5A-25A",
+ "Files" : [
+  {
+   "Path" : "C:/Users/nguye/Downloads/AEGIS-AES-main/AEGIS-AES-main/fpga/gowin/security_demo/src/aegis_aes_top.v",
+   "Type" : "verilog"
+  },
+  {
+   "Path" : "C:/Users/nguye/Downloads/AEGIS-AES-main/AEGIS-AES-main/fpga/gowin/security_demo/src/aegis_defs.vh",
+   "Type" : "verilog"
+  },
+  {
+   "Path" : "C:/Users/nguye/Downloads/AEGIS-AES-main/AEGIS-AES-main/fpga/gowin/security_demo/src/aes_core_tapped.v",
+   "Type" : "verilog"
+  },
+  {
+   "Path" : "C:/Users/nguye/Downloads/AEGIS-AES-main/AEGIS-AES-main/fpga/gowin/security_demo/src/aes_decipher_block.v",
+   "Type" : "verilog"
+  },
+  {
+   "Path" : "C:/Users/nguye/Downloads/AEGIS-AES-main/AEGIS-AES-main/fpga/gowin/security_demo/src/aes_encipher_block.v",
+   "Type" : "verilog"
+  },
+  {
+   "Path" : "C:/Users/nguye/Downloads/AEGIS-AES-main/AEGIS-AES-main/fpga/gowin/security_demo/src/aes_inv_sbox.v",
+   "Type" : "verilog"
+  },
+  {
+   "Path" : "C:/Users/nguye/Downloads/AEGIS-AES-main/AEGIS-AES-main/fpga/gowin/security_demo/src/aes_key_mem_tapped.v",
+   "Type" : "verilog"
+  },
+  {
+   "Path" : "C:/Users/nguye/Downloads/AEGIS-AES-main/AEGIS-AES-main/fpga/gowin/security_demo/src/aes_sbox.v",
+   "Type" : "verilog"
+  },
+  {
+   "Path" : "C:/Users/nguye/Downloads/AEGIS-AES-main/AEGIS-AES-main/fpga/gowin/security_demo/src/fic_fsm_integrity.v",
+   "Type" : "verilog"
+  },
+  {
+   "Path" : "C:/Users/nguye/Downloads/AEGIS-AES-main/AEGIS-AES-main/fpga/gowin/security_demo/src/klg_key_leak_guard.v",
+   "Type" : "verilog"
+  },
+  {
+   "Path" : "C:/Users/nguye/Downloads/AEGIS-AES-main/AEGIS-AES-main/fpga/gowin/security_demo/src/orc_output_checker.v",
+   "Type" : "verilog"
+  },
+  {
+   "Path" : "C:/Users/nguye/Downloads/AEGIS-AES-main/AEGIS-AES-main/fpga/gowin/security_demo/src/rcm_round_monitor.v",
+   "Type" : "verilog"
+  },
+  {
+   "Path" : "C:/Users/nguye/Downloads/AEGIS-AES-main/AEGIS-AES-main/fpga/gowin/security_demo/src/red_rare_event.v",
+   "Type" : "verilog"
+  },
+  {
+   "Path" : "C:/Users/nguye/Downloads/AEGIS-AES-main/AEGIS-AES-main/fpga/gowin/security_demo/src/top_security_demo.v",
+   "Type" : "verilog"
+  },
+  {
+   "Path" : "C:/Users/nguye/Downloads/AEGIS-AES-main/AEGIS-AES-main/fpga/gowin/security_demo/src/tru_tamper_response.v",
+   "Type" : "verilog"
+  },
+  {
+   "Path" : "C:/Users/nguye/Downloads/AEGIS-AES-main/AEGIS-AES-main/fpga/gowin/security_demo/src/uart_cmd_fsm_security.v",
+   "Type" : "verilog"
+  },
+  {
+   "Path" : "C:/Users/nguye/Downloads/AEGIS-AES-main/AEGIS-AES-main/fpga/gowin/security_demo/src/uart_rx.v",
+   "Type" : "verilog"
+  },
+  {
+   "Path" : "C:/Users/nguye/Downloads/AEGIS-AES-main/AEGIS-AES-main/fpga/gowin/security_demo/src/uart_tx.v",
+   "Type" : "verilog"
+  }
+ ],
+ "IncludePath" : [
+
+ ],
+ "LoopLimit" : 2000,
+ "ResultFile" : "C:/Users/nguye/Downloads/AEGIS-AES-main/AEGIS-AES-main/fpga/gowin/security_demo/impl/temp/rtl_parser.result",
+ "Top" : "top_security_demo",
+ "VerilogStd" : "verilog_2001",
+ "VhdlStd" : "vhdl_93"
+}

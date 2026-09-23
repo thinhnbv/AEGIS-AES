@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE gowin-synthesis-project>
+<Project>
+    <Version>beta</Version>
+    <Device id="GW5A-25A" package="UBGA324" speed="2" partNumber="GW5A-LV25UG324C2/I1"/>
+    <FileList>
+        <File path="\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\aegis_aes_top.v" type="verilog"/>
+        <File path="\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\aegis_defs.vh" type="verilog"/>
+        <File path="\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\aes_core_tapped.v" type="verilog"/>
+        <File path="\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\aes_decipher_block.v" type="verilog"/>
+        <File path="\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\aes_encipher_block.v" type="verilog"/>
+        <File path="\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\aes_inv_sbox.v" type="verilog"/>
+        <File path="\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\aes_key_mem_tapped.v" type="verilog"/>
+        <File path="\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\aes_sbox.v" type="verilog"/>
+        <File path="\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\fic_fsm_integrity.v" type="verilog"/>
+        <File path="\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\klg_key_leak_guard.v" type="verilog"/>
+        <File path="\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\orc_output_checker.v" type="verilog"/>
+        <File path="\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\rcm_round_monitor.v" type="verilog"/>
+        <File path="\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\red_rare_event.v" type="verilog"/>
+        <File path="\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\top_demo_protected.v" type="verilog"/>
+        <File path="\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\tru_tamper_response.v" type="verilog"/>
+        <File path="\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\uart_cmd_fsm.v" type="verilog"/>
+        <File path="\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\uart_rx.v" type="verilog"/>
+        <File path="\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\src\uart_tx.v" type="verilog"/>
+    </FileList>
+    <OptionList>
+        <Option type="disable_insert_pad" value="0"/>
+        <Option type="looplimit" value="2000"/>
+        <Option type="output_file" value="\\wsl.localhost\Ubuntu\home\thinhnbv\aegis-aes\fpga\gowin\aegis_protected\impl\gwsynthesis\aegis_protected.vg"/>
+        <Option type="print_all_synthesis_warning" value="0"/>
+        <Option type="ram_rw_check" value="0"/>
+        <Option type="top_module" value="top_demo_protected"/>
+        <Option type="verilog_language" value="verilog-2001"/>
+        <Option type="vhdl_language" value="vhdl-1993"/>
+    </OptionList>
+</Project>

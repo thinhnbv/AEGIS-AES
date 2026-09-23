@@ -62,14 +62,16 @@ module uart_cmd_fsm (
     localparam ST_EXEC          = 4'd4;
     localparam ST_SEND_RESP     = 4'd5;
     localparam ST_ERR_CHKSUM    = 4'd6;
+    localparam ST_EXEC_ACK      = 4'd7;
 
     reg [3:0] state;
     reg [5:0] rx_count;
-    reg [7:0] rx_buf [0:33];
+    reg [7:0] rx_buf [0:35];
     reg [7:0] chksum;
 
     reg [5:0] tx_count;
     reg [7:0] tx_buf [0:36];
+    reg       tx_phase; // 0 = waiting to push next byte, 1 = waiting for uart_tx to accept it
 
     // Input FSM
     always @(posedge clk or negedge rst_n) begin
@@ -82,6 +84,7 @@ module uart_cmd_fsm (
             cmd_init     <= 1'b0;
             key_valid    <= 1'b0;
             result_ready <= 1'b0;
+            tx_phase     <= 1'b0;
         end else begin
             cmd_start    <= 1'b0;
             cmd_init     <= 1'b0;
@@ -91,10 +94,18 @@ module uart_cmd_fsm (
                 ST_IDLE: begin
                     if (rx_valid && rx_ready) begin
                         if (rx_data == 8'h01) begin
-                            rx_count <= 6'd0;
-                            rx_ready <= 1'b0;
-                            state    <= ST_RECV_CMD;
-                            chksum   <= 8'd0;
+                            // Store the marker itself at rx_buf[0] and start
+                            // counting from 1, so every later byte lands at
+                            // its documented protocol index. Previously the
+                            // marker was consumed without being stored/counted,
+                            // shifting every subsequent byte's index by one and
+                            // making the FSM wait for a 37th byte that never
+                            // arrives (permanent hang in ST_RECV_CMD).
+                            rx_buf[0] <= rx_data;
+                            rx_count  <= 6'd1;
+                            rx_ready  <= 1'b0;
+                            state     <= ST_RECV_CMD;
+                            chksum    <= rx_data;
                         end
                     end
                 end
@@ -110,9 +121,8 @@ module uart_cmd_fsm (
                             rx_ready <= 1'b1;
 
                             // Check checksum and end marker
-                            // chksum now = XOR(bytes 0-34), rx_buf[0] = byte 0
-                            // We expect chksum ^ rx_data = rx_buf[0]
-                            if ((chksum ^ rx_data) == rx_buf[0] && rx_data == 8'hAA) begin
+                            // chksum now = XOR(bytes 0-33), rx_buf[34] = host checksum byte
+                            if ((chksum == rx_buf[34]) && (rx_data == 8'hAA)) begin
                                 // Parse command
                                 cmd_is_encrypt <= rx_buf[1][0];
 
@@ -154,7 +164,7 @@ module uart_cmd_fsm (
 
                                 key_valid <= 1'b1;
                                 cmd_init  <= 1'b1;
-                                state     <= ST_WAIT_READY;
+                                state     <= ST_INIT_KEY;
                             end else begin
                                 state <= ST_ERR_CHKSUM;
                             end
@@ -162,11 +172,33 @@ module uart_cmd_fsm (
                     end
                 end
 
-                ST_WAIT_READY: begin
+                ST_INIT_KEY: begin
+                    // Wait for aes_core to actually register cmd_init and drop
+                    // aes_ready before trusting it - right after the init pulse,
+                    // aes_ready still reads its stale (old) value for one cycle
+                    // because aes_core's ready_reg update lags one clock behind
+                    // its combinational next-state logic.
                     key_valid <= 1'b0;
+                    if (!aes_ready) begin
+                        state <= ST_WAIT_READY;
+                    end
+                end
+
+                ST_WAIT_READY: begin
                     if (aes_ready) begin
                         cmd_start <= 1'b1;
-                        state     <= ST_EXEC;
+                        state     <= ST_EXEC_ACK;
+                    end
+                end
+
+                ST_EXEC_ACK: begin
+                    // Same stale-read hazard as ST_INIT_KEY, but for cmd_start:
+                    // wait for aes_ready to actually drop before trusting
+                    // cmd_done, otherwise a result_valid left over (held high)
+                    // from a previous transaction can be misread as "done"
+                    // before the new operation has even started.
+                    if (!aes_ready) begin
+                        state <= ST_EXEC;
                     end
                 end
 
@@ -174,6 +206,7 @@ module uart_cmd_fsm (
                     if (cmd_done) begin
                         state <= ST_SEND_RESP;
                         tx_count <= 6'd0;
+                        tx_phase <= 1'b0;
 
                         // Build response buffer
                         tx_buf[0] <= 8'h02;  // marker
@@ -221,7 +254,7 @@ module uart_cmd_fsm (
                 end
 
                 ST_SEND_RESP: begin
-                    if (tx_count == 6'd0) begin
+                    if (tx_count == 6'd0 && tx_phase == 1'b0) begin
                         // Compute checksum for bytes 0..33
                         tx_buf[34] <= tx_buf[0] ^ tx_buf[1] ^ tx_buf[2] ^ tx_buf[3] ^
                                       tx_buf[4] ^ tx_buf[5] ^ tx_buf[6] ^ tx_buf[7] ^
@@ -234,18 +267,30 @@ module uart_cmd_fsm (
                                       tx_buf[32] ^ tx_buf[33];
                     end
 
-                    if (tx_ready) begin
-                        tx_data  <= tx_buf[tx_count];
-                        tx_valid <= 1'b1;
-                        tx_count <= tx_count + 1'b1;
-
-                        if (tx_count == 6'd36) begin
-                            tx_valid    <= 1'b0;
-                            result_ready <= 1'b1;
-                            state       <= ST_IDLE;
+                    if (tx_phase == 1'b0) begin
+                        // Request phase: push the next byte once uart_tx is idle.
+                        if (tx_ready) begin
+                            tx_data  <= tx_buf[tx_count];
+                            tx_valid <= 1'b1;
+                            tx_phase <= 1'b1;
                         end
                     end else begin
+                        // Accept phase: wait for uart_tx to latch the byte and go busy
+                        // (tx_ready deasserts) before advancing tx_count. This avoids
+                        // pushing a second byte while tx_ready is still stale-high.
                         tx_valid <= 1'b0;
+
+                        if (!tx_ready) begin
+                            tx_phase <= 1'b0;
+
+                            if (tx_count == 6'd36) begin
+                                result_ready <= 1'b1;
+                                state        <= ST_IDLE;
+                                tx_count     <= 6'd0;
+                            end else begin
+                                tx_count <= tx_count + 1'b1;
+                            end
+                        end
                     end
                 end
 
