@@ -1,0 +1,44 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Gowin: Synthesize aegis_demo",
+            "type": "shell",
+            "command": "C:\\Gowin\\Gowin_V1.9.11.01_Education_x64\\IDE\\bin\\gw_sh.exe",
+            "args": [
+                "${workspaceFolder}\\fpga\\gowin\\aegis_demo\\build.tcl"
+            ],
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Gowin: Program FPGA (aegis_demo)",
+            "type": "shell",
+            "command": "C:\\Gowin\\Gowin_V1.9.11.01_Education_x64\\Programmer\\bin\\programmer_cli.exe",
+            "args": [
+                "--device", "GW5A-25A",
+                "--fsFile", "${workspaceFolder}\\fpga\\gowin\\aegis_demo\\impl\\pnr\\aegis_demo.fs",
+                "--cable-index", "0",
+                "--run", "2"
+            ],
+            "options": {
+                "env": {
+                    "PYTHONUTF8": "1",
+                    "PYTHONIOENCODING": "utf-8"
+                }
+            },
+            "dependsOn": "Gowin: Synthesize aegis_demo",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
+            "problemMatcher": []
+        }
+    ]
+}
