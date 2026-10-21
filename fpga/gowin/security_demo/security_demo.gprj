@@ -1,0 +1,29 @@
+<?xml version="1" encoding="UTF-8"?>
+<!DOCTYPE gowin-fpga-project>
+<Project>
+    <Template>FPGA</Template>
+    <Version>5</Version>
+    <Device name="GW5A-25A" pn="GW5A-LV25UG324C2/I1">gw5a25a-008</Device>
+    <FileList>
+        <File path="src/aegis_aes_top.v" type="file.verilog" enable="1"/>
+        <File path="src/aegis_defs.vh" type="file.verilog" enable="1"/>
+        <File path="src/aes_core_tapped.v" type="file.verilog" enable="1"/>
+        <File path="src/aes_decipher_block.v" type="file.verilog" enable="1"/>
+        <File path="src/aes_encipher_block.v" type="file.verilog" enable="1"/>
+        <File path="src/aes_inv_sbox.v" type="file.verilog" enable="1"/>
+        <File path="src/aes_key_mem_tapped.v" type="file.verilog" enable="1"/>
+        <File path="src/aes_sbox.v" type="file.verilog" enable="1"/>
+        <File path="src/fic_fsm_integrity.v" type="file.verilog" enable="1"/>
+        <File path="src/klg_key_leak_guard.v" type="file.verilog" enable="1"/>
+        <File path="src/orc_output_checker.v" type="file.verilog" enable="1"/>
+        <File path="src/rcm_round_monitor.v" type="file.verilog" enable="1"/>
+        <File path="src/red_rare_event.v" type="file.verilog" enable="1"/>
+        <File path="src/top_security_demo.v" type="file.verilog" enable="1"/>
+        <File path="src/tru_tamper_response.v" type="file.verilog" enable="1"/>
+        <File path="src/uart_cmd_fsm_security.v" type="file.verilog" enable="1"/>
+        <File path="src/uart_rx.v" type="file.verilog" enable="1"/>
+        <File path="src/uart_tx.v" type="file.verilog" enable="1"/>
+        <File path="src/acg525.cst" type="file.cst" enable="1"/>
+        <File path="src/security_demo.sdc" type="file.sdc" enable="1"/>
+    </FileList>
+</Project>
