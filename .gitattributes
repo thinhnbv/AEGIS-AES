@@ -1,0 +1,19 @@
+# Chuan hoa line ending cho toan repo: luon LF trong git.
+#
+# Ly do: repo duoc develop tren WSL/Linux nhưng edit tren Windows bang
+# VSCode/Notepad. Khong co quy uoc nay, editor Windows tu dong luu file
+# thanh CRLF -> git bao "modified" cho moi file (chi khac byte 0x0D cuoi
+# dong) va lam diff nhieu dong cho thay doi 1 dong that.
+#
+# "text=auto eol=lf" nghia la:
+#   - git tu chuan hoa CRLF -> LF khi commit vao repo
+#   - khi checkout tren Windows, file duoc ghi ra voi LF (editor Windows
+#     hien dai van hien thi binh thuong)
+* text=auto eol=lf
+
+# File van ban / binary nen giu nguyen:
+*.png binary
+*.jpg binary
+*.gif binary
+*.pdf binary
+*.fs binary
