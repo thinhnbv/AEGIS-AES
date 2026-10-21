@@ -5,3 +5,15 @@ results/runs/
 __pycache__/
 backend/openlane/runs/
 .env
+
+# Gowin IDE build artifacts (synthesis, place & route, bitstream).
+# Chi source + project file moi commit; impl/ co the len vai MB
+# (bitstream .fs, netlist .vg, log synthesis).
+fpga/gowin/*/impl/
+fpga/gowin/*/*.fs
+fpga/gowin/*/*.bin
+fpga/gowin/*/*.binx
+fpga/gowin/*/*.db
+
+# Gowin IDE user state (UI layout, per-machine). IDE tu tao lai khi mo project.
+fpga/gowin/*/*.gprj.user
