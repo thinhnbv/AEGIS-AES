@@ -58,13 +58,13 @@ security:
 	@mkdir -p $(BUILD)/$(CASE)
 ifeq ($(CASE),CLEAN)
 	# CLEAN case: aegis RTL + golden support
-	iverilog -g2012 -I$(RTL_AEGIS) -DCASE=\"$(CASE)\" -o $(BUILD)/$(CASE)/sec.out \
+	iverilog -g2012 -I$(RTL_AEGIS) -DCASE=\"$(CASE)\" -o $(BUILD)/$(CASE)/$(CASE).out \
 		$(SRC_AEGIS) \
 		$(filter-out $(RTL_GOLD)/aes.v,$(SRC_GOLD)) \
 		$(TB)/tb_security.sv
 else ifeq ($(CASE),clean)
 	# clean case: same as CLEAN
-	iverilog -g2012 -I$(RTL_AEGIS) -DCASE=\"$(CASE)\" -o $(BUILD)/$(CASE)/sec.out \
+	iverilog -g2012 -I$(RTL_AEGIS) -DCASE=\"$(CASE)\" -o $(BUILD)/$(CASE)/$(CASE).out \
 		$(SRC_AEGIS) \
 		$(filter-out $(RTL_GOLD)/aes.v,$(SRC_GOLD)) \
 		$(TB)/tb_security.sv
@@ -72,13 +72,13 @@ else
 	# Infected case: aegis RTL (filtered) + infected RTL + golden support
 	# Filter out aes_core_tapped.v from aegis since infected provides its own
 	# Use infected aes_core_tapped.v for security tests (has tapped ports for monitors)
-	iverilog -g2012 -I$(RTL_AEGIS) -DCASE=\"$(CASE)\" -o $(BUILD)/$(CASE)/sec.out \
+	iverilog -g2012 -I$(RTL_AEGIS) -DCASE=\"$(CASE)\" -o $(BUILD)/$(CASE)/$(CASE).out \
 		$(filter-out $(RTL_AEGIS)/aes_core_tapped.v,$(SRC_AEGIS)) \
 		$(filter-out $(RTL_CASE)/aes_core.v,$(wildcard $(RTL_CASE)/*_tapped.v)) \
 		$(SEC_GOLD_SUPPORT) \
 		$(TB)/tb_security.sv
 endif
-	@bash -o pipefail -c 'vvp $(BUILD)/$(CASE)/sec.out | tee $(BUILD)/$(CASE)/security.log'
+	@bash -o pipefail -c 'vvp $(BUILD)/$(CASE)/$(CASE).out | tee $(BUILD)/$(CASE)/$(CASE).log'
 
 lint:
 	verilator --lint-only -Wall -Wno-fatal -Wno-DECLFILENAME \
