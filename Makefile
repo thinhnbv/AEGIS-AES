@@ -29,12 +29,13 @@ else
 	SRC_AEGIS_DUT  = $(SRC_AEGIS_KEEP)
 endif
 
-.PHONY: help golden sim security regress regress-all lint formal all-cases fpga backend campaign report clean
+.PHONY: help golden sim security gen-cfg regress regress-all lint formal all-cases fpga backend campaign report clean
 
 help:
 	@echo 'make golden              - kiem tra loi AES goc'
 	@echo 'make sim CASE=T01_...    - mo phong chuc nang'
 	@echo 'make security CASE=T01   - kich hoat trigger, do latency'
+	@echo 'make gen-cfg             - sinh hop dong case tu ground_truth.yaml'
 	@echo 'make regress             - NIST KAT+MCT regression tren core sach'
 	@echo 'make regress CASE=T01    - NIST regression tren core nhiem Trojan'
 	@echo 'make regress-all         - NIST regression cho tat ca ca nhiem'
@@ -60,17 +61,30 @@ SEC_GOLD_SUPPORT = $(RTL_GOLD)/aes_sbox.v $(RTL_GOLD)/aes_inv_sbox.v \
                    $(RTL_GOLD)/aes_key_mem.v \
                    $(RTL_GOLD)/aes_encipher_block.v $(RTL_GOLD)/aes_decipher_block.v
 
-security:
+#---------------------------------------------------------------
+# gen-cfg: compile the case contract into verif/cfg/*.cfg
+#
+# The contract (which detectors must fire, the detection latency
+# budget, whether the Trojan must stay silent on clean NIST traffic)
+# lives in rtl/infected/<CASE>/ground_truth.yaml. It is compiled into
+# a flat config file that the testbenches read at runtime, so the
+# Red team (who writes the Trojan) and the Blue team (who writes the
+# checker) cannot silently disagree.
+#---------------------------------------------------------------
+gen-cfg:
+	@python3 scripts/gen_case_cfg.py
+
+security: gen-cfg
 	@mkdir -p $(BUILD)/$(CASE)
 ifeq ($(CASE),CLEAN)
 	# CLEAN case: aegis RTL + golden support
-	iverilog -g2012 -I$(RTL_AEGIS) -DCASE=\"$(CASE)\" -o $(BUILD)/$(CASE)/$(CASE).out \
+	iverilog -g2012 -I$(RTL_AEGIS) -I$(TB) -DCASE=\"$(CASE)\" -o $(BUILD)/$(CASE)/$(CASE).out \
 		$(SRC_AEGIS) \
 		$(filter-out $(RTL_GOLD)/aes.v,$(SRC_GOLD)) \
 		$(TB)/tb_security.sv
 else ifeq ($(CASE),clean)
 	# clean case: same as CLEAN
-	iverilog -g2012 -I$(RTL_AEGIS) -DCASE=\"$(CASE)\" -o $(BUILD)/$(CASE)/$(CASE).out \
+	iverilog -g2012 -I$(RTL_AEGIS) -I$(TB) -DCASE=\"$(CASE)\" -o $(BUILD)/$(CASE)/$(CASE).out \
 		$(SRC_AEGIS) \
 		$(filter-out $(RTL_GOLD)/aes.v,$(SRC_GOLD)) \
 		$(TB)/tb_security.sv
@@ -78,7 +92,7 @@ else
 	# Infected case: aegis RTL (filtered) + infected RTL + golden support
 	# Filter out aes_core_tapped.v from aegis since infected provides its own
 	# Use infected aes_core_tapped.v for security tests (has tapped ports for monitors)
-	iverilog -g2012 -I$(RTL_AEGIS) -DCASE=\"$(CASE)\" -o $(BUILD)/$(CASE)/$(CASE).out \
+	iverilog -g2012 -I$(RTL_AEGIS) -I$(TB) -DCASE=\"$(CASE)\" -o $(BUILD)/$(CASE)/$(CASE).out \
 		$(filter-out $(RTL_AEGIS)/aes_core_tapped.v,$(SRC_AEGIS)) \
 		$(filter-out $(RTL_CASE)/aes_core.v,$(wildcard $(RTL_CASE)/*_tapped.v)) \
 		$(SEC_GOLD_SUPPORT) \
@@ -93,20 +107,20 @@ endif
 # clean NIST traffic - ciphertext still correct AND no monitor
 # raises a false alarm.
 #---------------------------------------------------------------
-regress:
+regress: gen-cfg
 	@mkdir -p $(BUILD)/$(CASE)
 ifeq ($(CASE),CLEAN)
-	iverilog -g2012 -I$(RTL_AEGIS) -DMCT_LIMIT=$(MCT_LIMIT) -o $(BUILD)/$(CASE)/regress.out \
+	iverilog -g2012 -I$(RTL_AEGIS) -I$(TB) -DMCT_LIMIT=$(MCT_LIMIT) -DCASE=\"$(CASE)\" -o $(BUILD)/$(CASE)/regress.out \
 		$(SRC_AEGIS) \
 		$(filter-out $(RTL_GOLD)/aes.v,$(SRC_GOLD)) \
 		$(TB)/tb_regress_nist.sv
 else ifeq ($(CASE),clean)
-	iverilog -g2012 -I$(RTL_AEGIS) -DMCT_LIMIT=$(MCT_LIMIT) -o $(BUILD)/$(CASE)/regress.out \
+	iverilog -g2012 -I$(RTL_AEGIS) -I$(TB) -DMCT_LIMIT=$(MCT_LIMIT) -DCASE=\"$(CASE)\" -o $(BUILD)/$(CASE)/regress.out \
 		$(SRC_AEGIS) \
 		$(filter-out $(RTL_GOLD)/aes.v,$(SRC_GOLD)) \
 		$(TB)/tb_regress_nist.sv
 else
-	iverilog -g2012 -I$(RTL_AEGIS) -DMCT_LIMIT=$(MCT_LIMIT) -o $(BUILD)/$(CASE)/regress.out \
+	iverilog -g2012 -I$(RTL_AEGIS) -I$(TB) -DMCT_LIMIT=$(MCT_LIMIT) -DCASE=\"$(CASE)\" -o $(BUILD)/$(CASE)/regress.out \
 		$(filter-out $(RTL_AEGIS)/aes_core_tapped.v,$(SRC_AEGIS)) \
 		$(filter-out $(RTL_CASE)/aes_core.v,$(wildcard $(RTL_CASE)/*_tapped.v)) \
 		$(SEC_GOLD_SUPPORT) \
