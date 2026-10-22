@@ -1,6 +1,9 @@
 # ====== AEGIS-AES Makefile ======
 CASE      ?= clean
 SIM       ?= iverilog
+# Max NIST MCT vectors for `make regress`. 0 = all 10000 (~10 min
+# under Icarus). Set e.g. MCT_LIMIT=100 for a quick smoke test.
+MCT_LIMIT ?= 0
 
 RTL_GOLD   = rtl/aes_golden
 RTL_AEGIS  = rtl/aegis
@@ -26,12 +29,15 @@ else
 	SRC_AEGIS_DUT  = $(SRC_AEGIS_KEEP)
 endif
 
-.PHONY: help golden sim security lint formal all-cases fpga backend campaign report clean
+.PHONY: help golden sim security regress regress-all lint formal all-cases fpga backend campaign report clean
 
 help:
 	@echo 'make golden              - kiem tra loi AES goc'
 	@echo 'make sim CASE=T01_...    - mo phong chuc nang'
 	@echo 'make security CASE=T01   - kich hoat trigger, do latency'
+	@echo 'make regress             - NIST KAT+MCT regression tren core sach'
+	@echo 'make regress CASE=T01    - NIST regression tren core nhiem Trojan'
+	@echo 'make regress-all         - NIST regression cho tat ca ca nhiem'
 	@echo 'make lint                - Verilator lint tren rtl/aegis'
 	@echo 'make formal              - SymbiYosys chay tap SVA'
 	@echo 'make all-cases           - chay toan bo benchmark'
@@ -80,11 +86,47 @@ else
 endif
 	@bash -o pipefail -c 'vvp $(BUILD)/$(CASE)/$(CASE).out | tee $(BUILD)/$(CASE)/$(CASE).log'
 
+#---------------------------------------------------------------
+# regress: NIST FIPS-197 regression (KAT 16 + MCT 10000 vectors)
+#
+# Property under test: a Trojan-infected core must be SILENT on
+# clean NIST traffic - ciphertext still correct AND no monitor
+# raises a false alarm.
+#---------------------------------------------------------------
+regress:
+	@mkdir -p $(BUILD)/$(CASE)
+ifeq ($(CASE),CLEAN)
+	iverilog -g2012 -I$(RTL_AEGIS) -DMCT_LIMIT=$(MCT_LIMIT) -o $(BUILD)/$(CASE)/regress.out \
+		$(SRC_AEGIS) \
+		$(filter-out $(RTL_GOLD)/aes.v,$(SRC_GOLD)) \
+		$(TB)/tb_regress_nist.sv
+else ifeq ($(CASE),clean)
+	iverilog -g2012 -I$(RTL_AEGIS) -DMCT_LIMIT=$(MCT_LIMIT) -o $(BUILD)/$(CASE)/regress.out \
+		$(SRC_AEGIS) \
+		$(filter-out $(RTL_GOLD)/aes.v,$(SRC_GOLD)) \
+		$(TB)/tb_regress_nist.sv
+else
+	iverilog -g2012 -I$(RTL_AEGIS) -DMCT_LIMIT=$(MCT_LIMIT) -o $(BUILD)/$(CASE)/regress.out \
+		$(filter-out $(RTL_AEGIS)/aes_core_tapped.v,$(SRC_AEGIS)) \
+		$(filter-out $(RTL_CASE)/aes_core.v,$(wildcard $(RTL_CASE)/*_tapped.v)) \
+		$(SEC_GOLD_SUPPORT) \
+		$(TB)/tb_regress_nist.sv
+endif
+	@bash -o pipefail -c 'vvp $(BUILD)/$(CASE)/regress.out | tee $(BUILD)/$(CASE)/regress.log'
+
+# Run the NIST regression over every infected case plus the clean core.
+regress-all:
+	@echo "=== clean ==="
+	@$(MAKE) --no-print-directory regress CASE=clean || true
+	@for c in $$(ls rtl/infected); do \
+	echo "=== $$c ==="; \
+	$(MAKE) --no-print-directory regress CASE=$$c || true; \
+	done
+
 lint:
 	verilator --lint-only -Wall -Wno-fatal -Wno-DECLFILENAME \
 		-I$(RTL_AEGIS) $(SRC_DUT) $(SRC_AEGIS_DUT) \
 		--top-module aegis_aes_top
-
 formal:
 	sby -f verif/sva/aegis.sby
 
