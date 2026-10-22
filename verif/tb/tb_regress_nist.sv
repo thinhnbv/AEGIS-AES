@@ -1,4 +1,5 @@
 `timescale 1ns/1ps
+`include "aegis_cfg_reader.vh"
 
 //==============================================================
 // tb_regress_nist.sv
@@ -32,6 +33,15 @@
 //   ... etc, one per rtl/infected/T0x_* case
 //==============================================================
 module tb_regress_nist;
+
+  //------------------------------------------------------------
+  // Case contract (verif/cfg/<CASE>.cfg).
+  //------------------------------------------------------------
+  logic [7:0] cfg_mask;
+  integer     cfg_latency;
+  logic       cfg_silent;
+  integer     cfg_ok;
+  string      cfg_path;
 
   // Maximum number of MCT vectors to run. 0 = all 10,000.
   // Override from the Makefile: make regress MCT_LIMIT=100
@@ -182,10 +192,17 @@ module tb_regress_nist;
     //    is reported but does not fail the regression.
     if (sec_alarm === 1'b1) begin
       alarm_count = alarm_count + 1;
-      err_count   = err_count + 1;
-      local_err   = local_err + 1;
-      $display("  [ALARM] vec %0d: sec_alarm=1 sec_status=%08b",
-               idx, sec_status);
+
+      if (cfg_silent) begin
+        err_count = err_count + 1;
+        local_err = local_err + 1;
+        $display("  [ALARM] vec %0d: sec_alarm=1 sec_status=%08b (FAIL: contract requires silence)",
+                 idx, sec_status);
+      end
+      else begin
+        $display("  [ALARM] vec %0d: sec_alarm=1 sec_status=%08b (allowed by contract)",
+                 idx, sec_status);
+      end
     end
 
     // -- Let the wrapper return to ST_READY for the next vector.
@@ -253,6 +270,28 @@ module tb_regress_nist;
     fail_count    = 0;
     alarm_count   = 0;
     err_count     = 0;
+
+    // -- Load the case contract, if this run targets an infected
+    //    case. The clean core has no contract, so it defaults to
+    //    "must stay silent".
+    cfg_mask    = 8'd0;
+    cfg_latency = -1;
+    cfg_silent  = 1'b1;
+    cfg_ok      = 0;
+
+    cfg_path = {"verif/cfg/", `CASE, ".cfg"};
+
+    aegis_cfg_read(
+      cfg_path,
+      cfg_mask,
+      cfg_latency,
+      cfg_silent,
+      cfg_ok
+    );
+
+    if (!cfg_ok)
+      $display("[CFG] Khong co contract cho CASE=%0s, dung mac dinh im lang",
+               `CASE);
 
     // -- MCT vector limit. 0 = run all 10,000.
     limit = `MCT_LIMIT;
