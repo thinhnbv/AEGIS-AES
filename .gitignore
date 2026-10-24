@@ -17,3 +17,6 @@ fpga/gowin/*/*.db
 
 # Gowin IDE user state (UI layout, per-machine). IDE tu tao lai khi mo project.
 fpga/gowin/*/*.gprj.user
+
+# Verilator build output
+obj_dir/

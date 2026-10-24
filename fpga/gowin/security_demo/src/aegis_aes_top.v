@@ -55,6 +55,8 @@ module aegis_aes_top #(
   // ORC signals
   wire       orc_alarm;
   wire [3:0] orc_code;
+  wire       orc_ref_valid;
+  wire [127:0] orc_ref_result;
   wire [127:0] state_before_final;
   wire [127:0] final_round_key;
 
@@ -112,9 +114,12 @@ module aegis_aes_top #(
     .clk(clk),
     .rst_n(rst_n),
     .key_reg(key_reg),
+    .key_valid(key_valid),
     .round_keys_flat(round_keys_flat),
     .data_out(core_dout),
     .data_out_valid(core_dvalid),  // Check on every core output, not wrapper state
+    .orc_ref_valid(orc_ref_valid),
+    .orc_ref_result(orc_ref_result),
     .round_nr(core_round_nr),      // Round counter for edge detection
     .klg_alarm(klg_alarm),
     .klg_code(klg_code),
@@ -183,11 +188,15 @@ module aegis_aes_top #(
         .final_round_key(final_round_key),
         .core_result(core_dout),
         .orc_alarm(orc_alarm),
-        .orc_code(orc_code)
+        .orc_code(orc_code),
+        .orc_ref_valid(orc_ref_valid),
+        .orc_ref_result(orc_ref_result)
       );
     end else begin : gen_orc_stub
       assign orc_alarm = 1'b0;
       assign orc_code  = 4'd0;
+      assign orc_ref_valid  = 1'b0;
+      assign orc_ref_result = 128'd0;
     end
   endgenerate
 

@@ -1,6 +1,17 @@
 # ====== AEGIS-AES Makefile ======
 CASE      ?= clean
 SIM       ?= iverilog
+# Max NIST MCT vectors for `make regress`. 0 = all 10000 (~10 min
+# under Icarus). Set e.g. MCT_LIMIT=100 for a quick smoke test.
+MCT_LIMIT ?= 0
+
+# False-alarm measurement (make fa-rate).
+# FA_KEYS keys are installed in turn, each reused for FA_PER_KEY
+# encryptions. 100 x 1000 = 100k encryptions per run; scale up for
+# the 1e6 figure quoted in the report.
+FA_KEYS   ?= 100
+FA_PER_KEY ?= 1000
+FA_SEED   ?= 305419896
 
 RTL_GOLD   = rtl/aes_golden
 RTL_AEGIS  = rtl/aegis
@@ -26,13 +37,17 @@ else
 	SRC_AEGIS_DUT  = $(SRC_AEGIS_KEEP)
 endif
 
-.PHONY: help golden sim security gen-cfg lint formal all-cases fpga backend campaign report clean
+.PHONY: help golden sim security gen-cfg regress regress-all fa-rate lint formal all-cases fpga backend campaign report clean
 
 help:
 	@echo 'make golden              - kiem tra loi AES goc'
 	@echo 'make sim CASE=T01_...    - mo phong chuc nang'
 	@echo 'make security CASE=T01   - kich hoat trigger, do latency'
 	@echo 'make gen-cfg             - sinh hop dong case tu ground_truth.yaml'
+	@echo 'make regress             - NIST KAT+MCT regression tren core sach'
+	@echo 'make regress CASE=T01    - NIST regression tren core nhiem Trojan'
+	@echo 'make fa-rate             - do false alarm rate tren luong ma hoa hop le'
+	@echo 'make regress-all         - NIST regression cho tat ca ca nhiem'
 	@echo 'make lint                - Verilator lint tren rtl/aegis'
 	@echo 'make formal              - SymbiYosys chay tap SVA'
 	@echo 'make all-cases           - chay toan bo benchmark'
@@ -61,7 +76,7 @@ SEC_GOLD_SUPPORT = $(RTL_GOLD)/aes_sbox.v $(RTL_GOLD)/aes_inv_sbox.v \
 # The contract (which detectors must fire, the detection latency
 # budget, whether the Trojan must stay silent on clean NIST traffic)
 # lives in rtl/infected/<CASE>/ground_truth.yaml. It is compiled into
-# a flat config file that the testbench reads at runtime, so the
+# a flat config file that the testbenches read at runtime, so the
 # Red team (who writes the Trojan) and the Blue team (who writes the
 # checker) cannot silently disagree.
 #---------------------------------------------------------------
@@ -94,11 +109,88 @@ else
 endif
 	@bash -o pipefail -c 'vvp $(BUILD)/$(CASE)/$(CASE).out | tee $(BUILD)/$(CASE)/$(CASE).log'
 
+#---------------------------------------------------------------
+# regress: NIST FIPS-197 regression (KAT 16 + MCT 10000 vectors)
+#
+# Property under test: a Trojan-infected core must be SILENT on
+# clean NIST traffic - ciphertext still correct AND no monitor
+# raises a false alarm.
+#---------------------------------------------------------------
+regress: gen-cfg
+	@mkdir -p $(BUILD)/$(CASE)
+ifeq ($(CASE),CLEAN)
+	iverilog -g2012 -I$(RTL_AEGIS) -I$(TB) -DMCT_LIMIT=$(MCT_LIMIT) -DCASE=\"$(CASE)\" -o $(BUILD)/$(CASE)/regress.out \
+		$(SRC_AEGIS) \
+		$(filter-out $(RTL_GOLD)/aes.v,$(SRC_GOLD)) \
+		$(TB)/tb_regress_nist.sv
+else ifeq ($(CASE),clean)
+	iverilog -g2012 -I$(RTL_AEGIS) -I$(TB) -DMCT_LIMIT=$(MCT_LIMIT) -DCASE=\"$(CASE)\" -o $(BUILD)/$(CASE)/regress.out \
+		$(SRC_AEGIS) \
+		$(filter-out $(RTL_GOLD)/aes.v,$(SRC_GOLD)) \
+		$(TB)/tb_regress_nist.sv
+else
+	iverilog -g2012 -I$(RTL_AEGIS) -I$(TB) -DMCT_LIMIT=$(MCT_LIMIT) -DCASE=\"$(CASE)\" -o $(BUILD)/$(CASE)/regress.out \
+		$(filter-out $(RTL_AEGIS)/aes_core_tapped.v,$(SRC_AEGIS)) \
+		$(filter-out $(RTL_CASE)/aes_core.v,$(wildcard $(RTL_CASE)/*_tapped.v)) \
+		$(SEC_GOLD_SUPPORT) \
+		$(TB)/tb_regress_nist.sv
+endif
+	@bash -o pipefail -c 'vvp $(BUILD)/$(CASE)/regress.out | tee $(BUILD)/$(CASE)/regress.log'
+
+# Run the NIST regression over every infected case plus the clean core.
+regress-all:
+	@echo "=== clean ==="
+	@$(MAKE) --no-print-directory regress CASE=clean || true
+	@for c in $$(ls rtl/infected); do \
+	echo "=== $$c ==="; \
+	$(MAKE) --no-print-directory regress CASE=$$c || true; \
+	done
+
+#---------------------------------------------------------------
+# fa-rate: measure the false-alarm rate of the security monitors.
+#
+# The proposal (muc 9.2) requires the report to state the number of
+# false alarms over 1e6 valid encryptions. This target measures it on
+# a realistic traffic pattern: one key is installed, then reused for
+# many encryptions. That is the pattern the sliding-window detectors
+# are designed for.
+#
+# Overridable:
+#   make fa-rate FA_KEYS=200 FA_PER_KEY=5000
+#
+# The default simulator is Icarus, but Icarus needs several hours for
+# 1e6 encryptions. Set SIM=verilator for a compiled run that finishes
+# in seconds:
+#   make fa-rate SIM=verilator FA_KEYS=200 FA_PER_KEY=5000
+#---------------------------------------------------------------
+fa-rate:
+	@mkdir -p $(BUILD)/fa_rate
+ifeq ($(SIM),verilator)
+	verilator --binary --timing -Wno-fatal -Wno-DECLFILENAME \
+		-I$(RTL_AEGIS) -I$(TB) \
+		--top-module tb_fa_rate \
+		-DFA_KEYS=$(FA_KEYS) -DFA_PER_KEY=$(FA_PER_KEY) \
+		-DFA_SEED=$(FA_SEED) \
+		-Mdir $(BUILD)/fa_rate/obj -o fa_rate_v \
+		$(SRC_AEGIS) \
+		$(filter-out $(RTL_GOLD)/aes.v,$(SRC_GOLD)) \
+		$(TB)/tb_fa_rate.sv
+	@bash -o pipefail -c '$(BUILD)/fa_rate/obj/fa_rate_v | tee $(BUILD)/fa_rate/fa_rate.log'
+else
+	iverilog -g2012 -I$(RTL_AEGIS) -I$(TB) \
+		-DFA_KEYS=$(FA_KEYS) -DFA_PER_KEY=$(FA_PER_KEY) \
+		-DFA_SEED=$(FA_SEED) \
+		-o $(BUILD)/fa_rate/fa_rate.out \
+		$(SRC_AEGIS) \
+		$(filter-out $(RTL_GOLD)/aes.v,$(SRC_GOLD)) \
+		$(TB)/tb_fa_rate.sv
+	@bash -o pipefail -c 'vvp $(BUILD)/fa_rate/fa_rate.out | tee $(BUILD)/fa_rate/fa_rate.log'
+endif
+
 lint:
 	verilator --lint-only -Wall -Wno-fatal -Wno-DECLFILENAME \
 		-I$(RTL_AEGIS) $(SRC_DUT) $(SRC_AEGIS_DUT) \
 		--top-module aegis_aes_top
-
 formal:
 	sby -f verif/sva/aegis.sby
 

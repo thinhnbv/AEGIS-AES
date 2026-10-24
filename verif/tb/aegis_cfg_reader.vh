@@ -16,6 +16,8 @@
 //                                    clean NIST traffic at all
 //                           false -> the case is allowed to be
 //                                    detectable on NIST traffic
+//   trigger_repeat          how many times the trigger vector must be
+//                            sent before the case counts as detected
 //   trigger_seq             path to the trigger vector file
 //
 // Usage in a testbench:
@@ -56,6 +58,7 @@ task automatic aegis_cfg_read;
   output reg [7:0]   expected_mask;
   output integer     expected_latency;
   output reg         silent_under_nist;
+  output integer     trigger_repeat;
   output integer     cfg_ok;
 
   integer            fd;
@@ -69,6 +72,7 @@ task automatic aegis_cfg_read;
     expected_latency  = -1;
     silent_under_nist = 1'b1;
     silent_str        = "true";
+    trigger_repeat    = 1;
     done              = 0;
     cfg_ok            = 0;
 
@@ -96,6 +100,10 @@ task automatic aegis_cfg_read;
                            silent_str) == 1) begin
             done = 0;
           end
+          else if ($sscanf(line, "trigger_repeat = %d",
+                           trigger_repeat) == 1) begin
+            done = 0;
+          end
         end
       end
 
@@ -104,9 +112,9 @@ task automatic aegis_cfg_read;
       silent_under_nist = (silent_str == "true");
       cfg_ok            = 1;
 
-      $display("[CFG] %0s: expected_mask=%08b latency=%0d silent=%0s",
+      $display("[CFG] %0s: expected_mask=%08b latency=%0d silent=%0s repeat=%0d",
                path, expected_mask, expected_latency,
-               silent_under_nist ? "true" : "false");
+               silent_under_nist ? "true" : "false", trigger_repeat);
     end
   end
 endtask
