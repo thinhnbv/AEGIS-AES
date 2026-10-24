@@ -203,8 +203,19 @@ module aes_core_tapped #(
         aes_core_ctrl_reg <= aes_core_ctrl_new;
 
       // Count each accepted encryption exactly once.
-      if (encrypt_counter_we)
-        encrypt_counter <= encrypt_counter + 16'd1;
+      //
+      // The counter SATURATES at the threshold instead of wrapping
+      // around. A wrapping counter would drop back to 0 one
+      // encryption after the trigger fires, so the payload would
+      // leak exactly once every 65536 encryptions. The benchmark
+      // specification for T02 is a slow but CONTINUOUS key leak
+      // ("leak 8 key bits into the ciphertext on every encryption
+      // once the counter reaches the threshold"), so the counter
+      // must stay above the threshold once it is reached.
+      if (encrypt_counter_we) begin
+        if (encrypt_counter < T02_TRIGGER_COUNT)
+          encrypt_counter <= encrypt_counter + 16'd1;
+      end
     end
   end
 

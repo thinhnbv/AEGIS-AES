@@ -40,7 +40,22 @@ module orc_output_checker #(
     input  wire [127:0] core_result,
 
     output reg          orc_alarm,
-    output reg  [3:0]   orc_code
+    output reg  [3:0]   orc_code,
+
+    // Independently recomputed reference ciphertext.
+    //
+    // orc_ref_valid is high once the final-round checkpoint has
+    // been observed, i.e. whenever the recomputation is meaningful.
+    // orc_ref_result is the ciphertext the core SHOULD have
+    // produced for the current transaction.
+    //
+    // KLG uses these to CORROBORATE its byte-level leak check: a
+    // ciphertext byte that carries key material is only a real leak
+    // if the reference says that byte was actually modified. That
+    // turns a 1/256 guess into a deterministic zero-false-alarm
+    // test. See rtl/aegis/klg_key_leak_guard.v.
+    output wire         orc_ref_valid,
+    output wire [127:0] orc_ref_result
 );
 
 
@@ -139,6 +154,11 @@ module orc_output_checker #(
   assign computed_final =
       {shift_w0, shift_w1, shift_w2, shift_w3} ^
       captured_final_key;
+
+  // The recomputed ciphertext is only meaningful once the
+  // final-round checkpoint has been captured.
+  assign orc_ref_valid  = capture_valid;
+  assign orc_ref_result = computed_final;
 
 
   //-------------------------------------------------------------

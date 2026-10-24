@@ -41,6 +41,7 @@ module tb_regress_nist;
   integer     cfg_latency;
   logic       cfg_silent;
   integer     cfg_ok;
+  integer     cfg_repeat;
   string      cfg_path;
 
   // Maximum number of MCT vectors to run. 0 = all 10,000.
@@ -286,6 +287,7 @@ module tb_regress_nist;
       cfg_mask,
       cfg_latency,
       cfg_silent,
+      cfg_repeat,
       cfg_ok
     );
 

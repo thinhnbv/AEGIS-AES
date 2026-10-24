@@ -27,4 +27,13 @@ detection:
 
 verification:
   silent_under_nist: true
+  # KLG detects the P2 leak through a sliding-window statistical test
+  # (16 results, threshold 6 matches) instead of a single 8-bit
+  # comparison, so the monitor needs several consecutive leaking
+  # results before it alarms.
+  #
+  # The trigger counter saturates at the threshold, so every
+  # encryption after the trigger has fired leaks the key byte. Six
+  # repetitions are therefore enough to fill the window.
+  trigger_repeat: 6
   activation_seq: verif/vectors/trigger_T02.txt

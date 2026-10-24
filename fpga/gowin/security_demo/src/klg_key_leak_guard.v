@@ -14,6 +14,9 @@
 // ciphertext[7:0]. It is parameterized so a production design can
 // disable it or move the observed byte without changing the module.
 //
+// Layer 4 uses a SLIDING-WINDOW STATISTICAL test rather than a single
+// comparison. See "P2 byte-leak window detector" below.
+//
 // klg_alarm is sticky until rst_n.
 // klg_verdict_valid is a one-cycle pulse for each new AES result.
 //
@@ -42,16 +45,28 @@ module klg_key_leak_guard #(
     parameter integer NUM_RKEY          = `AEGIS_NUM_RKEY,
     parameter integer HAM_THRESH        = 16,
     parameter integer EN_BYTE_LEAK      = 1,
-    parameter integer BYTE_LEAK_INDEX   = 0
+    parameter integer BYTE_LEAK_INDEX   = 0,
+
+    // Sliding-window parameters for the P2 byte-leak detector.
+    // See rtl/aegis/klg_key_leak_guard.v for the derivation.
+    parameter integer BYTE_LEAK_WINDOW  = 16,
+    parameter integer BYTE_LEAK_THRESH  = 6
 ) (
     input  wire                         clk,
     input  wire                         rst_n,
 
     input  wire [127:0]                 key_reg,
+    input  wire                         key_valid,
     input  wire [NUM_RKEY*128-1:0]      round_keys_flat,
 
     input  wire [127:0]                 data_out,
     input  wire                         data_out_valid,
+
+    // Recomputed reference ciphertext from the ORC, used to
+    // corroborate the byte-level leak check. See
+    // rtl/aegis/klg_key_leak_guard.v.
+    input  wire                         orc_ref_valid,
+    input  wire [127:0]                 orc_ref_result,
 
     // Kept for interface compatibility / debug visibility.
     input  wire [3:0]                   round_nr,
@@ -220,11 +235,58 @@ module klg_key_leak_guard #(
   //   result[7:0] = key[7:0]
   //
   // BYTE_LEAK_INDEX=0 corresponds to [7:0].
+  //
+  // A single match is far too weak on its own: on random traffic it
+  // fires with probability 1/256, i.e. ~3906 false alarms per 1e6
+  // encryptions. The match is therefore counted in a sliding window
+  // and only becomes an alarm once enough of the recent results
+  // matched. This mirrors rtl/aegis/klg_key_leak_guard.v.
   //-------------------------------------------------------------
-  wire hit_byte_leak =
-      EN_BYTE_LEAK &&
+  wire byte_match_now =
       (data_out[BYTE_LEAK_INDEX*8 +: 8] ==
        key_reg[BYTE_LEAK_INDEX*8 +: 8]);
+
+  // Corroborated byte-leak test: the ORC reference proves the byte
+  // was actually modified, so a chance match is not a leak.
+  // This mirrors rtl/aegis/klg_key_leak_guard.v.
+  wire byte_leak_corrob =
+      EN_BYTE_LEAK &&
+      orc_ref_valid &&
+      (data_out[BYTE_LEAK_INDEX*8 +: 8] !=
+       orc_ref_result[BYTE_LEAK_INDEX*8 +: 8]) &&
+      (data_out[BYTE_LEAK_INDEX*8 +: 8] ==
+       key_reg[BYTE_LEAK_INDEX*8 +: 8]);
+
+  reg [BYTE_LEAK_WINDOW-1:0] byte_leak_hist;
+  reg [7:0]                byte_leak_cnt;
+
+  wire [7:0] byte_leak_count_next =
+      byte_leak_cnt
+      + (byte_match_now ? 8'd1 : 8'd0)
+      - byte_leak_hist[BYTE_LEAK_WINDOW-1];
+
+  wire hit_byte_leak_window =
+      EN_BYTE_LEAK && (byte_leak_count_next >= BYTE_LEAK_THRESH);
+
+  wire hit_byte_leak =
+      byte_leak_corrob || hit_byte_leak_window;
+
+  always @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+      byte_leak_hist <= {BYTE_LEAK_WINDOW{1'b0}};
+      byte_leak_cnt  <= 8'd0;
+    end
+    else if (key_valid) begin
+      byte_leak_hist <= {BYTE_LEAK_WINDOW{1'b0}};
+      byte_leak_cnt  <= 8'd0;
+    end
+    else if (result_event) begin
+      byte_leak_hist <= {byte_leak_hist[BYTE_LEAK_WINDOW-2:0],
+                         byte_match_now};
+
+      byte_leak_cnt  <= byte_leak_count_next;
+    end
+  end
 
 
   //-------------------------------------------------------------

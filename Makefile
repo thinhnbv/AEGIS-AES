@@ -5,6 +5,14 @@ SIM       ?= iverilog
 # under Icarus). Set e.g. MCT_LIMIT=100 for a quick smoke test.
 MCT_LIMIT ?= 0
 
+# False-alarm measurement (make fa-rate).
+# FA_KEYS keys are installed in turn, each reused for FA_PER_KEY
+# encryptions. 100 x 1000 = 100k encryptions per run; scale up for
+# the 1e6 figure quoted in the report.
+FA_KEYS   ?= 100
+FA_PER_KEY ?= 1000
+FA_SEED   ?= 305419896
+
 RTL_GOLD   = rtl/aes_golden
 RTL_AEGIS  = rtl/aegis
 RTL_CASE   = rtl/infected/$(CASE)
@@ -29,7 +37,7 @@ else
 	SRC_AEGIS_DUT  = $(SRC_AEGIS_KEEP)
 endif
 
-.PHONY: help golden sim security gen-cfg regress regress-all lint formal all-cases fpga backend campaign report clean
+.PHONY: help golden sim security gen-cfg regress regress-all fa-rate lint formal all-cases fpga backend campaign report clean
 
 help:
 	@echo 'make golden              - kiem tra loi AES goc'
@@ -38,6 +46,7 @@ help:
 	@echo 'make gen-cfg             - sinh hop dong case tu ground_truth.yaml'
 	@echo 'make regress             - NIST KAT+MCT regression tren core sach'
 	@echo 'make regress CASE=T01    - NIST regression tren core nhiem Trojan'
+	@echo 'make fa-rate             - do false alarm rate tren luong ma hoa hop le'
 	@echo 'make regress-all         - NIST regression cho tat ca ca nhiem'
 	@echo 'make lint                - Verilator lint tren rtl/aegis'
 	@echo 'make formal              - SymbiYosys chay tap SVA'
@@ -136,6 +145,29 @@ regress-all:
 	echo "=== $$c ==="; \
 	$(MAKE) --no-print-directory regress CASE=$$c || true; \
 	done
+
+#---------------------------------------------------------------
+# fa-rate: measure the false-alarm rate of the security monitors.
+#
+# The proposal (muc 9.2) requires the report to state the number of
+# false alarms over 1e6 valid encryptions. This target measures it on
+# a realistic traffic pattern: one key is installed, then reused for
+# many encryptions. That is the pattern the sliding-window detectors
+# are designed for.
+#
+# Overridable:
+#   make fa-rate FA_KEYS=200 FA_PER_KEY=5000
+#---------------------------------------------------------------
+fa-rate:
+	@mkdir -p $(BUILD)/fa_rate
+	iverilog -g2012 -I$(RTL_AEGIS) -I$(TB) \
+		-DFA_KEYS=$(FA_KEYS) -DFA_PER_KEY=$(FA_PER_KEY) \
+		-DFA_SEED=$(FA_SEED) \
+		-o $(BUILD)/fa_rate/fa_rate.out \
+		$(SRC_AEGIS) \
+		$(filter-out $(RTL_GOLD)/aes.v,$(SRC_GOLD)) \
+		$(TB)/tb_fa_rate.sv
+	@bash -o pipefail -c 'vvp $(BUILD)/fa_rate/fa_rate.out | tee $(BUILD)/fa_rate/fa_rate.log'
 
 lint:
 	verilator --lint-only -Wall -Wno-fatal -Wno-DECLFILENAME \

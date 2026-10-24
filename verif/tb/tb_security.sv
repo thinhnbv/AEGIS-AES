@@ -57,6 +57,8 @@ module tb_security;
   //   bit 4 = ORC
   //------------------------------------------------------------
   logic [7:0] expected_mask;
+  integer     trigger_repeat;
+  integer     trigger_idx;
 
 
   //------------------------------------------------------------
@@ -69,6 +71,7 @@ module tb_security;
   integer     cfg_latency;
   logic       cfg_silent;
   integer     cfg_ok;
+  integer     cfg_repeat;
   string      cfg_path;
 
 
@@ -344,6 +347,12 @@ module tb_security;
 
     expected_mask  = 8'd0;
 
+    // How many times the trigger vector is sent. A monitor that
+    // needs several consecutive results to build confidence (the
+    // KLG sliding-window byte-leak detector) declares this in the
+    // case contract. Defaults to a single trigger.
+    trigger_repeat = 1;
+
     fail_count     = 0;
     tap_fail_count = 0;
     wait_count     = 0;
@@ -386,11 +395,14 @@ module tb_security;
       cfg_mask,
       cfg_latency,
       cfg_silent,
+      cfg_repeat,
       cfg_ok
     );
 
-    if (cfg_ok)
+    if (cfg_ok) begin
       expected_mask = cfg_mask;
+      trigger_repeat = cfg_repeat;
+    end
     else begin
 
       //--------------------------------------------------------
@@ -839,6 +851,13 @@ module tb_security;
       //
       // Preserve the real RTL threshold. Only preload the internal
       // counter to threshold-1 in verification.
+      //
+      // The counter is 16 bit wide, so it must be preloaded to
+      // threshold-1 and not to threshold: the first encryption then
+      // increments it exactly onto the threshold, which is what
+      // arms the payload. Preloading to the threshold itself would
+      // wrap the counter to 0 on the first increment and the
+      // trigger would never fire.
       //--------------------------------------------------------
       if ((`CASE == "T02_p2_slow_leak") ||
           (`CASE == "T02")) begin
@@ -861,16 +880,65 @@ module tb_security;
 
       //--------------------------------------------------------
       // Send trigger plaintext.
+      //
+      // The vector is repeated trigger_repeat times. Most monitors
+      // react to a single leaking result, but a monitor that
+      // aggregates evidence over a sliding window (the KLG P2
+      // byte-leak detector) needs several consecutive results
+      // before it crosses its threshold. The case contract
+      // declares how many repetitions are required.
+      //
+      // The waits are bounded: once TRU has entered LOCKDOWN the
+      // core is held in reset and busy never rises again, so an
+      // unbounded wait here would hang the testbench.
       //--------------------------------------------------------
-      @(negedge clk);
+      for (trigger_idx = 0;
+           trigger_idx < trigger_repeat;
+           trigger_idx = trigger_idx + 1) begin
 
-      data_in       = trigger_pt;
-      data_in_valid = 1'b1;
+        @(negedge clk);
+
+        data_in       = trigger_pt;
+        data_in_valid = 1'b1;
 
 
-      @(negedge clk);
+        @(negedge clk);
 
-      data_in_valid = 1'b0;
+        data_in_valid = 1'b0;
+
+        // Let the core finish this encryption before the next one.
+        //
+        // Both the rising and the falling edge of busy are awaited
+        // with a bounded counter: the rising edge proves the core
+        // accepted the request, the falling edge proves the result
+        // is out. The bounds keep the testbench alive if the core
+        // is already locked down by TRU.
+        begin : wait_trigger_done
+          integer wait_i;
+
+          // Wait for the core to accept the request.
+          wait_i = 0;
+          while ((busy !== 1'b1) && (wait_i < 200) &&
+                 (sec_alarm !== 1'b1)) begin
+            @(posedge clk);
+            wait_i = wait_i + 1;
+          end
+
+          // Wait for the result to be produced.
+          wait_i = 0;
+          while ((busy !== 1'b0) && (wait_i < 200) &&
+                 (sec_alarm !== 1'b1)) begin
+            @(posedge clk);
+            wait_i = wait_i + 1;
+          end
+        end
+
+        // A hard alarm stops the repetition loop: the core is
+        // already locked down and no further trigger is needed.
+        if (sec_alarm === 1'b1)
+          trigger_idx = trigger_repeat;
+
+      end
 
 
       //--------------------------------------------------------

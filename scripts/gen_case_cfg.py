@@ -15,6 +15,7 @@ expected_mask_bits = KLG
 expected_latency = 1
 expected_latency_cycles = 1
 silent_under_nist = false
+trigger_repeat = 1
 trigger_seq = verif/vectors/trigger_T01.txt
 
 Field notes
@@ -37,6 +38,14 @@ silent_under_nist
     vector is a false positive and fails the regression. When false the
     case is allowed to be detectable on NIST traffic, so an alarm is
     reported but does not fail the regression.
+
+trigger_repeat
+    How many times the trigger vector must be sent before the case is
+    considered detected. Defaults to 1. A detector that needs several
+    consecutive results to build confidence (for example the KLG
+    sliding-window byte-leak detector) requires this to be larger
+    than 1, otherwise the security testbench would report a false
+    negative even though the monitor works as specified.
 
 A short alias config (T01.cfg -> T01_p1_key_dump.cfg) is written next to
 the full-name config so a testbench can open verif/cfg/<CASE>.cfg for
@@ -70,7 +79,7 @@ def parse_latency(value):
 
 
 def write_cfg(path, case_id, mask, checker_list, latency_text, latency_cycles,
-              silent, trigger_seq):
+              silent, trigger_repeat, trigger_seq):
     with open(path, "w", encoding="utf-8") as fp:
         fp.write("[case]\n")
         fp.write(f"case_id = {case_id}\n")
@@ -79,6 +88,7 @@ def write_cfg(path, case_id, mask, checker_list, latency_text, latency_cycles,
         fp.write(f"expected_latency = {latency_text}\n")
         fp.write(f"expected_latency_cycles = {latency_cycles}\n")
         fp.write(f"silent_under_nist = {'true' if silent else 'false'}\n")
+        fp.write(f"trigger_repeat = {trigger_repeat}\n")
         fp.write(f"trigger_seq = {trigger_seq}\n")
 
 
@@ -114,10 +124,11 @@ def main():
             verification = data.get("verification", {})
             silent = bool(verification.get("silent_under_nist", True))
             trigger_seq = verification.get("activation_seq", "")
+            trigger_repeat = int(verification.get("trigger_repeat", 1))
 
             full_path = os.path.join(CFG_DIR, f"{case_id}.cfg")
             write_cfg(full_path, case_id, mask, checker_list, latency_text,
-                      latency_cycles, silent, trigger_seq)
+                      latency_cycles, silent, trigger_repeat, trigger_seq)
             print(f"Generated {full_path}")
 
             # Short alias, e.g. T01_p1_key_dump -> T01.
@@ -125,7 +136,7 @@ def main():
             if short_id and short_id != case_id:
                 short_path = os.path.join(CFG_DIR, f"{short_id}.cfg")
                 write_cfg(short_path, case_id, mask, checker_list, latency_text,
-                          latency_cycles, silent, trigger_seq)
+                          latency_cycles, silent, trigger_repeat, trigger_seq)
                 print(f"Generated {short_path}")
 
     print("All config files created.")
