@@ -2,11 +2,11 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Gowin: Synthesize aegis_demo",
+            "label": "Gowin: Synthesize security_demo",
             "type": "shell",
             "command": "C:\\Gowin\\Gowin_V1.9.11.01_Education_x64\\IDE\\bin\\gw_sh.exe",
             "args": [
-                "${workspaceFolder}\\fpga\\gowin\\aegis_demo\\build.tcl"
+                "${workspaceFolder}\\fpga\\gowin\\security_demo\\build.tcl"
             ],
             "group": "build",
             "presentation": {
@@ -17,12 +17,12 @@
             "problemMatcher": []
         },
         {
-            "label": "Gowin: Program FPGA (aegis_demo)",
+            "label": "Gowin: Program FPGA (security_demo)",
             "type": "shell",
             "command": "C:\\Gowin\\Gowin_V1.9.11.01_Education_x64\\Programmer\\bin\\programmer_cli.exe",
             "args": [
                 "--device", "GW5A-25A",
-                "--fsFile", "${workspaceFolder}\\fpga\\gowin\\aegis_demo\\impl\\pnr\\aegis_demo.fs",
+                "--fsFile", "${workspaceFolder}\\fpga\\gowin\\security_demo\\impl\\pnr\\security_demo.fs",
                 "--cable-index", "0",
                 "--run", "2"
             ],
@@ -32,7 +32,7 @@
                     "PYTHONIOENCODING": "utf-8"
                 }
             },
-            "dependsOn": "Gowin: Synthesize aegis_demo",
+            "dependsOn": "Gowin: Synthesize security_demo",
             "group": "build",
             "presentation": {
                 "reveal": "always",
