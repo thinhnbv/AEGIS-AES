@@ -94,6 +94,10 @@ module tb_fa_rate;
   integer       enc_idx;
   integer       total_enc;
 
+  // Previous value of the sticky sec_warning flag, so that warning
+  // EVENTS are counted instead of the same event over and over.
+  logic         prev_sec_warning;
+
   logic [127:0] cur_key;
 
   // $random() needs a variable seed, not an expression.
@@ -119,6 +123,7 @@ module tb_fa_rate;
     key_idx        = 0;
     enc_idx        = 0;
     total_enc      = 0;
+    prev_sec_warning = 1'b0;
 
     repeat (4) @(posedge clk);
     rst_n = 1'b1;
@@ -183,8 +188,18 @@ module tb_fa_rate;
           enc_idx = `FA_PER_KEY;
         end
 
-        if (sec_warning === 1'b1)
+        //------------------------------------------------------
+        // Warning events.
+        //
+        // sec_warning is STICKY in the TRU: it is set once and only
+        // cleared by reset. Counting the flag on every encryption
+        // would count the SAME event thousands of times, so only a
+        // rising edge is counted as a new warning event.
+        //------------------------------------------------------
+        if ((sec_warning === 1'b1) && (prev_sec_warning !== 1'b1))
           warning_count = warning_count + 1;
+
+        prev_sec_warning = sec_warning;
 
       end
 

@@ -157,9 +157,26 @@ regress-all:
 #
 # Overridable:
 #   make fa-rate FA_KEYS=200 FA_PER_KEY=5000
+#
+# The default simulator is Icarus, but Icarus needs several hours for
+# 1e6 encryptions. Set SIM=verilator for a compiled run that finishes
+# in seconds:
+#   make fa-rate SIM=verilator FA_KEYS=200 FA_PER_KEY=5000
 #---------------------------------------------------------------
 fa-rate:
 	@mkdir -p $(BUILD)/fa_rate
+ifeq ($(SIM),verilator)
+	verilator --binary --timing -Wno-fatal -Wno-DECLFILENAME \
+		-I$(RTL_AEGIS) -I$(TB) \
+		--top-module tb_fa_rate \
+		-DFA_KEYS=$(FA_KEYS) -DFA_PER_KEY=$(FA_PER_KEY) \
+		-DFA_SEED=$(FA_SEED) \
+		-Mdir $(BUILD)/fa_rate/obj -o fa_rate_v \
+		$(SRC_AEGIS) \
+		$(filter-out $(RTL_GOLD)/aes.v,$(SRC_GOLD)) \
+		$(TB)/tb_fa_rate.sv
+	@bash -o pipefail -c '$(BUILD)/fa_rate/obj/fa_rate_v | tee $(BUILD)/fa_rate/fa_rate.log'
+else
 	iverilog -g2012 -I$(RTL_AEGIS) -I$(TB) \
 		-DFA_KEYS=$(FA_KEYS) -DFA_PER_KEY=$(FA_PER_KEY) \
 		-DFA_SEED=$(FA_SEED) \
@@ -168,6 +185,7 @@ fa-rate:
 		$(filter-out $(RTL_GOLD)/aes.v,$(SRC_GOLD)) \
 		$(TB)/tb_fa_rate.sv
 	@bash -o pipefail -c 'vvp $(BUILD)/fa_rate/fa_rate.out | tee $(BUILD)/fa_rate/fa_rate.log'
+endif
 
 lint:
 	verilator --lint-only -Wall -Wno-fatal -Wno-DECLFILENAME \
