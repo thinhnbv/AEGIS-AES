@@ -1,23 +1,21 @@
 # AEGIS-AES: A Trojan-Resilient AES-128 Core with On-Chip Security Monitor, Built and Verified via an LLM-Assisted Red/Blue-Team Loop
 
-## 📊 Project Status
+Dự án cấy Trojan phần cứng vào lõi AES-128 (bản tham chiếu từ [secworks/aes](https://github.com/secworks/aes)) và xây một bộ **giám sát an ninh on-chip** phát hiện Trojan theo thời gian thực — không sửa core AES gốc. Quy trình phát triển dùng vòng lặp **Red/Blue team** có trợ giúp LLM: Red team cấy Trojan vào bản copy core, Blue team viết các khối giám sát để bắt được Trojan trong khi vẫn giữ đúng chức năng AES chuẩn (test bằng vector NIST FIPS-197).
 
-Trạng thái dưới đây được **kiểm chứng bằng cách chạy thật**, không phải suông đoán. Lệnh kiểm chứng nằm ở cột cuối.
+## Kiến trúc
 
-### Đã hoàn thành
-| Việc | Kiểm chứng |
-|---|---|
-| Lõi AES gốc (Secworks) clone vào `rtl/aes_golden/`, testbench gốc pass | `make golden` |
-| Vector NIST FIPS-197 (KAT 16 + MCT 10.000) + `tb_aes_golden.sv` | Ciphertext khớp vector chuẩn |
-| 5 ca Trojan T01–T05, mỗi ca kèm `ground_truth.yaml` | `ls rtl/infected/` |
-| 5 khối giám sát + TRU nối vào `aegis_aes_top.v` | `make security CASE=<case>` |
-| Hợp đồng case (`ground_truth.yaml` → `verif/cfg/*.cfg`) dùng chung cho Red/Blue team | `make gen-cfg` |
-| Regression NIST FIPS-197 đầy đủ, Trojan im lặng trên traffic sạch | `make regress-all` |
-| Đo false-alarm rate theo §9.2 (10⁶ lần mã hóa hợp lệ) | `make fa-rate SIM=verilator FA_KEYS=200 FA_PER_KEY=5000` |
-| Demo FPGA trên board ACG525 (Gowin GW5A-25), wrapper `top_security_demo.v` + giao thức UART `0xA5`/`0x5A`, bitstream đã build | `fpga/gowin/security_demo/` |
-| Tái tạo & sửa lỗi framing UART lệch 1 byte ở **cả 2 bản sao** | `fpga/uart/` + `fpga/gowin/security_demo/src/` |
+Ba lớp, từ dưới lên:
 
-**Tất cả 5 ca Trojan đều bị bắt đúng detector theo hợp đồng, và zeroize thành công:**
+```
+Lớp 3 — Demo FPGA (fpga/)            UART 115200 ⇄ uart_cmd_fsm ⇄ aes_core_tapped
+Lớp 2 — Security wrapper (rtl/aegis/)  aegis_aes_top + KLG/FIC/RCM/RED/ORC + TRU
+Lớp 1 — Core AES tham chiếu (rtl/aes_golden/)  secworks/aes, bất biến
+```
+
+- `aegis_aes_top` bọc `aes_core_tapped`, 5 khối giám sát chạy **song song, không nằm trên đường trễ chính**, 1 khối phản ứng (TRU: `NORMAL → SUSPECT → LOCKDOWN`, zeroize + chặn output).
+- Mỗi ca Trojan (5 ca, `rtl/infected/`) kèm `ground_truth.yaml` — hợp đồng giữa Red team và Blue team, được biên dịch thành `verif/cfg/*.cfg` cho testbench đọc.
+
+Kết quả đã kiểm chứng: **5/5 ca Trojan bị bắt đúng detector, zeroize thành công; regression NIST FIPS-197 (10.016 vector × 6 case) 0 FAIL, 0 false alarm; false-alarm rate = 0 trên 10⁶ lần mã hóa hợp lệ.** Chi tiết và số liệu: [`docs/REPO_GUIDE.md`](docs/REPO_GUIDE.md).
 
 | Ca | Payload | Detector bắt được | `sec_status` |
 |---|---|---|---|
@@ -27,19 +25,11 @@ Trạng thái dưới đây được **kiểm chứng bằng cách chạy thật
 | `T04_p4_debug_port` | P4 — debug port | FIC + RED | `00001010` |
 | `T05_dos_trojan` | DoS — treo core | RCM + RED | `00001100` |
 
-### Việc còn lại
-| Việc | Ghi chú |
-|---|---|
-| Port `sec_alarm`/`sec_status` ra cổng ASIC (OpenLane) | `aegis_aes_top.v` đang dùng hierarchical reference `u_core.aes_core_ctrl_reg` — chạy được với simulation/FPGA, **không** chạy được với ASIC backend. Cần thay bằng cổng tường minh. |
-| Chạy `make formal` | Cần cài `sby` (SymbiYosys) và tạo `verif/sva/aegis.sby`. |
-| Nối `skip_round9` trong bản copy T03 | Cổng này chưa được nối ở bản `aes_encipher_block.v` của `fpga/gowin/security_demo/src/` (dùng cho demo T03), gây cảnh báo synthesis. |
-| Thêm ràng buộc `create_clock` cho `clk` | Chưa có trong constraint file → phân tích timing chưa chính xác. |
-| Dựng pipeline thí nghiệm LLM (`platform/`) | `Makefile` đã có target `campaign`/`report` nhưng `platform/` chưa tồn tại. |
+## Cấu trúc thư mục
 
-## 🗂️ Cấu trúc thư mục
 - `rtl/aes_golden/`: Lõi AES tham chiếu chuẩn (Secworks), bất biến.
-- `rtl/aegis/`: Mã nguồn thiết kế của nhóm (Security Wrapper, các khối giám sát KLG, FIC, RCM, v.v.).
-- `rtl/infected/`: Các ca Trojan do Red team cấy, mỗi ca kèm `ground_truth.yaml` mô tả hợp đồng.
+- `rtl/aegis/`: Mã nguồn thiết kế của nhóm (Security Wrapper, các khối giám sát KLG, FIC, RCM, RED, ORC, TRU).
+- `rtl/infected/`: Các ca Trojan do Red team cấy, mỗi ca kèm `ground_truth.yaml`.
 - `verif/`: Testbench chức năng, tập vector chuẩn NIST FIPS-197, hợp đồng case dạng `.cfg`.
 - `docs/`: Tài liệu kiến trúc và kỹ thuật phần cứng.
 - `fpga/`: Demo trên board thật (ACG525 / Gowin GW5A-25) qua UART.
@@ -47,7 +37,7 @@ Trạng thái dưới đây được **kiểm chứng bằng cách chạy thật
 
 Chi tiết từng file, cách các phần ghép lại với nhau, và các cạm bẫy đã biết: **[`docs/REPO_GUIDE.md`](docs/REPO_GUIDE.md)**.
 
-## 🚀 Hướng dẫn chạy (Quick Start)
+## Hướng dẫn chạy (Quick Start)
 
 Tất cả lệnh chạy **từ thư mục gốc repo**.
 
@@ -73,6 +63,8 @@ make regress-all
 
 # Đo false-alarm rate trên lưu lượng mã hoá hợp lệ (yêu cầu §9.2)
 make fa-rate
+# Icarus mất hàng giờ cho 10^6; dùng Verilator (compiled C++) chạy trong giây:
+make fa-rate SIM=verilator FA_KEYS=200 FA_PER_KEY=5000
 
 # Sinh lại hợp đồng case từ ground_truth.yaml
 make gen-cfg
@@ -81,13 +73,3 @@ make gen-cfg
 make lint
 make formal
 ```
-
-> ✅ **Đã xử lý (mục 12.1 trong `docs/REPO_GUIDE.md`):** trước đây `make regress` với đủ 10.000 vector **treo ở khoảng vector 267** vì KLG báo động giả khi so 8 bit `data_out[7:0]` với `key_reg[7:0]` (xác suất trùng ngẫu nhiên 1/256 mỗi vector). Nay KLG **xác nhận** phép so này bằng ciphertext tham chiếu mà ORC tính lại: byte chỉ được coi là rò rỉ khi core thực sự đã sửa nó. Kết quả — **false alarm rate = 0 tuyệt đối**, và T02 vẫn bị cả KLG lẫn ORC bắt (`sec_status = 00010001`).
-
-### Số liệu đã kiểm chứng
-
-| Chỉ số | Kết quả | Lệnh kiểm chứng |
-|---|---|---|
-| Regression NIST FIPS-197 | 10.016 vector × 6 case, **0 FAIL**, **0 false alarm** | `make regress-all` |
-| False alarm rate (yêu cầu §9.2 của bản đề xuất) | **0** trên 10⁶ lần mã hóa hợp lệ | `make fa-rate` |
-| Phát hiện Trojan | 5/5 ca, đúng detector theo hợp đồng, zeroize thành công | `make security CASE=<tên>` |

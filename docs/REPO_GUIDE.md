@@ -309,9 +309,10 @@ Còn lại:
 |---|------|---------|
 | 1 | Port `sec_alarm`/`sec_status` ra cổng ASIC | `aegis_aes_top.v` dùng hierarchical reference `u_core.aes_core_ctrl_reg` — chạy được với simulation/FPGA, **không** chạy được với OpenLane backend. Cần cổng tường minh. |
 | 2 | Chạy `make formal` | Cần cài `sby` (SymbiYosys) và tạo `verif/sva/aegis.sby` — thư mục này chưa tồn tại. |
-| 3 | Thêm ràng buộc `create_clock` cho `clk` | Chưa có trong constraint file → phân tích timing chưa chính xác. |
-| 4 | Đo LUT/FF/Fmax cho hai cấu hình | §7.3 yêu cầu số liệu cho bản "tiết kiệm" (≤15%) và "đầy đủ" (≤25%). |
-| 5 | Dựng pipeline thí nghiệm LLM (`platform/`) | `Makefile` có target `campaign`/`report` nhưng `platform/` chưa tồn tại. |
+| 3 | Nối `skip_round9` trong bản copy T03 | Cổng này chưa được nối ở `fpga/gowin/security_demo/src/aes_encipher_block.v` (bản copy cho demo T03) — `skip_round9` không còn trong `rtl/aegis/aes_core_tapped.v` nên không phải lỗi của bản chính, chỉ là bản copy FPGA thừa cổng, gây cảnh báo synthesis. |
+| 4 | Thêm ràng buộc `create_clock` cho `clk` | Chưa có trong constraint file → phân tích timing chưa chính xác. |
+| 5 | Đo LUT/FF/Fmax cho hai cấu hình | §7.3 yêu cầu số liệu cho bản "tiết kiệm" (≤15%) và "đầy đủ" (≤25%). |
+| 6 | Dựng pipeline thí nghiệm LLM (`platform/`) | `Makefile` có target `campaign`/`report` nhưng `platform/` chưa tồn tại. |
 
 ---
 
