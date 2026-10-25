@@ -1,0 +1,52 @@
+#================================================================
+# SymbiYosys formal config for the AEGIS-AES security wrapper.
+#
+# Bounded-model-checking of the wrapper's control invariants
+# (pulse discipline, alarm stickiness, no output after alarm) on
+# the CLEAN aegis_aes_top. The AES datapath is black-boxed so the
+# proof stays tractable; Trojan-detection behavior is covered by
+# the simulation regression (make all-cases / make regress), not
+# by formal.
+#
+#   make formal     # requires yosys-sby (apt install yosys-sby)
+#================================================================
+
+[options]
+
+[mode]
+bmc
+
+[task]
+bmc
+
+[depth]
+64
+
+[script]
+# -DAEGIS_FORMAL enables the liveness property P7 (request eventually
+# completes) in aegis_props.sv, which the simulation subset of
+# assertions (Verilator) does not support.
+read_verilog -formal -DAEGIS_FORMAL \
+    rtl/aegis/aegis_aes_top.v \
+    rtl/aegis/aes_core_tapped.v \
+    rtl/aegis/aes_key_mem_tapped.v \
+    rtl/aegis/aes_encipher_block.v \
+    rtl/aegis/fic_fsm_integrity.v \
+    rtl/aegis/klg_key_leak_guard.v \
+    rtl/aegis/orc_output_checker.v \
+    rtl/aegis/rcm_round_monitor.v \
+    rtl/aegis/red_rare_event.v \
+    rtl/aegis/tru_tamper_response.v \
+    rtl/aes_golden/aes_sbox.v \
+    rtl/aes_golden/aes_inv_sbox.v \
+    rtl/aes_golden/aes_decipher_block.v \
+    verif/uvm/sva/aegis_props.sv
+
+# The assertion module is attached to the DUT by the `bind` in
+# aegis_props.sv, which read_verilog above reads and applies.
+
+# Black-box the AES datapath: formal checks wrapper control logic,
+# not AES correctness (covered by NIST regression instead).
+blackbox aes_encipher_block_tapped aes_decipher_block aes_sbox aes_inv_sbox
+chformal -setinitreset
+prep -top aegis_aes_top

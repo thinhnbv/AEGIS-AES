@@ -1,0 +1,3 @@
+[submodule "verif/uvm/uvm-core"]
+	path = verif/uvm/uvm-core
+	url = https://github.com/accellera-official/uvm-core.git

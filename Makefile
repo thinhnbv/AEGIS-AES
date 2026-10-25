@@ -52,6 +52,7 @@ help:
 	@echo 'make formal              - SymbiYosys chay tap SVA'
 	@echo 'make all-cases           - chay toan bo benchmark'
 	@echo 'make check-vectors       - kiem tra vector trigger hop le (de chay sau khi checkout)'
+	@echo 'make uvm CASE=...        - (Windows) chay UVM+coverage bang ModelSim'
 	@echo 'make campaign CFG=...    - chay thi nghiem pipeline LLM'
 	@echo 'make fpga / backend      - tong hop FPGA / OpenLane'
 
@@ -197,7 +198,19 @@ lint:
 	verilator --lint-only -Wall -Wno-fatal -Wno-DECLFILENAME \
 		-I$(RTL_AEGIS) $(SRC_DUT) $(SRC_AEGIS_DUT) \
 		--top-module aegis_aes_top
+# UVM + functional-coverage flow. ModelSim (Altera/Intel, Windows)
+# is the target simulator; the script lives in verif/uvm/scripts/
+# and is meant to be run from the repo root on Windows
+# (vsim -c -do "do verif/uvm/scripts/aegis_uvm.tcl").
+# This target only ensures the pinned UVM-core submodule is present.
+uvm:
+	@git submodule update --init --recursive 2>/dev/null || true
+	@echo "UVM flow runs under ModelSim on Windows:"
+	@echo "  vsim -c -do \"set aegis_case $(or $(CASE),clean); do verif/uvm/scripts/aegis_uvm.tcl\""
+	@echo "  (CASE: clean | fa | T01_p1_key_dump ... T05_dos_trojan)"
+
 formal:
+	@command -v sby >/dev/null 2>&1 || { echo "sby (yosys-sby) chua cai - chay: sudo apt install yosys-sby"; exit 1; }
 	sby -f verif/sva/aegis.sby
 
 all-cases:
