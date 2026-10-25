@@ -4,21 +4,18 @@
 
 Trạng thái dưới đây được **kiểm chứng bằng cách chạy thật**, không phải suông đoán. Lệnh kiểm chứng nằm ở cột cuối.
 
-### Tuần 1
-| # | Việc | Trạng thái | Kiểm chứng |
-|---|------|------------|------------|
-| 1 | Tạo repo theo cây thư mục, commit đầu tiên | [x] | `git log` |
-| 2 | Clone secworks/aes vào `rtl/aes_golden/`, giữ nguyên LICENSE | [x] | `ls rtl/aes_golden/` |
-| 3 | Chạy `make golden` — testbench gốc phải pass | [x] | `make golden` → PASS |
-| 4 | Nạp vector NIST FIPS-197 Appendix B, viết `tb_aes_golden.sv` | [x] | Ciphertext khớp vector chuẩn |
-| 5 | Đọc `aes_core.v`, ghi `docs/architecture.md` (bảng tín hiệu tap) | [x] | `docs/architecture.md` |
-| 6 | Viết 5 ca Trojan T01–T05, mỗi ca kèm `ground_truth.yaml` | [x] | `ls rtl/infected/` |
-| 7 | Xác nhận Trojan im lặng trên vector NIST | [x] | `make regress CASE=<case>` |
-| 8 | Viết 5 khối giám sát + TRU, nối vào `aegis_aes_top.v` | [x] | `make security CASE=<case>` |
-| 9 | Hợp đồng case (`ground_truth.yaml` → `verif/cfg/*.cfg`) dùng chung cho Red/Blue team | [x] | `make gen-cfg` |
-| 10 | Regression NIST FIPS-197 đầy đủ (KAT 16 + MCT 10.000) | [x] | `make regress` |
-| 10b | Đo false-alarm rate theo §9.2 (10⁶ lần mã hóa hợp lệ) | [x] | `make fa-rate` |
-| 11 | Demo FPGA thật trên board ACG525 (Gowin GW5A-25) | [x] | `fpga/gowin/security_demo/` đã build ra bitstream |
+### Đã hoàn thành
+| Việc | Kiểm chứng |
+|---|---|
+| Lõi AES gốc (Secworks) clone vào `rtl/aes_golden/`, testbench gốc pass | `make golden` |
+| Vector NIST FIPS-197 (KAT 16 + MCT 10.000) + `tb_aes_golden.sv` | Ciphertext khớp vector chuẩn |
+| 5 ca Trojan T01–T05, mỗi ca kèm `ground_truth.yaml` | `ls rtl/infected/` |
+| 5 khối giám sát + TRU nối vào `aegis_aes_top.v` | `make security CASE=<case>` |
+| Hợp đồng case (`ground_truth.yaml` → `verif/cfg/*.cfg`) dùng chung cho Red/Blue team | `make gen-cfg` |
+| Regression NIST FIPS-197 đầy đủ, Trojan im lặng trên traffic sạch | `make regress-all` |
+| Đo false-alarm rate theo §9.2 (10⁶ lần mã hóa hợp lệ) | `make fa-rate SIM=verilator FA_KEYS=200 FA_PER_KEY=5000` |
+| Demo FPGA trên board ACG525 (Gowin GW5A-25), wrapper `top_security_demo.v` + giao thức UART `0xA5`/`0x5A`, bitstream đã build | `fpga/gowin/security_demo/` |
+| Tái tạo & sửa lỗi framing UART lệch 1 byte ở **cả 2 bản sao** | `fpga/uart/` + `fpga/gowin/security_demo/src/` |
 
 **Tất cả 5 ca Trojan đều bị bắt đúng detector theo hợp đồng, và zeroize thành công:**
 
@@ -30,20 +27,14 @@ Trạng thái dưới đây được **kiểm chứng bằng cách chạy thật
 | `T04_p4_debug_port` | P4 — debug port | FIC + RED | `00001010` |
 | `T05_dos_trojan` | DoS — treo core | RCM + RED | `00001100` |
 
-### Tuần 2
-| # | Việc | Trạng thái | Kiểm chứng |
-|---|------|------------|------------|
-| 12 | Hoàn thiện wrapper an toàn cho FPGA: `top_security_demo.v` + giao thức UART `0xA5`/`0x5A` | [x] | `fpga/gowin/security_demo/src/` |
-| 13 | Tái tạo lỗi framing UART lệch 1 byte ở **cả 2 bản sao** | [x] | `fpga/uart/` + `fpga/gowin/security_demo/src/` |
-
 ### Việc còn lại
-| # | Việc | Ghi chú |
-|---|------|---------|
-| 14 | Port `sec_alarm`/`sec_status` ra cổng ASIC (OpenLane) | `aegis_aes_top.v:83` đang dùng hierarchical reference `u_core.aes_core_ctrl_reg` — chạy được với simulation/FPGA, **không** chạy được với ASIC backend. Cần thay bằng cổng tường minh. |
-| 15 | Chạy `make formal` | Cần cài `sby` (SymbiYosys). |
-| 16 | Nối `skip_round9` của `aes_core_tapped.v` | Cổng này chưa được nối ở `top_demo.v`, gây cảnh báo synthesis. |
-| 17 | Thêm ràng buộc `create_clock` cho `clk` | Chưa có trong constraint file nên phân tích timing chưa chính xác. |
-| 18 | Dựng pipeline thí nghiệm LLM (`platform/`) | `Makefile` đã có target `campaign`/`report` nhưng `platform/` chưa tồn tại. |
+| Việc | Ghi chú |
+|---|---|
+| Port `sec_alarm`/`sec_status` ra cổng ASIC (OpenLane) | `aegis_aes_top.v` đang dùng hierarchical reference `u_core.aes_core_ctrl_reg` — chạy được với simulation/FPGA, **không** chạy được với ASIC backend. Cần thay bằng cổng tường minh. |
+| Chạy `make formal` | Cần cài `sby` (SymbiYosys) và tạo `verif/sva/aegis.sby`. |
+| Nối `skip_round9` trong bản copy T03 | Cổng này chưa được nối ở bản `aes_encipher_block.v` của `fpga/gowin/security_demo/src/` (dùng cho demo T03), gây cảnh báo synthesis. |
+| Thêm ràng buộc `create_clock` cho `clk` | Chưa có trong constraint file → phân tích timing chưa chính xác. |
+| Dựng pipeline thí nghiệm LLM (`platform/`) | `Makefile` đã có target `campaign`/`report` nhưng `platform/` chưa tồn tại. |
 
 ## 🗂️ Cấu trúc thư mục
 - `rtl/aes_golden/`: Lõi AES tham chiếu chuẩn (Secworks), bất biến.
