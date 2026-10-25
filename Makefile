@@ -51,6 +51,7 @@ help:
 	@echo 'make lint                - Verilator lint tren rtl/aegis'
 	@echo 'make formal              - SymbiYosys chay tap SVA'
 	@echo 'make all-cases           - chay toan bo benchmark'
+	@echo 'make check-vectors       - kiem tra vector trigger hop le (de chay sau khi checkout)'
 	@echo 'make campaign CFG=...    - chay thi nghiem pipeline LLM'
 	@echo 'make fpga / backend      - tong hop FPGA / OpenLane'
 
@@ -83,7 +84,12 @@ SEC_GOLD_SUPPORT = $(RTL_GOLD)/aes_sbox.v $(RTL_GOLD)/aes_inv_sbox.v \
 gen-cfg:
 	@python3 scripts/gen_case_cfg.py
 
-security: gen-cfg
+# Validate trigger vectors parse and are in sync (catches a checkout
+# that materialized a symlink on a non-symlink filesystem).
+check-vectors:
+	@python3 scripts/check_trigger_vectors.py
+
+security: gen-cfg check-vectors
 	@mkdir -p $(BUILD)/$(CASE)
 ifeq ($(CASE),CLEAN)
 	# CLEAN case: aegis RTL + golden support
@@ -116,7 +122,7 @@ endif
 # clean NIST traffic - ciphertext still correct AND no monitor
 # raises a false alarm.
 #---------------------------------------------------------------
-regress: gen-cfg
+regress: gen-cfg check-vectors
 	@mkdir -p $(BUILD)/$(CASE)
 ifeq ($(CASE),CLEAN)
 	iverilog -g2012 -I$(RTL_AEGIS) -I$(TB) -DMCT_LIMIT=$(MCT_LIMIT) -DCASE=\"$(CASE)\" -o $(BUILD)/$(CASE)/regress.out \
@@ -195,10 +201,22 @@ formal:
 	sby -f verif/sva/aegis.sby
 
 all-cases:
-	@for c in $$(ls rtl/infected); do \
-	echo "=== $$c ==="; \
-	$(MAKE) --no-print-directory security CASE=$$c || true; \
-	done
+	@failed=0; \
+	for c in $$(ls rtl/infected); do \
+	  echo "=== $$c ==="; \
+	  if $(MAKE) --no-print-directory security CASE=$$c; then \
+	    echo "[OK] $$c"; \
+	  else \
+	    echo "[FAIL] $$c"; failed=1; \
+	  fi; \
+	done; \
+	echo "===================="; \
+	if [ $$failed -eq 0 ]; then \
+	  echo "[ALL-CASES] PASS: all cases detected"; \
+	else \
+	  echo "[ALL-CASES] FAIL: one or more cases failed"; \
+	  exit 1; \
+	fi
 
 campaign:
 	python3 platform/run.py --config platform/config/$$(CFG).yaml --out results/runs/$$(STAMP)_$$(CFG)
