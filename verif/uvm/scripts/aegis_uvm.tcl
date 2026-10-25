@@ -79,17 +79,17 @@ vmap work
 
 # 1. Accellera UVM core (pinned submodule).
 #
-# NOTE: no -assert flag. In ModelSim (2020.1 Intel FPGA Edition and
-# later) SystemVerilog assertion compilation is enabled by default
-# under -sv; the -assert flag does not exist in this tool build.
-vlog -sv -work work +incdir+$UVM_SRC $UVM_SRC/uvm_pkg.sv
-if {$::error_info != ""} {
-    echo "ERROR: UVM core failed to compile - see messages above"
+# NOTE: no -assert flag. In this Intel FPGA Edition build, SystemVerilog
+# assertion compilation is enabled by default under -sv; the -assert flag
+# is not available. `vlog` returns 0 on success, non-zero on failure.
+set rc [vlog -sv -work work +incdir+$UVM_SRC $UVM_SRC/uvm_pkg.sv]
+if {$rc != 0} {
+    echo "ERROR: UVM core failed to compile (vlog returned $rc) - see above"
     exit 1
 }
 
 # 2. Interface, UVM env package, SVA, testbench top, DUT RTL.
-vlog -sv -work work \
+set rc [vlog -sv -work work \
      +incdir+$RTL_AEGIS +incdir+$RTL_GOLD +incdir+verif/uvm/pkg \
      +incdir+$UVM_SRC \
      $inc_defines \
@@ -97,10 +97,19 @@ vlog -sv -work work \
      verif/uvm/aegis_if.sv \
      verif/uvm/pkg/aegis_uvm_pkg.sv \
      verif/uvm/sva/aegis_props.sv \
-     verif/uvm/tb_top.sv
+     verif/uvm/tb_top.sv]
+if {$rc != 0} {
+    echo "ERROR: design/env failed to compile (vlog returned $rc) - see above"
+    exit 1
+}
 
 # ---------------------------------------------------------------
-# Simulate with functional-coverage collection
+# Simulate with functional-coverage collection.
+#
+# -covd is Questa/ModelSim's functional-coverage collect switch. It is
+# accepted by this edition; if the license/edition later rejects it,
+# the run still proceeds (the UVM scoreboard result is the primary
+# evidence) - so we do not hard-fail on the switch.
 # ---------------------------------------------------------------
 echo "=== vsim -covd (case=$aegis_case) ==="
 
@@ -109,8 +118,12 @@ vsim -covd -sv -work work tb_top
 run -all
 
 # ---------------------------------------------------------------
-# Functional-coverage report
+# Functional-coverage report (Questa command; no-op on editions that
+# lack it - the UVM scoreboard SUMMARY above is the primary result).
 # ---------------------------------------------------------------
 echo "=== Functional coverage (case=$aegis_case) ==="
-report coverage -functional
+if {[catch {report coverage -functional} cov_err]} {
+    echo "NOTE: 'report coverage -functional' unavailable ($cov_err)."
+    echo "      Falling back to UVM scoreboard SUMMARY as primary evidence."
+}
 echo "=== done: case=$aegis_case ==="
