@@ -20,3 +20,14 @@ fpga/gowin/*/*.gprj.user
 
 # Verilator build output
 obj_dir/
+
+# Questa/ModelSim (Windows) run + coverage artifacts
+qrun*.log
+vsim.log
+modelsim.log
+transcript
+*.wdf
+work/            # vsim library dir (default "work")
+cov_work/        # Questa functional-coverage database
+*.ucdb
+*.shm
