@@ -4,6 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Quy tắc commit (bắt buộc)
 
+**Không commit trực tiếp lên `main`.** Mọi công việc (feature, fix, docs, verification) phải tạo branch mới dạng `<loại>/<nội-dung>` (ví dụ `verif/uvm-modelsim`, `rtl/klg-orc`), commit trên branch, rồi mới merge về `main`. Không được `git push origin main` với commit được tạo trực tiếp trên `main`.
+
 **Không được thêm bất kỳ trailer tác giả phụ nào vào commit message.** Repo này chỉ có `thinhnbv` là author — commit chỉ ghi tên tác giả chính, không ghi thêm dòng trạng thái "co-authored"/"co-generated" cho bất kỳ công cụ hay trợ lý nào. Không có ngoại lệ.
 
 Quy tắc này áp dụng cho **cả nội dung file**: không viết dòng dạng đó vào source, comment, hay tài liệu nào trong repo (kể cả chính file này).
