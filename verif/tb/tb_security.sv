@@ -1272,7 +1272,7 @@ module tb_security;
 
     $display(
       "       core FSM    = %0d",
-      dut.u_core.aes_core_ctrl_reg
+      dut.core_fsm_state
     );
 
     $display(

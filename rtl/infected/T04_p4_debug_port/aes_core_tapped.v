@@ -55,6 +55,12 @@ module aes_core_tapped(
     // ORC tap.
     output wire [127 : 0]  state_before_final,
 
+    // FIC: tap FSM control state.
+    // Export ra cong tuong minh thay vi tham chieu phan cap
+    // (u_core.aes_core_ctrl_reg) de design tong hop duoc
+    // voi ASIC backend (OpenLane) va FPGA (Vivado).
+    output wire [1 : 0]   fsm_state,
+
     // Trojan P4 debug port.
     output wire             debug_valid,
     output wire [127 : 0]   debug_data
@@ -274,6 +280,7 @@ module aes_core_tapped(
 
   assign state_before_final =
       enc_state_before_final;
+  assign fsm_state         = aes_core_ctrl_reg;
 
 
   //----------------------------------------------------------------

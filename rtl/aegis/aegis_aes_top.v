@@ -58,6 +58,11 @@ module aegis_aes_top #(
   wire [127:0] state_before_final;
   wire [127:0] final_round_key;
 
+  // FIC signal: FSM state cua aes_core, xuat ra cong tuong minh
+  // ('fsm_state') thay vi tham chieu phan cap (u_core.aes_core_ctrl_reg)
+  // - tham chieu phan cap khong duoc ho tro khi tong hop ASIC (OpenLane).
+  wire [1:0] core_fsm_state;
+
   // Recomputed reference ciphertext, used by KLG to corroborate its
   // byte-level leak check. Without it the check would false-alarm
   // once every 256 encryptions.
@@ -83,12 +88,10 @@ module aegis_aes_top #(
     .result_valid(core_dvalid),
     .round_keys_flat(round_keys_flat),
     .muxed_round_nr(core_round_nr),
-    .state_before_final(state_before_final)
+    .state_before_final(state_before_final),
+    .fsm_state(core_fsm_state)
   );
 
-  // Tap FSM state tu aes_core de FIC kiem tra
-  wire [1:0] core_fsm_state;
-  assign core_fsm_state = u_core.aes_core_ctrl_reg;
 
   wire       klg_alarm;
   wire [3:0] klg_code;

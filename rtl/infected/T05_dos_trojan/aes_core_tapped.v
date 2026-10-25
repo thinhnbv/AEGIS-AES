@@ -30,7 +30,13 @@ module aes_core_tapped(
                 // Tapped outputs for monitors
                 output wire [1407 : 0] round_keys_flat,
                 output wire [3 : 0]   muxed_round_nr,
-                output wire [127 : 0] state_before_final
+                output wire [127 : 0] state_before_final,
+
+                // FIC: tap FSM control state.
+                // Export ra cong tuong minh thay vi tham chieu phan cap
+                // (u_core.aes_core_ctrl_reg) de design tong hop duoc
+                // voi ASIC backend (OpenLane) va FPGA (Vivado).
+                output wire [1 : 0]   fsm_state
                );
 
 
@@ -167,6 +173,7 @@ module aes_core_tapped(
   assign result_valid       = result_valid_reg;
   assign muxed_round_nr     = muxed_round_nr_int;
   assign state_before_final = enc_state_before_final;
+  assign fsm_state         = aes_core_ctrl_reg;
 
 
   //----------------------------------------------------------------

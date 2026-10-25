@@ -86,7 +86,7 @@ Core Secworks nguyên bản. **Không sửa trực tiếp.** Muốn thêm cổng
 
 **Quan trọng — KLG dùng ORC để xác nhận.** Lớp dò rò rỉ 8-bit so `data_out[7:0]` với `key_reg[7:0]`. Nếu chỉ so thế, xác suất trùng ngẫu nhiên là 1/256 mỗi lần mã hóa → ~3906 false alarm trên 10⁶, và full regression NIST 10.000 vector **treo ở vector 266** (core sạch). Nay KLG nhận `orc_ref_valid` / `orc_ref_result` từ ORC: byte chỉ được coi là rò rỉ khi core thực sự đã sửa nó (`ct != orc_ref && ct == key`). Kết quả: **false alarm = 0 tuyệt đối**, T02 vẫn bị cả KLG lẫn ORC bắt. Cửa sổ thống kê (W=16, T=6) giữ lại làm đường dự phòng cho build `EN_ORC=0` — nhánh đó phải tie-off `orc_ref_valid = 0`.
 
-**Hierarchical reference.** `aegis_aes_top.v` dùng `u_core.aes_core_ctrl_reg` cho FIC. Cách này chạy được với simulation/FPGA nhưng **không** chạy được với ASIC backend (OpenLane) — cần port tường minh.
+**Hierarchical reference — đã loại bỏ.** Trước đây `aegis_aes_top.v` lấy FSM state cho FIC qua `u_core.aes_core_ctrl_reg`; tham chiếu phân cấp **không** được ASIC backend (OpenLane) hỗ trợ. Nay `aes_core_tapped.v` export cổng `fsm_state` tường minh (`assign fsm_state = aes_core_ctrl_reg;`) và `aegis_aes_top.v` nối thẳng `.fsm_state(core_fsm_state)`. **Mọi bản copy `aes_core_tapped.v` đều phải có cổng này** — gồm 5 ca trong `rtl/infected/`, `fpga/gowin/security_demo/src/`, `fpga/gowin/aegis_demo/src/`. Thêm cổng mới vào `aes_core_tapped.v` thì phải đồng bộ **tất cả** các bản copy.
 
 ### `rtl/infected/` — ca Trojan
 
@@ -153,7 +153,7 @@ Bit 0 = KLG, 1 = FIC, 2 = RCM, 3 = RED, 4 = ORC. Kỳ vọng từng ca:
 - **Merger branch hay gây trùng khai báo biến** trong `verif/tb/tb_security.sv` (cả hai bên đều khai báo `cfg_*`). Sau khi merge phải compile lại toàn bộ, không tin vào việc merge "sạch".
 - **`make formal` chưa chạy được** — `verif/sva/aegis.sby` chưa tồn tại, cần cài `sby`.
 - **`make campaign` / `report` / `backend` chưa chạy được** — `platform/`, `scripts/report.py`, `backend/openlane/` chưa tồn tại trong repo.
-- **Chưa có ràng buộc `create_clock`** cho `clk` trong constraint file → phân tích timing chưa chính xác.
+- **Ràng buộc `create_clock` — đã thêm cho cả 3 project Gowin.** `security_demo.sdc`, `aegis_demo.sdc`, `uart_echo.sdc` đều khai `create_clock -name clk -period 20 -waveform {0 10} [get_ports {clk}]` (50 MHz) và đã được đăng ký trong file `.gprj` tương ứng (`type="file.sdc"`). Khi chuyển board (ví dụ Zynq ZC702) phải tạo lại file `.xdc` — cùng nội dung `create_clock` nhưng định dạng Xilinx.
 - `tb_regress_nist.sv` **đổi key mỗi vector** → cửa sổ detector không bao giờ tích luỹ. Đừng dùng nó để đo false-alarm rate; dùng `tb_fa_rate.sv`.
 
 ## Quy ước
