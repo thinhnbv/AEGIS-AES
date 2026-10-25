@@ -71,7 +71,9 @@ Lấy lại/refresh core gốc bằng `scripts/fetch_golden.sh` (clone secworks/
 
 `aegis_defs.vh` khai báo hằng số dùng chung: số round key (`AEGIS_NUM_RKEY=11`), mã trạng thái trong `sec_status`, và 3 trạng thái của TRU.
 
-Hai file `aes_core_tapped.v` / `aes_key_mem_tapped.v` là bản copy của core gốc đã **thêm cổng output** cho các tín hiệu nội bộ mà các khối giám sát cần (không dùng hierarchical reference `u_core.something` khi tổng hợp bằng OpenLane/backend ASIC — xem lý do trong [`docs/architecture.md`](architecture.md)). Lưu ý: bản FPGA dùng lại `u_core.aes_core_ctrl_reg` qua hierarchical path ở `aegis_aes_top.v:83` — cách này chỉ chạy được với simulation/FPGA synthesis, **sẽ không chạy được với ASIC backend (OpenLane)** — cần thay bằng cổng tường minh nếu port sang ASIC.
+Hai file `aes_core_tapped.v` / `aes_key_mem_tapped.v` là bản copy của core gốc đã **thêm cổng output** cho các tín hiệu nội bộ mà các khối giám sát cần (không dùng hierarchical reference `u_core.something` khi tổng hợp bằng OpenLane/backend ASIC — xem lý do trong [`docs/architecture.md`](architecture.md)). Mọi FSM state đều được export ra cổng tường minh `fsm_state` trên `aes_core_tapped.v` (và `aegis_aes_top.v` nối `.fsm_state(core_fsm_state)`), **không** dùng hierarchical reference.
+
+> ⚠️ **Quy tắc đồng bộ:** `aes_core_tapped.v` có **7 bản copy** (1 bản gốc trong `rtl/aegis/`, 5 bản Trojan trong `rtl/infected/T0*/`, và 2 bản FPGA trong `fpga/gowin/*/src/`). Thêm bất kỳ cổng tap nào (như `fsm_state`) phải sửa **cả 7 bản**, vì mỗi bản là file độc lập — Gowin build từ bản trong `fpga/gowin/*/src/`, không phải `rtl/aegis/`. Bản `fpga/gowin/security_demo/src/` còn có khác biệt chủ ý khác (KLG layer 2/3 bị disable để xắp 2 core) — chỉ thêm cổng mới, **đừng xoá** phần khác.
 
 ## 5. `rtl/infected/` — các ca Trojan (đối tượng bị test)
 
@@ -272,7 +274,8 @@ Nếu cài toolchain ở máy khác/version khác, sửa lại 2 đường dẫn
 - ✅ `fpga/host/demo_cli.py` **đã khớp** RTL (`uart_cmd_fsm_security.v`). Cặp dùng với nhau là `demo_cli.py` ↔ `top_security_demo.v`. Xem bảng so sánh 2 giao thức ở mục 7.
 - `fpga/Makefile` trỏ toolchain Linux không tồn tại trên Windows — dùng VSCode task thay thế (mục 8).
 - ✅ `.gitignore` **đã** loại trừ `fpga/gowin/*/impl/`, `*.fs`, `*.bin`, `*.db` và `*.gprj.user`.
-- ⚠️ Chưa có ràng buộc `create_clock` cho `clk` trong constraint file nên phân tích timing chưa chính xác. (Cảnh báo synthesis cũ về cổng `skip_round9` chưa được nối ở `top_demo.v` **đã không còn đúng** — `skip_round9` chỉ còn trong bản copy `fpga/gowin/*/src/aes_encipher_block.v` dùng cho demo T03, không còn trong `rtl/aegis/aes_core_tapped.v`.)
+- ✅ Ràng buộc `create_clock` cho `clk` **đã có** ở cả 3 project Gowin (`security_demo.sdc`, `aegis_demo.sdc`, `uart_echo.sdc`), đều đã được đăng ký trong `.gprj` (`type="file.sdc"`). (Cảnh báo synthesis cũ về cổng `skip_round9` chưa được nối ở `top_demo.v` **đã không còn đúng** — `skip_round9` chỉ còn trong bản copy `fpga/gowin/*/src/aes_encipher_block.v` dùng cho demo T03, không còn trong `rtl/aegis/aes_core_tapped.v`.)
+- ✅ Không còn hierarchical reference `u_core.aes_core_ctrl_reg` trong RTL — FSM state được export thành cổng `fsm_state` trên `aes_core_tapped.v` (tham khảo mục 4).
 - `rtl/infected/T0x_*/aes_core.v` là **bản sao core gốc, không phải bản bị nhiễm** — Trojan nằm trong `aes_core_tapped.v` cùng thư mục. `Makefile` đã `filter-out` file này khi biên dịch. Có thể xoá cho gọn, nhưng giữ lại cũng vô hại.
 - File build artifact sót ở gốc repo (`a.out`) đã được `.gitignore` loại trừ bằng rule `*.out` — nhưng vẫn nên xoá khỏi đĩa cho gọn.
 
@@ -307,12 +310,13 @@ Còn lại:
 
 | # | Việc | Ghi chú |
 |---|------|---------|
-| 1 | Port `sec_alarm`/`sec_status` ra cổng ASIC | `aegis_aes_top.v` dùng hierarchical reference `u_core.aes_core_ctrl_reg` — chạy được với simulation/FPGA, **không** chạy được với OpenLane backend. Cần cổng tường minh. |
+| 1 | Port `sec_alarm`/`sec_status` ra cổng ASIC | ✅ **Đã xong** — `aes_core_tapped.v` export cổng tường minh `fsm_state`; `aegis_aes_top.v` nối thẳng, không còn hierarchical reference. Cổng `sec_alarm`/`sec_status` vốn đã là output cấp top. |
 | 2 | Chạy `make formal` | Cần cài `sby` (SymbiYosys) và tạo `verif/sva/aegis.sby` — thư mục này chưa tồn tại. |
 | 3 | Nối `skip_round9` trong bản copy T03 | Cổng này chưa được nối ở `fpga/gowin/security_demo/src/aes_encipher_block.v` (bản copy cho demo T03) — `skip_round9` không còn trong `rtl/aegis/aes_core_tapped.v` nên không phải lỗi của bản chính, chỉ là bản copy FPGA thừa cổng, gây cảnh báo synthesis. |
-| 4 | Thêm ràng buộc `create_clock` cho `clk` | Chưa có trong constraint file → phân tích timing chưa chính xác. |
+| 4 | Thêm ràng buộc `create_clock` cho `clk` | ✅ **Đã xong** — `security_demo.sdc`, `aegis_demo.sdc`, `uart_echo.sdc` đều khai `create_clock -period 20` (50 MHz), đã đăng ký trong `.gprj`. |
 | 5 | Đo LUT/FF/Fmax cho hai cấu hình | §7.3 yêu cầu số liệu cho bản "tiết kiệm" (≤15%) và "đầy đủ" (≤25%). |
 | 6 | Dựng pipeline thí nghiệm LLM (`platform/`) | `Makefile` có target `campaign`/`report` nhưng `platform/` chưa tồn tại. |
+| 7 | Chuyển board sang Zynq-7000 (ZC702 / XC7Z020) | Được tách riêng để làm sau. RTL hiện tại **hoàn toàn portable** (không có primitive vendor nào), chỉ cần: đổi toolchain sang Vivado, thay `.cst`/`.sdc` bằng `.xdc`, và quyết định kiến trúc PL-only (UART qua PMOD) hay ARM-driven (AXI-Lite). |
 
 ---
 
