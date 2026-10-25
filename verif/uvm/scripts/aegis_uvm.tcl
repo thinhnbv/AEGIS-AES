@@ -68,28 +68,37 @@ if {$aegis_case eq "T02_p2_slow_leak" || $aegis_case eq "T02"} {
 }
 
 # ---------------------------------------------------------------
-# Compile
+# Run compile + simulation + coverage inside a proc so that 'return'
+# (the only way to abort a ModelSim Tcl flow without tripping over the
+# hijacked 'exit') is legal. All the setup above (paths, file lists,
+# case) is global and visible to the proc.
 # ---------------------------------------------------------------
-echo "=== AEGIS UVM build: case=$aegis_case ==="
+proc aegis_run {} {
+    global aegis_case inc_defines rtl_files UVM_SRC RTL_AEGIS RTL_GOLD
 
-if {![file isdirectory work]} {
-    vlib work
-}
-vmap work
+    echo "=== AEGIS UVM build: case=$aegis_case ==="
+
+    if {![file isdirectory work]} {
+        vlib work
+    }
+    vmap work
+
+# ModelSim's Tcl has no return codes on vlog: the command raises a Tcl
+# error on failure and returns an empty string on success. Use catch{}.
+# ('exit' is hijacked by ModelSim into 'quit' - use 'return' to abort.)
 
 # 1. Accellera UVM core (pinned submodule).
 #
 # NOTE: no -assert flag. In this Intel FPGA Edition build, SystemVerilog
 # assertion compilation is enabled by default under -sv; the -assert flag
-# is not available. `vlog` returns 0 on success, non-zero on failure.
-set rc [vlog -sv -work work +incdir+$UVM_SRC $UVM_SRC/uvm_pkg.sv]
-if {$rc != 0} {
-    echo "ERROR: UVM core failed to compile (vlog returned $rc) - see above"
-    exit 1
+# is not available.
+if {[catch {vlog -sv -work work +incdir+$UVM_SRC $UVM_SRC/uvm_pkg.sv} uvm_err]} {
+    echo "ERROR: UVM core failed to compile: $uvm_err"
+    return
 }
 
 # 2. Interface, UVM env package, SVA, testbench top, DUT RTL.
-set rc [vlog -sv -work work \
+if {[catch {vlog -sv -work work \
      +incdir+$RTL_AEGIS +incdir+$RTL_GOLD +incdir+verif/uvm/pkg \
      +incdir+$UVM_SRC \
      $inc_defines \
@@ -97,10 +106,9 @@ set rc [vlog -sv -work work \
      verif/uvm/aegis_if.sv \
      verif/uvm/pkg/aegis_uvm_pkg.sv \
      verif/uvm/sva/aegis_props.sv \
-     verif/uvm/tb_top.sv]
-if {$rc != 0} {
-    echo "ERROR: design/env failed to compile (vlog returned $rc) - see above"
-    exit 1
+     verif/uvm/tb_top.sv} env_err]} {
+    echo "ERROR: design/env failed to compile: $env_err"
+    return
 }
 
 # ---------------------------------------------------------------
@@ -115,7 +123,10 @@ echo "=== vsim (case=$aegis_case) ==="
 if {[catch {vsim -covd -sv -work work tb_top} launch_err]} {
     echo "NOTE: 'vsim -covd' failed: $launch_err"
     echo "      Retrying without -covd (coverage collection disabled)."
-    vsim -sv -work work tb_top
+    if {[catch {vsim -sv -work work tb_top} launch_err2]} {
+        echo "ERROR: vsim failed: $launch_err2"
+        return
+    }
 }
 
 run -all
@@ -124,9 +135,13 @@ run -all
 # Functional-coverage report (Questa command; no-op on editions that
 # lack it - the UVM scoreboard SUMMARY above is the primary result).
 # ---------------------------------------------------------------
-echo "=== Functional coverage (case=$aegis_case) ==="
-if {[catch {report coverage -functional} cov_err]} {
-    echo "NOTE: 'report coverage -functional' unavailable ($cov_err)."
-    echo "      Falling back to UVM scoreboard SUMMARY as primary evidence."
+    echo "=== Functional coverage (case=$aegis_case) ==="
+    if {[catch {report coverage -functional} cov_err]} {
+        echo "NOTE: 'report coverage -functional' unavailable ($cov_err)."
+        echo "      Falling back to UVM scoreboard SUMMARY as primary evidence."
+    }
+    echo "=== done: case=$aegis_case ==="
 }
-echo "=== done: case=$aegis_case ==="
+
+# Top level: run the proc; on abort the script ends cleanly.
+aegis_run
