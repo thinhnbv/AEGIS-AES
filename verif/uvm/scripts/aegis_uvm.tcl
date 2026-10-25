@@ -78,14 +78,18 @@ if {![file isdirectory work]} {
 vmap work
 
 # 1. Accellera UVM core (pinned submodule).
-vlog -sv -assert -work work +incdir+$UVM_SRC $UVM_SRC/uvm_pkg.sv
+#
+# NOTE: no -assert flag. In ModelSim (2020.1 Intel FPGA Edition and
+# later) SystemVerilog assertion compilation is enabled by default
+# under -sv; the -assert flag does not exist in this tool build.
+vlog -sv -work work +incdir+$UVM_SRC $UVM_SRC/uvm_pkg.sv
 if {$::error_info != ""} {
     echo "ERROR: UVM core failed to compile - see messages above"
     exit 1
 }
 
 # 2. Interface, UVM env package, SVA, testbench top, DUT RTL.
-vlog -sv -assert -work work \
+vlog -sv -work work \
      +incdir+$RTL_AEGIS +incdir+$RTL_GOLD +incdir+verif/uvm/pkg \
      +incdir+$UVM_SRC \
      $inc_defines \
@@ -100,7 +104,7 @@ vlog -sv -assert -work work \
 # ---------------------------------------------------------------
 echo "=== vsim -covd (case=$aegis_case) ==="
 
-vsim -covd -assert -sv -work work tb_top
+vsim -covd -sv -work work tb_top
 
 run -all
 
