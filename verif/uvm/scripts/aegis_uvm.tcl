@@ -106,14 +106,17 @@ if {$rc != 0} {
 # ---------------------------------------------------------------
 # Simulate with functional-coverage collection.
 #
-# -covd is Questa/ModelSim's functional-coverage collect switch. It is
-# accepted by this edition; if the license/edition later rejects it,
-# the run still proceeds (the UVM scoreboard result is the primary
-# evidence) - so we do not hard-fail on the switch.
+# -covd is the functional-coverage collect switch. If this edition
+# rejects it, fall back to a plain run - the UVM scoreboard SUMMARY
+# is the primary evidence either way.
 # ---------------------------------------------------------------
-echo "=== vsim -covd (case=$aegis_case) ==="
+echo "=== vsim (case=$aegis_case) ==="
 
-vsim -covd -sv -work work tb_top
+if {[catch {vsim -covd -sv -work work tb_top} launch_err]} {
+    echo "NOTE: 'vsim -covd' failed: $launch_err"
+    echo "      Retrying without -covd (coverage collection disabled)."
+    vsim -sv -work work tb_top
+}
 
 run -all
 
