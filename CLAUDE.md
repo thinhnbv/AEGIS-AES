@@ -4,14 +4,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Quy tắc commit (bắt buộc)
 
-**Không được thêm dòng `Co-Authored-By:` hoặc `Co-Generated-By:` vào bất kỳ commit message nào.** Repo này chỉ có `thinhnbv` là author. Không có ngoại lệ.
+**Không được thêm bất kỳ trailer tác giả phụ nào vào commit message.** Repo này chỉ có `thinhnbv` là author — commit chỉ ghi tên tác giả chính, không ghi thêm dòng trạng thái "co-authored"/"co-generated" cho bất kỳ công cụ hay trợ lý nào. Không có ngoại lệ.
 
-Nếu đã lỡ thêm, xóa khỏi **toàn bộ lịch sử** (không chỉ commit mới):
+Quy tắc này áp dụng cho **cả nội dung file**: không viết dòng dạng đó vào source, comment, hay tài liệu nào trong repo (kể cả chính file này).
+
+Nếu đã lỡ thêm vào commit message, xóa khỏi **toàn bộ lịch sử** (không chỉ commit mới):
 
 ```bash
 FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch -f \
   --msg-filter 'sed -E "/^[Cc]o-[Aa]uthored-[Bb]y: /d; /^[Cc]o-[Gg]enerated-[Bb]y: /d"' \
   --tag-name-filter cat -- --all
+
+# filter-branch giữ lại bản gốc trong refs/original/ - phải xoá, nếu không
+# trailer vẫn còn trong database:
+git for-each-ref --format='%(refname)' refs/original | while read r; do git update-ref -d "$r"; done
+git reflog expire --expire=now --all && git gc --prune=now
 ```
 
 Sau khi rewrite, lịch sử đã đổi SHA → cần `git push --force-with-lease` cho mọi branch. Kiểm tra lại bằng:
@@ -20,7 +27,7 @@ Sau khi rewrite, lịch sử đã đổi SHA → cần `git push --force-with-le
 git log --format="%B" --all | grep -iE "^Co-(Authored|Generated)-By:"
 ```
 
-Cùng quy tắc này áp dụng cho **nội dung file** — không viết trailer dạng đó vào source, comment, hay tài liệu nào trong repo.
+Lệnh trên phải cho ra **không có dòng nào**.
 
 ## Dự án này là gì
 
