@@ -132,21 +132,21 @@ if {[catch {vlog {*}$vlog_args} env_err]} {
 }
 
 # ---------------------------------------------------------------
-# Simulate with functional-coverage collection.
+# Reload the just-compiled design in this session and run.
 #
-# -covd is the functional-coverage collect switch. If this edition
-# rejects it, fall back to a plain run - the UVM scoreboard SUMMARY
-# is the primary evidence either way.
+# The full/Questa flow collects functional coverage with
+# 'vsim -covd -sv'. This Intel FPGA Starter edition rejects BOTH
+# -covd (no code-coverage license) and -sv (vish-3296 "Unknown
+# option"), so the reload is kept minimal: 'vsim -work work tb_top'
+# re-elaborates the freshly compiled design in-process. The UVM
+# scoreboard SUMMARY is the primary evidence; coverage is read from
+# the event-counter report at the end of the test.
 # ---------------------------------------------------------------
 echo "=== vsim (case=$aegis_case) ==="
 
-if {[catch {vsim -covd -sv -work work tb_top} launch_err]} {
-    echo "NOTE: 'vsim -covd' failed: $launch_err"
-    echo "      Retrying without -covd (coverage collection disabled)."
-    if {[catch {vsim -sv -work work tb_top} launch_err2]} {
-        echo "ERROR: vsim failed: $launch_err2"
-        return
-    }
+if {[catch {vsim -work work tb_top} launch_err]} {
+    echo "ERROR: vsim design reload failed: $launch_err"
+    return
 }
 
 run -all
