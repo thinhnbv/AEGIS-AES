@@ -1,9 +1,22 @@
 # UVM Verification Environment (ModelSim)
 
-Môi trường UVM cho `aegis_aes_top` (5 monitor + TRU). Chạy trên
-**ModelSim (Altera/Intel FPGA edition)** ở Windows; nguồn UVM là
-[`accellera-official/uvm-core`](https://github.com/accellera-official/uvm-core)
-pin tại tag **2020.3.1** (submodule `uvm-core/`).
+Môi trường UVM cho `aegis_aes_top` (5 monitor + TRU), chạy trên
+**ModelSim 2020.1 (Intel FPGA Starter edition)** với
+[Accellera UVM 1.2](https://github.com/accellera-official/uvm-core)
+pin tag **2020.3.1** (submodule `uvm-core/`).
+
+Toolchain hiện dùng cho flow UVM:
+
+- UVM env chỉ chạy trên ModelSim/Questa — Icarus không có UVM, và
+  Verilator (5.020) không compile được UVM 1.2 (đã kiểm tra,
+  `%Error-PKGNODECL` ở factory/`type_id`).
+- Bản Starter không có license Code Coverage → build **default** của
+  `aegis_coverage.sv` dùng event counters (không cần license); build
+  covergroup thật chỉ chạy trên Questa: `-DAEGIS_COVGROUP` +
+  `vsim -covd`.
+- Kết quả UVM phải trùng baseline plain-SV: `make security` /
+  `make regress` / `make fa-rate` (Icarus/Verilator, xem
+  `docs/REPO_GUIDE.md` mục 8).
 
 ## Cấu trúc
 
@@ -19,14 +32,14 @@ verif/uvm/
 │   ├── aegis_agent.sv     # driver (handshake + capture) + monitor + sequencer
 │   ├── aegis_seqs.sv      # nist_kat_seq / security_case_seq (T04 3-block, T02 repeat) / fa_rate_seq
 │   ├── aegis_scoreboard.sv# KAT + detector mask + false-alarm check (duy nhất nguồn PASS/FAIL)
-│   ├── aegis_coverage.sv  # covergroup thật (ModelSim -covd): op mix, sec_status pattern, latency
+│   ├── aegis_coverage.sv  # default: event counters; -DAEGIS_COVGROUP: covergroup (Questa)
 │   ├── aegis_env.sv
 │   └── aegis_test.sv      # aegis_base_test (chọn seq theo spec.kind)
 ├── sva/
 │   └── aegis_props.sv     # SVA bind vào aegis_aes_top (pulse, alarm sticky, no-output-after-alarm)
 ├── tb_top.sv            # DUT + clock/reset + TOÀN BỘ file I/O (cfg, vector, NIST) + run_test
 └── scripts/
-    └── aegis_uvm.tcl    # vlib/vlog/vsim -covd + report coverage -functional
+    └── aegis_uvm.tcl    # vlib/vlog -sv + vsim -c (kèm -coverage nếu bản có license)
 ```
 
 ## Chạy (Windows, từ repo root)
@@ -37,7 +50,6 @@ vsim -c -do "set aegis_case clean; do verif/uvm/scripts/aegis_uvm.tcl"
 
 :: security case (T01..T05, trigger theo verif/cfg/<case>.cfg)
 vsim -c -do "set aegis_case T03_p3_skip_mixcol; do verif/uvm/scripts/aegis_uvm.tcl"
-
 :: false-alarm rate (1 key, nhiều block random - khớp make fa-rate)
 vsim -c -do "set aegis_case fa; do verif/uvm/scripts/aegis_uvm.tcl"
 ```
@@ -45,37 +57,17 @@ vsim -c -do "set aegis_case fa; do verif/uvm/scripts/aegis_uvm.tcl"
 Hoặc vào ModelSim GUI, Console: `do verif/uvm/scripts/aegis_uvm.tcl`
 (có thể đặt `set aegis_case ...` trước).
 
-Kết quả: scoreboard in `SUMMARY clean=… kat=… sec=… fail=0`; coverage xem
-bằng `report coverage -functional` (đã có sẵn trong script) hoặc GUI
-`Tools → Coverage Reports`.
+Kết quả mong đợi: scoreboard in `SUMMARY clean=… kat=… sec=… fail=0`
+và report event-counter (build default). Bản Questa chạy thêm
+`report coverage -functional`.
 
-## Chạy được trên Icarus không?
+## Ghi chú khi sửa env (UVM 1.2, không phải UVM 1.1)
 
-Không. Icarus không có UVM (class/sequence). UVM env này là flow
-**ModelSim/Questa**; các testbench plain-SV hiện có
-(`tb_security.sv`, `tb_regress_nist.sv`, `tb_fa_rate.sv`) tiếp tục
-chạy trên Icarus/Verilator và là baseline đối chiếu: kết quả UVM phải
-trùng với `make security` / `make regress` / `make fa-rate`.
-
-## Capability smoke test (gate trước khi dựa vào ModelSim)
-
-Trước khi coi ModelSim là công cụ DV chính, chạy 5 điểm kiểm tra
-(theo `docs/DV_FPGA_PD_ROADMAP.md`, mục "Confirmed resources") và
-ghi kết quả kèm version + lệnh:
-
-| # | Kiểm tra | Cách | Đạt khi |
-|---|---|---|---|
-| 1 | UVM startup | `aegis_smoke_test` (hoặc chạy `case=clean` với 1 vector) | `run_test` kết thúc, UVM test report in ra |
-| 2 | Constrained-random + seed reproducible | `fa` case, ghi seed từ log; chạy lại cùng seed | cùng chuỗi block, cùng kết quả |
-| 3 | SVA pass + SVA fail chủ ý | compile `-assert`; trên clean: 0 violation; tạo 1 input vi phạm (vd giữ `key_valid` 2 chu kỳ) | assert bắt được |
-| 4 | Functional coverage sampling | chạy `case=clean`, `report coverage -functional` | có dòng coverpoint, % hit |
-| 5 | Save/merge/report DB | `save_covd` + chạy case khác + `report coverage -functional` | DB gộp được |
-
-**Nếu #4/#5 bị chặn license** (edition ModelSim của bạn không có
-functional coverage): fallback — giữ UVM + SVA như bình thường, thay
-`aegis_coverage.sv` bằng UVM event-counter (không dùng covergroup) +
-code coverage Verilator (`--coverage -ccov`). UVM/SVA không bị ảnh
-hưởng. Ghi kết quả smoke test vào `verif/uvm/SMOKE_RESULTS.md`.
+- Connect: `drv.seq_item_port.connect(sqr.seq_item_export)`.
+- Driver/sequencer cùng parameter `(aegis_txn, aegis_txn)`.
+- `seq_item_port.get_next_item(txn)` (1.1: `get_next_request`).
+- Constructor UVM class đóng bằng `endfunction`; không declare biến
+  giữa thân task đã có statement (ModelSim bắt, Icarus thì cho).
 
 ## Ghi chú thực thi
 

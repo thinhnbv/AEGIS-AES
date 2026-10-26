@@ -61,7 +61,16 @@ make gen-cfg                                 # sinh lại verif/cfg/*.cfg từ g
 make lint                                    # Verilator lint trên rtl/aegis
 ```
 
-`make fa-rate` mặc định dùng Icarus — **cần vài giờ** cho 10⁶ mã hóa. Luôn dùng `SIM=verilator` (compiled C++, chạy vài giây).
+`security`, `regress`, `fa-rate` đều có nhánh `SIM=verilator` (compiled
+C++, nhanh) — mặc định là Icarus.
+
+- `make fa-rate` mặc định Icarus **cần vài giờ** cho 10⁶ mã hóa → luôn
+  dùng `SIM=verilator` (vài giây).
+- `make security CASE=T02_p2_slow_leak SIM=verilator TRIG_REPEAT=65536`:
+  trên Verilator không với tới DUT-internal counter preload (Icarus dùng
+  nó), nên T02 phải thật sự tích luỹ 2^16 mã hoá; `TRIG_REPEAT` ghi đè
+  số lần trigger + watchdog dài hơn.
+- Các ca T01/T03/T04/T05 chạy `SIM=verilator` không cần override.
 
 Chạy một testbench lẻ: `make sim CASE=T01` dùng `verif/tb/tb_<CASE>.sv` nếu có, không thì `tb_aegis_top.sv`.
 

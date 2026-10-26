@@ -13,6 +13,15 @@ FA_KEYS   ?= 100
 FA_PER_KEY ?= 1000
 FA_SEED   ?= 305419896
 
+# Optional trigger-count override for the security testbench. Needed on
+# Verilator for T02: there the DUT-internal counter preload is not
+# reachable, so the Trojan must genuinely accumulate 2^16 encryptions.
+# Leave empty for the normal contract repeat count.
+TRIG_REPEAT ?=
+# When TRIG_REPEAT is set, the security TB runs 2^16 encryptions, so
+# extend its watchdog (default 500000 ns is far too short for that).
+VLT_SECURITY_DEFS = $(if $(TRIG_REPEAT),-DTRIG_REPEAT=$(TRIG_REPEAT) -DSECURITY_WATCHDOG_NS=100000000)
+
 RTL_GOLD   = rtl/aes_golden
 RTL_AEGIS  = rtl/aegis
 RTL_CASE   = rtl/infected/$(CASE)
@@ -92,6 +101,38 @@ check-vectors:
 
 security: gen-cfg check-vectors
 	@mkdir -p $(BUILD)/$(CASE)
+ifeq ($(SIM),verilator)
+# Verilator: compile to a binary (fast), then run. Same source
+# selection as the Icarus flow; $fopen/$fscanf (the TB's vector
+# readers) are supported.
+ifeq ($(CASE),CLEAN)
+	verilator --binary --timing -Wno-fatal -Wno-DECLFILENAME \
+		-I$(RTL_AEGIS) -I$(TB) --top-module tb_security \
+		-DCASE=\"$(CASE)\" $(VLT_SECURITY_DEFS) \
+		-Mdir $(BUILD)/$(CASE)/obj -o security_v \
+		$(SRC_AEGIS) \
+		$(filter-out $(RTL_GOLD)/aes.v,$(SRC_GOLD)) \
+		$(TB)/tb_security.sv
+else ifeq ($(CASE),clean)
+	verilator --binary --timing -Wno-fatal -Wno-DECLFILENAME \
+		-I$(RTL_AEGIS) -I$(TB) --top-module tb_security \
+		-DCASE=\"$(CASE)\" $(VLT_SECURITY_DEFS) \
+		-Mdir $(BUILD)/$(CASE)/obj -o security_v \
+		$(SRC_AEGIS) \
+		$(filter-out $(RTL_GOLD)/aes.v,$(SRC_GOLD)) \
+		$(TB)/tb_security.sv
+else
+	verilator --binary --timing -Wno-fatal -Wno-DECLFILENAME \
+		-I$(RTL_AEGIS) -I$(TB) --top-module tb_security \
+		-DCASE=\"$(CASE)\" $(VLT_SECURITY_DEFS) \
+		-Mdir $(BUILD)/$(CASE)/obj -o security_v \
+		$(filter-out $(RTL_AEGIS)/aes_core_tapped.v,$(SRC_AEGIS)) \
+		$(filter-out $(RTL_CASE)/aes_core.v,$(wildcard $(RTL_CASE)/*_tapped.v)) \
+		$(SEC_GOLD_SUPPORT) \
+		$(TB)/tb_security.sv
+endif
+	@bash -o pipefail -c '$(BUILD)/$(CASE)/obj/security_v | tee $(BUILD)/$(CASE)/$(CASE).log'
+else
 ifeq ($(CASE),CLEAN)
 	# CLEAN case: aegis RTL + golden support
 	iverilog -g2012 -I$(RTL_AEGIS) -I$(TB) -DCASE=\"$(CASE)\" -o $(BUILD)/$(CASE)/$(CASE).out \
@@ -115,6 +156,7 @@ else
 		$(TB)/tb_security.sv
 endif
 	@bash -o pipefail -c 'vvp $(BUILD)/$(CASE)/$(CASE).out | tee $(BUILD)/$(CASE)/$(CASE).log'
+endif
 
 #---------------------------------------------------------------
 # regress: NIST FIPS-197 regression (KAT 16 + MCT 10000 vectors)
@@ -125,6 +167,38 @@ endif
 #---------------------------------------------------------------
 regress: gen-cfg check-vectors
 	@mkdir -p $(BUILD)/$(CASE)
+ifeq ($(SIM),verilator)
+# Verilator: compile to a binary (fast), then run. MCT_LIMIT=0 keeps
+# the full 10000-vector run; same source selection as the Icarus flow.
+ifeq ($(CASE),CLEAN)
+	verilator --binary --timing -Wno-fatal -Wno-DECLFILENAME \
+		-I$(RTL_AEGIS) -I$(TB) --top-module tb_regress_nist \
+		-DMCT_LIMIT=$(MCT_LIMIT) -DCASE=\"$(CASE)\" \
+		-Mdir $(BUILD)/$(CASE)/obj -o regress_v \
+		$(SRC_AEGIS) \
+		$(filter-out $(RTL_GOLD)/aes.v,$(SRC_GOLD)) \
+		$(TB)/tb_regress_nist.sv
+else ifeq ($(CASE),clean)
+	verilator --binary --timing -Wno-fatal -Wno-DECLFILENAME \
+		-I$(RTL_AEGIS) -I$(TB) --top-module tb_regress_nist \
+		-DMCT_LIMIT=$(MCT_LIMIT) -DCASE=\"$(CASE)\" \
+		-Mdir $(BUILD)/$(CASE)/obj -o regress_v \
+		$(SRC_AEGIS) \
+		$(filter-out $(RTL_GOLD)/aes.v,$(SRC_GOLD)) \
+		$(TB)/tb_regress_nist.sv
+else
+	verilator --binary --timing -Wno-fatal -Wno-DECLFILENAME \
+		-I$(RTL_AEGIS) -I$(TB) --top-module tb_regress_nist \
+		-DMCT_LIMIT=$(MCT_LIMIT) -DCASE=\"$(CASE)\" \
+		-Mdir $(BUILD)/$(CASE)/obj -o regress_v \
+		$(filter-out $(RTL_AEGIS)/aes_core_tapped.v,$(SRC_AEGIS)) \
+		$(filter-out $(RTL_CASE)/aes_core.v,$(wildcard $(RTL_CASE)/*_tapped.v)) \
+		$(SEC_GOLD_SUPPORT) \
+		$(TB)/tb_regress_nist.sv
+endif
+	@bash -o pipefail -c '$(BUILD)/$(CASE)/obj/regress_v | tee $(BUILD)/$(CASE)/regress.log'
+	@exit 0
+endif
 ifeq ($(CASE),CLEAN)
 	iverilog -g2012 -I$(RTL_AEGIS) -I$(TB) -DMCT_LIMIT=$(MCT_LIMIT) -DCASE=\"$(CASE)\" -o $(BUILD)/$(CASE)/regress.out \
 		$(SRC_AEGIS) \
@@ -144,14 +218,19 @@ else
 endif
 	@bash -o pipefail -c 'vvp $(BUILD)/$(CASE)/regress.out | tee $(BUILD)/$(CASE)/regress.log'
 
-# Run the NIST regression over every infected case plus the clean core.
+# Run the NIST regression over every infected case plus the clean
+# core. SIM propagates to each case (default iverilog; use
+# SIM=verilator for the compiled, fast pass). Fails the target if any
+# case fails.
 regress-all:
-	@echo "=== clean ==="
-	@$(MAKE) --no-print-directory regress CASE=clean || true
-	@for c in $$(ls rtl/infected); do \
-	echo "=== $$c ==="; \
-	$(MAKE) --no-print-directory regress CASE=$$c || true; \
-	done
+	@FAILS=0; echo "=== clean ==="; \
+	$(MAKE) --no-print-directory regress CASE=clean SIM=$(SIM) || FAILS=$$((FAILS+1)); \
+	for c in $$(ls rtl/infected); do \
+		echo "=== $$c ==="; \
+		$(MAKE) --no-print-directory regress CASE=$$c SIM=$(SIM) || FAILS=$$((FAILS+1)); \
+	done; \
+	if [ $$FAILS -ne 0 ]; then echo "regress-all: $$FAILS case(s) FAILED"; exit 1; fi; \
+	echo "regress-all: OK (SIM=$$(SIM))""
 
 #---------------------------------------------------------------
 # fa-rate: measure the false-alarm rate of the security monitors.

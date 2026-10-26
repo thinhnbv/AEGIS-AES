@@ -367,8 +367,13 @@ module tb_regress_nist;
   // not the 10,000-vector count of the MCT file alone - the KAT
   // phase and the per-vector handshake add to it.
   //------------------------------------------------------------
+  // Icarus defaults unsized literals to 64 bits; Verilator to 32
+  // (2e11 overflows a 32-bit literal), so the watchdog budget is a
+  // named longint parameter - portable to both.
+  parameter longint WATCHDOG_PS = 64'h5_B800_0000_0000; // 2e11 ps
+
   initial begin
-    #200000000000;
+    #WATCHDOG_PS;
     $display("[FATAL] Simulation timeout - hung, aborting");
     $display("==================================================");
     $display("  Vectors completed   : %0d", total_vectors);
