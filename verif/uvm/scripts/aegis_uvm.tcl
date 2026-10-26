@@ -89,10 +89,20 @@ proc aegis_run {} {
 
 # 1. Accellera UVM core (pinned submodule).
 #
+# +define+UVM_NO_DPI disables every `import "DPI-C"` block in uvm_pkg and
+# substitutes the pure-SystemVerilog fallbacks (uvm_dpi.svh:43). The free
+# Intel FPGA Starter Edition does NOT link the C/C++ DPI backing that the
+# full Accellera/Questa kit prebuilds, so with DPI left on those imports
+# resolve to null foreign pointers and `run -all` SIGSEGVs on the first
+# uvm_root command-line call (uvm_dpi_get_next_arg_c). This flow never
+# uses UVM register backdoor / regex / cmdline-arg DPI, so the fallbacks
+# (glob match, empty next-arg) are correct here.
+#
 # NOTE: no -assert flag. In this Intel FPGA Edition build, SystemVerilog
 # assertion compilation is enabled by default under -sv; the -assert flag
 # is not available.
-if {[catch {vlog -sv -work work +incdir+$UVM_SRC $UVM_SRC/uvm_pkg.sv} uvm_err]} {
+if {[catch {vlog -sv +define+UVM_NO_DPI -work work +incdir+$UVM_SRC \
+    $UVM_SRC/uvm_pkg.sv} uvm_err]} {
     echo "ERROR: UVM core failed to compile: $uvm_err"
     return
 }
