@@ -18,7 +18,9 @@
 `timescale 1ns/1ps
 `default_nettype none
 
-interface aegis_if (input logic clk, input logic rst_n);
+// NOTE: port nets use 'wire', not 'logic' - ModelSim (vlog-2892)
+// flags variable-typed interface ports but not net-typed ones.
+interface aegis_if (input wire clk, input wire rst_n);
 
   // ---- Stimulus (driven by the UVM driver) ----
   logic [127:0] key;

@@ -33,10 +33,10 @@ class aegis_scoreboard extends uvm_scoreboard;
   endfunction
 
   function void write(aegis_txn t);
-    check(t);
+    check_txn(t);
   endfunction
 
-  protected void check(aegis_txn t);
+  function void check_txn(aegis_txn t);
     total++;
     if (t.expect_silent) begin
       n_clean_ops++;
@@ -77,7 +77,7 @@ class aegis_scoreboard extends uvm_scoreboard;
         if (t.alarm_latency < 0) begin
           `uvm_error("SCB", "alarm latency not measured")
           fail++;
-        else if (t.max_alarm_latency >= 0 &&
+        end else if (t.max_alarm_latency >= 0 &&
                 t.alarm_latency > t.max_alarm_latency) begin
           `uvm_error("SCB", $sformatf(
             "ALARM LATE: %0d cycles > contract budget %0d",
@@ -88,7 +88,7 @@ class aegis_scoreboard extends uvm_scoreboard;
         end
       end
     end
-  end
+  endfunction
 
   function void check_phase(uvm_phase phase);
     super.check_phase(phase);

@@ -30,6 +30,10 @@ class aegis_kat_db;
   bit[127:0] pt  [int];
   bit[127:0] ct  [int];
 
+  function new(string name = "aegis_kat_db");
+    n_vectors = 0;
+  endfunction
+
   // Load from already-read hex strings (the TB does the file I/O).
   function void add(bit[127:0] k, bit[127:0] p, bit[127:0] c);
     key[n_vectors] = k;
@@ -49,12 +53,12 @@ class nist_kat_seq extends uvm_sequence #(aegis_txn);
 
   function new(string name = "nist_kat_seq");
     super.new(name);
-  end
+  endfunction
 
   task body();
     for (int i = 0; i < db.n_vectors; i++) begin
       aegis_txn t = aegis_txn::type_id::create("kat_txn");
-      if (!start_item(t)) break;
+      start_item(t);
       t.key        = db.key[i];
       t.block      = db.pt[i];
       t.do_key_load = 1;
@@ -94,11 +98,14 @@ class security_case_seq extends uvm_sequence #(aegis_txn);
 
   function new(string name = "security_case_seq");
     super.new(name);
-  end
+  endfunction
 
   task body();
     aegis_txn c, t;
     bit[127:0] blk;
+    int reps;
+
+    reps = repeat_each ? trigger_repeat : 1;
 
     // ---- clean baseline (skipped for T04: it arms on the first
     // accepted block, so a clean op would corrupt the trigger FSM).
@@ -119,7 +126,6 @@ class security_case_seq extends uvm_sequence #(aegis_txn);
       `uvm_error("SECSEQ", "trig_blocks empty - nothing to trigger")
       return;
     end
-    int reps = repeat_each ? trigger_repeat : 1;
     for (int rep = 0; rep < reps; rep++) begin
       for (int i = 0; i < trig_blocks.size(); i++) begin
         blk = trig_blocks[i];
@@ -157,10 +163,11 @@ class fa_rate_seq extends uvm_sequence #(aegis_txn);
   function new(string name = "fa_rate_seq");
     super.new(name);
     iterations = 1000;
-  end
+  endfunction
 
   task body();
     bit[127:0] b;
+    aegis_txn k, t;
     int unsigned lcg = 32'h1234_5678 ^ iterations;
     // Deterministic LCG instead of std::randomize: this edition of
     // ModelSim (Intel FPGA) reports randomization as a Questa-only
@@ -168,7 +175,7 @@ class fa_rate_seq extends uvm_sequence #(aegis_txn);
     // without simulator-level randomization. The stream is still
     // well-distributed over 128-bit blocks.
     // load the key once
-    aegis_txn k = aegis_txn::type_id::create("fa_key");
+    k = aegis_txn::type_id::create("fa_key");
     start_item(k);
     k.key = shared_key; k.block = shared_key;
     k.do_key_load = 1;
@@ -177,7 +184,7 @@ class fa_rate_seq extends uvm_sequence #(aegis_txn);
     for (int i = 0; i < iterations; i++) begin
       lcg = (lcg * 32'h1966_0D + 32'h3) >>> 0;
       b = {lcg, lcg, lcg, lcg} ^ (i << 7);
-      aegis_txn t = aegis_txn::type_id::create("fa_txn");
+      t = aegis_txn::type_id::create("fa_txn");
       start_item(t);
       t.key         = shared_key;
       t.block       = b;

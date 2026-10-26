@@ -98,15 +98,25 @@ if {[catch {vlog -sv -work work +incdir+$UVM_SRC $UVM_SRC/uvm_pkg.sv} uvm_err]} 
 }
 
 # 2. Interface, UVM env package, SVA, testbench top, DUT RTL.
-if {[catch {vlog -sv -work work \
-     +incdir+$RTL_AEGIS +incdir+$RTL_GOLD +incdir+verif/uvm/pkg \
-     +incdir+$UVM_SRC \
-     $inc_defines \
-     [join $rtl_files] \
-     verif/uvm/aegis_if.sv \
-     verif/uvm/pkg/aegis_uvm_pkg.sv \
-     verif/uvm/sva/aegis_props.sv \
-     verif/uvm/tb_top.sv} env_err]} {
+#
+# Build the vlog argument list explicitly and expand it with {*}:
+# a bare `[join $rtl_files]` inside the catch{} would collapse every
+# RTL file into a SINGLE argument and vlog would fail with ENOENT.
+set vlog_args [list -sv -work work \
+    +incdir+$RTL_AEGIS \
+    +incdir+$RTL_GOLD \
+    +incdir+verif/uvm/pkg \
+    +incdir+$UVM_SRC]
+if {$inc_defines ne ""} {
+    lappend vlog_args $inc_defines
+}
+set vlog_args [concat $vlog_args $rtl_files \
+    verif/uvm/aegis_if.sv \
+    verif/uvm/pkg/aegis_uvm_pkg.sv \
+    verif/uvm/sva/aegis_props.sv \
+    verif/uvm/tb_top.sv]
+
+if {[catch {vlog {*}$vlog_args} env_err]} {
     echo "ERROR: design/env failed to compile: $env_err"
     return
 }

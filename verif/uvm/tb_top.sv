@@ -127,7 +127,7 @@ module tb_top;
       spec.add_kat(spec.clean_key, spec.clean_pt, spec.clean_ct);
       nist_fd = $fopen("verif/vectors/nist_kat.txt", "r");
       if (nist_fd != 0) begin
-        while (!feof(nist_fd))
+        while (!$feof(nist_fd))
           if (read_hex_line(nist_fd, f_key, f_pt, f_ct))
             spec.add_kat(f_key, f_pt, f_ct);
         $fclose(nist_fd);
@@ -140,7 +140,7 @@ module tb_top;
       cfg_fd = $fopen(cfg_path, "r");
       if (cfg_fd == 0)
         $fatal(1, "tb_top: cannot open contract %s", cfg_path);
-      while (!feof(cfg_fd)) begin
+      while (!$feof(cfg_fd)) begin
         line = "";
         if ($fgets(line, cfg_fd) > 0) begin
           if      ($sscanf(line, "trigger_repeat  = %d",

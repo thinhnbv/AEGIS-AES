@@ -25,7 +25,7 @@
 //--------------------------------------------------------------
 // Driver
 //--------------------------------------------------------------
-class aegis_driver extends uvm_driver #(aegis_txn);
+class aegis_driver extends uvm_driver #(aegis_txn, aegis_txn);
   `uvm_component_utils(aegis_driver)
 
   virtual aegis_if vif;
@@ -42,7 +42,7 @@ class aegis_driver extends uvm_driver #(aegis_txn);
   task run();
     aegis_txn txn;
     forever begin
-      seq_item_port.get_next_request(txn);
+      seq_item_port.get_next_item(txn);
       drive(txn);
       ap.write(txn);
       seq_item_port.item_done();
@@ -171,7 +171,7 @@ class aegis_agent extends uvm_agent;
 
   aegis_driver  drv;
   aegis_monitor mon;
-  uvm_sequencer #(aegis_txn) sqr;
+  uvm_sequencer #(aegis_txn, aegis_txn) sqr;
 
   virtual aegis_if vif;
 
@@ -183,9 +183,9 @@ class aegis_agent extends uvm_agent;
     super.build_phase(phase);
     drv = aegis_driver::type_id::create("drv", this);
     mon = aegis_monitor::type_id::create("mon", this);
-    sqr = uvm_sequencer #(aegis_txn)::type_id::create("sqr", this);
+    sqr = uvm_sequencer #(aegis_txn, aegis_txn)::type_id::create("sqr", this);
     if (get_is_active())
-      drv.seq_item_port.connect(sqr);
+      drv.seq_item_port.connect(sqr.seq_item_export);
   endfunction
 
   function void connect_phase(uvm_phase phase);
