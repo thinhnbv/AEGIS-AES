@@ -22,8 +22,18 @@ location:
   always_block: null
 
 detection:
-  expected_checker: KLG
-  expected_latency: 1
+  expected_checker: KLG, ORC
+  expected_latency: result-time
+  rationale:
+    ORC: >
+      Tinh lai round cuoi doc lap (SubBytes->ShiftRows->AddRoundKey)
+      roi so voi output core. P2 thay 8 bit thap cua result bang
+      key[7:0] nen ORC bat moi lan ma hoa sau trigger (result-time).
+    KLG: >
+      Cua so thong ke 16 ket qua, nguong 6 lan trung byte thap
+      khoa. Trigger counter bao hoa tai nguong nen moi lan ma hoa
+      sau trigger deu ro byte khoa; KLG can 6 ket qua lien tiep
+      (do do trigger_repeat = 6 trong muc verification).
 
 verification:
   silent_under_nist: true
