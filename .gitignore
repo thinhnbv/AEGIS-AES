@@ -43,3 +43,4 @@ work/            # vsim library dir (default "work")
 cov_work/        # Questa functional-coverage database
 *.ucdb
 *.shm
+CLAUDE.md
