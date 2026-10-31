@@ -21,6 +21,18 @@ fpga/gowin/*/*.gprj.user
 # Verilator build output
 obj_dir/
 
+# Xilinx Zynq build artifacts + src/ sync (sync_sources.sh sinh lai).
+# Chi commit file that trong fpga/xilinx (top/xdc/tcl/script/README).
+fpga/xilinx/src/
+fpga/xilinx/reports/
+fpga/xilinx/*.xpr
+fpga/xilinx/*.xpr.*
+fpga/xilinx/impl_*/
+fpga/xilinx/synth_*/
+fpga/xilinx/*.bit
+fpga/xilinx/*.jou
+fpga/xilinx/*.log
+
 # Questa/ModelSim (Windows) run + coverage artifacts
 qrun*.log
 vsim.log

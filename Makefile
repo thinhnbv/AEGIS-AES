@@ -46,7 +46,7 @@ else
 	SRC_AEGIS_DUT  = $(SRC_AEGIS_KEEP)
 endif
 
-.PHONY: help golden sim security gen-cfg regress regress-all fa-rate lint formal all-cases fpga backend campaign report clean
+.PHONY: help golden sim security gen-cfg regress regress-all fa-rate lint formal all-cases fpga backend campaign report clean demo-proof demo-proof-all
 
 help:
 	@echo 'make golden              - kiem tra loi AES goc'
@@ -324,3 +324,50 @@ backend:
 
 clean:
 	rm -rf $(BUILD)
+
+#---------------------------------------------------------------
+# demo-proof: byte-level UART protocol proof (tb_uart_demo.sv).
+#
+# Per-case:  make demo-proof CASE=T01_p1_key_dump   (or T02..T05)
+# All cases: make demo-proof-all
+#
+# Exercises the exact UART command FSM that runs on the Gowin/Zynq
+# board (uart_cmd_fsm_security.v, including the T05 raw/protected
+# watchdog) at the UART byte boundary, using the per-case infected
+# core for the raw path and the real aegis_aes_top for the protected
+# path. This is the showcase "evidence" that every Trojan case
+# returns a valid 37-byte response through the board's protocol.
+#---------------------------------------------------------------
+DEMO_PROOF_DIR = fpga/gowin/security_demo
+
+# One case at a time:  make demo-proof CASE=T01_p1_key_dump
+# The infected raw core is taken from rtl/infected/$(CASE)/; the
+# CASE_ID select is derived from the case name so the right TB body
+# runs. All 5:  make demo-proof-all
+demo-proof:
+	@mkdir -p $(BUILD)/demo_proof
+	@cid=$$(echo $(CASE) | sed -E 's/^T0([0-9]).*/\1/'); \
+	echo "=== demo-proof $(CASE) (T0$$cid) ==="; \
+	iverilog -g2012 -I$(RTL_AEGIS) \
+		-DT0$$cid \
+		-o $(BUILD)/demo_proof/$(CASE).out \
+		$(filter-out $(RTL_AEGIS)/aes_core_tapped.v,$(SRC_AEGIS)) \
+		$(wildcard $(RTL_CASE)/aes_core_tapped.v) \
+		$(SEC_GOLD_SUPPORT) \
+		$(DEMO_PROOF_DIR)/src/uart_cmd_fsm_security.v \
+		$(DEMO_PROOF_DIR)/tb/tb_uart_demo.sv; \
+	vvp $(BUILD)/demo_proof/$(CASE).out
+
+demo-proof-all:
+	@ok=1; \
+	for c in T01_p1_key_dump T02_p2_slow_leak T03_p3_skip_mixcol \
+		T04_p4_debug_port T05_dos_trojan; do \
+		echo "=== demo-proof $$c ==="; \
+		if $(MAKE) --no-print-directory demo-proof CASE=$$c > $(BUILD)/demo_proof/proof_$${c}.log 2>&1; then \
+			grep -E "\[PASS\]|\[FAIL\]" $(BUILD)/demo_proof/proof_$${c}.log; \
+		else \
+			echo "[FAIL] demo-proof $$c"; cat $(BUILD)/demo_proof/proof_$${c}.log; ok=0; \
+		fi; \
+	done; \
+	if [ $$ok = 1 ]; then echo "demo-proof-all: all cases PASS"; else \
+		echo "demo-proof-all: SOME CASES FAILED"; exit 1; fi
