@@ -17,10 +17,20 @@
 #=======================================================================
 
 # ---- SYSCLK: 200 MHz LVDS, on-board oscillator (UG850, bank MRCC) ----
+# Top co IBUFDS (clk_p/clk_n) => day clock tren port clk_p,
+# tool tu hiep nhat differential pair (khong bi IOSTDTYPE-1).
 set_property PACKAGE_PIN D18 [get_ports clk_p]
 set_property PACKAGE_PIN C19 [get_ports clk_n]
 set_property IOSTANDARD LVDS_25 [get_ports {clk_p clk_n}]
 create_clock -name clk -period 5.000 -waveform {0 2.5} [get_ports clk_p]
+
+# ---- MMCM (tu chon, nen dung - kiem tra comment top_security_demo.v) ----
+# Chuan an 25 MHz cho fabric (duong critical ~28.7ns, 200MHz dat khong).
+# Sau khi add MMCM IP (input 200MHz = net cu IBUFDS, output 25MHz):
+#   set clk25 [get_pins <thuc_mmcm/clkoutclk0>]
+#   create_generated_clock -name clk25 -source [get_clocks clk] \
+#       -period 40.000 $clk25
+#   # va gate reset: MMCM LOCKED (wizard co pin locked).
 
 # ---- Reset: GPIO_SW_N (active-low, nut DIP SW5) ----
 set_property PACKAGE_PIN G19 [get_ports rst_n]

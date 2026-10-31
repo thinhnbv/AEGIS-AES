@@ -35,14 +35,45 @@ module top_security_demo (
     output wire [3:0] led
 );
 
-    // Internal single-ended clock derived from the LVDS pair. Only
-    // clk_p carries the signal; clk_n exists so the XDC can constrain
-    // the differential input pair on the device package.
-    wire clk;
-    assign clk = clk_p;
+    // SYSCLK is a 200 MHz LVDS differential oscillator on the ZC702
+    // (D18/C19). Take it in with a proper IBUFDS so the tool builds a
+    // differential clock (kills the IOSTDTYPE-1 "single-ended vs LVDS"
+    // warning) instead of a lone IBUF on clk_p.
+    wire clk_in200;
+    IBUFDS u_clkbuff (
+        .I(clk_p),
+        .N(clk_n),
+        .O(clk_in200)
+    );
 
-    // 200 MHz system clock (ZC702 onboard oscillator).
-    localparam integer CLK_FREQ = 200_000_000;
+    // ----------------------------------------------------------------
+    // FABRIC CLOCK: the AEGIS logic + monitors are NOT fast enough for
+    // 200 MHz (post-route critical path ~28.7 ns => ~34 MHz max, and
+    // the KLG 128-bit compare is the long path). The demo is a 115200
+    // UART, so divide the 200 MHz input down and run the fabric at
+    // clk_core.
+    //
+    // HOW TO WIRE (GUI, ~3 buoc):
+    //   1. Project -> IP -> Add IP -> "7-series PLL Wizard" (Clocking),
+    //      chon loai MMCM, input 200 MHz, target output 25 MHz
+    //      (= 200/8, du phong cho duong critical ~28.7ns). Wizard ghi
+    //      san ca .xdc create_generated_clock cho output.
+    //   2. Instant IP bi sinh ra vao day (CLK_IN1 = clk_in200), roi
+    //      sua dong vclink core ben duoi (dong 71):
+    //         wire clk_core;
+    //         assign clk_core = <CLK_OUT0 cua MMCM>;
+    //      voi CLK_FREQ = 25_000_000 (dong 75). Gate reset khi MMCM
+    //      chua LOCKED: gop .rst_n = rst_n & <mmcm_locked> vao cac
+    //      block, hoac thuc hien sau MMCM lock (demo khong bat buoc).
+    //   3. Neu giu nguyen clk_core = clk_in200 (200 MHz) thi design
+    //      KHONG dat timing (WNS ~ -23ns) - chi dung khi sau nay
+    //      pipeline duong KLG.
+    // ----------------------------------------------------------------
+    wire clk_core = clk_in200;   // <- point at MMCM CLK_OUT0 when added
+
+    // System clock frequency the UART bit-timing prescaler computes
+    // from. MUST equal the frequency actually driving clk_core.
+    localparam integer CLK_FREQ = 200_000_000;  // or 33_333_333 with MMCM
 
     // ---- UART byte-level interface ----
     wire [7:0] rx_data;
@@ -57,7 +88,7 @@ module top_security_demo (
     // BIT_PERIOD) - chi cat CLK_FREQ, BAUD_RATE giu mac dinh 115200,
     // BIT_PERIOD co thuc hien tu dua tren 2 goc dai dau.
     uart_rx #(CLK_FREQ) u_uart_rx (
-        .clk          (clk),
+        .clk          (clk_core),
         .rst_n        (rst_n),
         .uart_rx      (uart_rx),
         .rx_data      (rx_data),
@@ -66,7 +97,7 @@ module top_security_demo (
     );
 
     uart_tx #(CLK_FREQ) u_uart_tx (
-        .clk      (clk),
+        .clk      (clk_core),
         .rst_n    (rst_n),
         .tx_data  (tx_data),
         .tx_valid (tx_valid),
@@ -84,7 +115,7 @@ module top_security_demo (
     wire         raw_result_valid;
 
     aes_core_tapped u_raw_core (
-        .clk               (clk),
+        .clk               (clk_core),
         .reset_n           (rst_n),
 
         .encdec            (1'b1),      // always encrypt for this demo
@@ -120,7 +151,7 @@ module top_security_demo (
     aegis_aes_top #(
         .EN_ORC(1)
     ) u_protected (
-        .clk            (clk),
+        .clk            (clk_core),
         .rst_n          (rst_n),
         .key            (prot_key),
         .key_valid      (prot_key_valid),
@@ -141,7 +172,7 @@ module top_security_demo (
     reg  [127:0] prot_result_latched;
     reg          prot_result_seen;
 
-    always @(posedge clk or negedge rst_n) begin
+    always @(posedge clk_core or negedge rst_n) begin
         if (!rst_n) begin
             prot_result_latched <= 128'd0;
             prot_result_seen    <= 1'b0;
@@ -159,7 +190,7 @@ module top_security_demo (
     // ---- Command FSM (default 65535-cycle watchdogs; T05 DoS is
     //      the only case that exercises them on the real board) ----
     uart_cmd_fsm_security u_cmd (
-        .clk             (clk),
+        .clk             (clk_core),
         .rst_n           (rst_n),
 
         .rx_data         (rx_data),
