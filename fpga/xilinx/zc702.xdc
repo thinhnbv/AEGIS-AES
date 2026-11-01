@@ -9,11 +9,11 @@
 #
 # LUU Y:
 #  - Pin chan cua J63 la PJTAG - KHONG duoc dua bao mat vao pin chan.
-#  - Neu PnR khong dat duoc timing tai 200 MHz (WNS < 0), co the
-#    chuyen clock vao PMod2_0 (V7, single-ended LVCMOS25) voi
-#    tuyen nhien 50 MHz: binh luan bo phan SYSCLK duoi, huy
-#    create_clock o tren, va doi CLK_FREQ trong top_security_demo.v
-#    sang 50_000_000 (dong bo cac file copy trong repo).
+#  - Fabric chay 25 MHz (chia /8 boi div_cnt trong top, khong can MMCM) -
+#    vi duong critical ~28.7ns, 200 MHz dat khong (WNS -23ns trong log
+#    Xilinx). Chuan nguon clk (5ns) chi chay IBUFDS + cau chia - dat du.
+#  - Neu WNS van am tai 25 MHz: chuyen nguon sang PMod2_0 (V7, 50 MHz)
+#    va doi cau chia trong top sang /2 - xem "backup plan" cuoi file.
 #=======================================================================
 
 # ---- SYSCLK: 200 MHz LVDS, on-board oscillator (UG850, bank MRCC) ----
@@ -24,13 +24,16 @@ set_property PACKAGE_PIN C19 [get_ports clk_n]
 set_property IOSTANDARD LVDS_25 [get_ports {clk_p clk_n}]
 create_clock -name clk -period 5.000 -waveform {0 2.5} [get_ports clk_p]
 
-# ---- MMCM (tu chon, nen dung - kiem tra comment top_security_demo.v) ----
-# Chuan an 25 MHz cho fabric (duong critical ~28.7ns, 200MHz dat khong).
-# Sau khi add MMCM IP (input 200MHz = net cu IBUFDS, output 25MHz):
-#   set clk25 [get_pins <thuc_mmcm/clkoutclk0>]
-#   create_generated_clock -name clk25 -source [get_clocks clk] \
-#       -period 40.000 $clk25
-#   # va gate reset: MMCM LOCKED (wizard co pin locked).
+# ---- Fabric clock: cau chia /8 trong top_security_demo.v (khong MMCM) ----
+# clk_core = div_cnt_reg[2].Q = 200/8 = 25 MHz (chu ky 40ns) - chang
+# toan bo fabric (UART + raw/protected + FSM). Critical path ~28.7ns
+# nen 200 MHz dat khong; chu ky 40ns co le margin ~11ns.
+# Ghi: Vivado tu suy ra pattern chia tren register, dong
+# create_generated_clock chi dinh chu ky + dat ten de report timing ro riet.
+# Neu PnR loi "pin khong tim thay" (ten register bi doi), xoa duoc dong
+# nay - timing van duoc phan tich tu clock suy ra.
+create_generated_clock -name clk25 -source [get_clocks clk] \
+    -divide_by 8 [get_pins div_cnt_reg\[2\].Q]
 
 # ---- Reset: GPIO_SW_N (active-low, nut DIP SW5) ----
 set_property PACKAGE_PIN G19 [get_ports rst_n]
@@ -48,9 +51,12 @@ set_property PACKAGE_PIN W17 [get_ports {led[2]}]
 set_property PACKAGE_PIN W5  [get_ports {led[3]}]
 set_property IOSTANDARD LVCMOS25 [get_ports {led[0] led[1] led[2] led[3]}]
 
-# ---- Backup plan (khong hoat dong mac dinh): PMod2_0 single-ended clock
-#      neu khong dat duoc 200 MHz - huy create_clock o tren, sua:
+# ---- Backup plan (khong hoat dong mac dinh): PMod2_0 single-ended 50 MHz
+#      dung neu WNS van am tai 25 MHz - huy block SYSCLK tren, huy dong
+#      create_generated_clock clk25, sua:
 #      set_property PACKAGE_PIN V7 [get_ports clk_p]
 #      set_property IOSTANDARD LVCMOS25 [get_ports clk_p]
 #      (loai port clk_n kho top + xdc)
 #      create_clock -name clk -period 20.000 [get_ports clk_p]
+#      # va trong top: cau chia /2 thay vi /8 (clk_core = div_cnt[1]),
+#      # CLK_FREQ giu nguyen = 25_000_000.

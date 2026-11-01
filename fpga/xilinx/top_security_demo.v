@@ -50,30 +50,27 @@ module top_security_demo (
     // FABRIC CLOCK: the AEGIS logic + monitors are NOT fast enough for
     // 200 MHz (post-route critical path ~28.7 ns => ~34 MHz max, and
     // the KLG 128-bit compare is the long path). The demo is a 115200
-    // UART, so divide the 200 MHz input down and run the fabric at
-    // clk_core.
+    // UART, so run the fabric at 25 MHz: divide the 200 MHz input by
+    // 8 with a small counter - no MMCM IP, no Block Design needed.
     //
-    // HOW TO WIRE (GUI, ~3 buoc):
-    //   1. Project -> IP -> Add IP -> "7-series PLL Wizard" (Clocking),
-    //      chon loai MMCM, input 200 MHz, target output 25 MHz
-    //      (= 200/8, du phong cho duong critical ~28.7ns). Wizard ghi
-    //      san ca .xdc create_generated_clock cho output.
-    //   2. Instant IP bi sinh ra vao day (CLK_IN1 = clk_in200), roi
-    //      sua dong vclink core ben duoi (dong 71):
-    //         wire clk_core;
-    //         assign clk_core = <CLK_OUT0 cua MMCM>;
-    //      voi CLK_FREQ = 25_000_000 (dong 75). Gate reset khi MMCM
-    //      chua LOCKED: gop .rst_n = rst_n & <mmcm_locked> vao cac
-    //      block, hoac thuc hien sau MMCM lock (demo khong bat buoc).
-    //   3. Neu giu nguyen clk_core = clk_in200 (200 MHz) thi design
-    //      KHONG dat timing (WNS ~ -23ns) - chi dung khi sau nay
-    //      pipeline duong KLG.
+    // div_cnt[2] toggles every 4 cycles => 200/8 = 25 MHz. All the
+    // fabric (UART + raw/protected path + FSM) rides clk_core.
+    // zc702.xdc carries the matching create_generated_clock (clk25)
+    // on div_cnt_reg[2].Q - run Implementation, not just Synthesis,
+    // to close timing on it.
     // ----------------------------------------------------------------
-    wire clk_core = clk_in200;   // <- point at MMCM CLK_OUT0 when added
+    reg [2:0] div_cnt;
+    always @(posedge clk_in200 or negedge rst_n) begin
+        if (!rst_n)
+            div_cnt <= 3'd0;
+        else
+            div_cnt <= div_cnt + 3'd1;
+    end
+    wire clk_core = div_cnt[2];   // 200 MHz / 8 = 25 MHz
 
     // System clock frequency the UART bit-timing prescaler computes
     // from. MUST equal the frequency actually driving clk_core.
-    localparam integer CLK_FREQ = 200_000_000;  // or 33_333_333 with MMCM
+    localparam integer CLK_FREQ = 25_000_000;
 
     // ---- UART byte-level interface ----
     wire [7:0] rx_data;

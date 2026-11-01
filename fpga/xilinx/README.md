@@ -2,7 +2,9 @@
 
 Port demo UART của `fpga/gowin/security_demo` sang board **ZC702**:
 cùng `uart_cmd_fsm_security` (gồm watchdog T05), cùng giao thức
-0xA5/0x5A, nhưng clock là **SYSCLK LVDS 200 MHz on-board** và bộ
+0xA5/0x5A, nhưng clock là **SYSCLK LVDS 200 MHz on-board** (chia ÷8
+bởi bộ chia RTL trong top → fabric chạy **25 MHz**, không cần MMCM)
+và bộ
 source dùng **master `rtl/aegis`** (KLG full + ORC + cổng `fsm_state`
 rõ, không tham chiếu phân cấp — hợp lệ cho ASIC/PnR thật).
 
@@ -13,7 +15,8 @@ protected path giống nhau).
 
 | Nhóm | File | Lấy từ |
 |---|---|---|
-| Top | `top_security_demo.v` | `fpga/xilinx/` (viết mới: LVDS `clk_p`/`clk_n`, `CLK_FREQ=200_000_000`) |
+| Top | `top_security_demo.v` | `fpga/xilinx/` (viết mới: LVDS `clk_p`/`clk_n` qua IBUFDS, bộ chia ÷8 → `CLK_FREQ=25_000_000`) |
+| IBUFDS stub | `ibufds_sim.v` | `fpga/xilinx/` (chỉ cho sim iverilog; KHÔNG vào `src/` của Vivado) |
 | XDC | `zc702.xdc` | `fpga/xilinx/` (pin map UG850/RDF0171) |
 | UART + FSM | `uart_rx.v` `uart_tx.v` `uart_cmd_fsm_security.v` (có watchdog T05) | `fpga/gowin/security_demo/src/` (sync tự động trong build) |
 | AEGIS wrapper | `aegis_aes_top.v` + 5 monitor + TRU + 2 block/KeyMem + `aegis_defs.vh` | `rtl/aegis/` (master) |
@@ -123,22 +126,28 @@ Chú ý 3 dòng đầu bảng *Slice Logic* (dự kiến, cần đối chiếu t
   triển ra LUT; nếu > 0 kiểm tra có BRAM IP nào bị lỡ ràng buộc).
 - **DSP48E1 = 0**.
 
-### `reports/<CASE>/timing.rpt` — timing (chu kỳ 5 ns)
+### `reports/<CASE>/timing.rpt` — timing (chu kỳ 40 ns = 25 MHz)
 
-Chú ý 2 dòng cuối section *Design Timing Summary*:
+Đường critical ~28.7 ns (tree so 128-bit của KLG) nên **fabric chạy
+25 MHz** (bộ chia ÷8 trong top, nguồn 200 MHz chỉ đi qua IBUFDS +
+counter chia). `zc702.xdc` ràng `create_generated_clock -name clk25`
+trên `div_cnt_reg[2].Q`.
 
-- **WNS (ns)** — phải **≥ 0** ở cả clock `clk` (200 MHz) lẫn `CLKFX`
-  (nếu có). `WNS < 0` = không đạt 200 MHz.
+Xem 2 dòng cuối section *Design Timing Summary* ở **cả 2 clock**:
+
+- **`clk` (200 MHz, 5 ns)** — chỉ IBUFDS + bộ chia: WNS phải ≥ 0.
+- **`clk25` (25 MHz, 40 ns)** — toàn bộ fabric: WNS phải ≥ 0
+  (dư ~11 ns margin; đây là clock định mệnh).
 - **WHN (ns)** — hold, phải ≥ 0 ở tần số bất kỳ.
 
-Nếu **WNS < 0**: xem bottleneck trong `timing.rpt` (thường là
-`aegis_aes_top`/`orc_output_checker` ở 200 MHz). Cách giảm:
+Nếu **WNS < 0 ở `clk25`** (không khả thi — 28.7 < 40 ns — nhưng
+nếu đổi bộ chia): tăng ÷ (vd ÷16 → 12.5 MHz, UART vẫn ổn).
+Xem backup 50 MHz source ÷2 trong `zc702.xdc`.
 
-1. Đổi `CLK_FREQ` trong `top_security_demo.v` + đổi clock trong
-   `zc702.xdc` sang **100 MHz** (period 10.0) — cần đổi pin clock
-   hoặc dùng MMCM / PMod2_0 (xem comment trong `zc702.xdc`).
-2. Hoặc giảm `PROT_TIMEOUT` / `RAW_TIMEOUT` của FSM (mặc định 65535,
-   chạy ở 200 MHz = ~330 µs; không bắt buộc cho demo).
+Nếu PnR lỗi *"pin div_cnt_reg[2].Q không tìm thấy"* (tên register
+bị tổng hợp đổi): xóa dòng `create_generated_clock` khỏi XDC —
+Vivado vẫn tự suy clock chia, timing tiếp tục được phân tích
+(dòng XDC chỉ để đặt tên + chu kỳ rõ cho report).
 
 ### `methodology.rpt`
 
@@ -214,9 +223,12 @@ make security CASE=T04_p4_debug_port SIM=verilator
 make security CASE=T05_dos_trojan SIM=verilator
 
 # Chạy "demo proof" byte-level trên bộ source XILINX (chính source
-# Vivado sẽ build - chứng minh bộ file hợp lệ ở tầng chức năng)
+# Vivado sẽ build - chứng minh bộ file hợp lệ ở tầng chức năng).
+# ibufds_sim.v: stub IBUFDS cho Icarus (Vivado có primitive thật,
+# nên file này KHÔNG nằm trong src/ của project).
 iverilog -g2012 -I fpga/xilinx/src -DT03 \
   fpga/xilinx/src/*.v fpga/xilinx/src/aegis_defs.vh \
+  fpga/xilinx/ibufds_sim.v \
   fpga/gowin/security_demo/tb/tb_uart_demo.sv -o /tmp/zc_T03.out
 vvp /tmp/zc_T03.out
 ```
@@ -231,6 +243,11 @@ vvp /tmp/zc_T03.out
 - **BRAM dự kiến 0**: nếu report hiện BRAM > 0, kiểm tra `aes_key_mem_tapped.v`
   (danh sách round key) có được ràng buộc thành BRAM không (mặc định
   là LUT, đúng thiết kế Secworks).
-- **WNS<0 ở 200 MHz**: xem cách giảm ở Bước 2.
+- **Timing đã khóa ở 25 MHz** (fabric qua bộ chia ÷8; nguồn 200 MHz
+  chỉ IBUFDS + counter chia): WNS âm ở `clk25` = phải tăng bộ chia
+  (÷16 → 12.5 MHz, UART error vẫn 0.006%) — xem Bước 2.
+- **Watchdog FSM ở 25 MHz**: `RAW_TIMEOUT`/`PROT_TIMEOUT` = 65535
+  chu kỳ = ~2.6 ms (trước đây ~0.33 ms ở 200 MHz) — demo không
+  bị ảnh hưởng (T05 vẫn được watchdog cứu, chỉ chậm hơn).
 - Source Xilinx **sync mỗi lần build** (TCL tự chạy) nên không bao giờ
   cũ — khác bản copy Gowin (phải đồng bộ thủ công, xem CLAUDE.md).
