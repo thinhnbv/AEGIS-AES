@@ -15,9 +15,8 @@ protected path giống nhau).
 
 | Nhóm | File | Lấy từ |
 |---|---|---|
-| Top | `top_security_demo.v` | `fpga/xilinx/` (viết mới: LVDS `clk_p`/`clk_n` qua IBUFDS, bộ chia ÷8 → `CLK_FREQ=25_000_000`) |
-| IBUFDS stub | `ibufds_sim.v` | `fpga/xilinx/` (chỉ cho sim iverilog; KHÔNG vào `src/` của Vivado) |
-| XDC | `zc702.xdc` | `fpga/xilinx/` (pin map UG850/RDF0171) |
+| Top | `top_security_demo.v` | `fpga/xilinx/` (LVDS pair `clk_p`/`clk_n` — Vivado tự suy buffer IBUFDS theo XDC, KHÔNG instantiate thủ công; bộ chia ÷8 → `CLK_FREQ=25_000_000`) |
+| XDC | `zc702.xdc` | `fpga/xilinx/` (pin map UG850/RDF0171, `LVDS_25` cho cặp clock) |
 | UART + FSM | `uart_rx.v` `uart_tx.v` `uart_cmd_fsm_security.v` (có watchdog T05) | `fpga/gowin/security_demo/src/` (sync tự động trong build) |
 | AEGIS wrapper | `aegis_aes_top.v` + 5 monitor + TRU + 2 block/KeyMem + `aegis_defs.vh` | `rtl/aegis/` (master) |
 | S-box/InvS-box/Decipher | `aes_sbox.v` `aes_inv_sbox.v` `aes_decipher_block.v` | `rtl/aes_golden/` |
@@ -224,11 +223,10 @@ make security CASE=T05_dos_trojan SIM=verilator
 
 # Chạy "demo proof" byte-level trên bộ source XILINX (chính source
 # Vivado sẽ build - chứng minh bộ file hợp lệ ở tầng chức năng).
-# ibufds_sim.v: stub IBUFDS cho Icarus (Vivado có primitive thật,
-# nên file này KHÔNG nằm trong src/ của project).
+# Top KHONG con su dung primitive IBUFDS (Vivado tu suy buffer theo
+# XDC nen source set trong sach, khong can stub).
 iverilog -g2012 -I fpga/xilinx/src -DT03 \
   fpga/xilinx/src/*.v fpga/xilinx/src/aegis_defs.vh \
-  fpga/xilinx/ibufds_sim.v \
   fpga/gowin/security_demo/tb/tb_uart_demo.sv -o /tmp/zc_T03.out
 vvp /tmp/zc_T03.out
 ```

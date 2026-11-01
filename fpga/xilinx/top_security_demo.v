@@ -12,9 +12,13 @@
 //
 // Differences vs the Gowin top:
 //   - clock is the ZC702 onboard 200 MHz LVDS system clock,
-//     declared as clk_p/clk_n so the XDC can constrain the pair
-//     directly (no PLL/MMCM: 115200 baud at 200 MHz is plenty).
-//   - UART RX/TX CLK_FREQ passed explicitly = 200_000_000.
+//     declared as clk_p/clk_n so the XDC constrains the pair as LVDS_25;
+//     Vivado then AUTO-INFERS the differential input buffer (IBUFDS) -
+//     we deliberately do NOT hand-instantiate IBUFDS in the RTL because
+//     its unisim port list changes between tool versions and broke
+//     2024.1 synthesis (Synth 8-11365 "port N does not exist").
+//   - fabric runs at 200 MHz / 8 = 25 MHz (UART + AEGIS), CLK_FREQ =
+//     25_000_000 passed to the UART blocks.
 //
 // Pin map (zc702.xdc, UG850/RDF0171 reference):
 //   clk_p/clk_n = D18/C19 (SYSCLK LVDS, bank MRCC)
@@ -35,16 +39,21 @@ module top_security_demo (
     output wire [3:0] led
 );
 
-    // SYSCLK is a 200 MHz LVDS differential oscillator on the ZC702
-    // (D18/C19). Take it in with a proper IBUFDS so the tool builds a
-    // differential clock (kills the IOSTDTYPE-1 "single-ended vs LVDS"
-    // warning) instead of a lone IBUF on clk_p.
-    wire clk_in200;
-    IBUFDS u_clkbuff (
-        .I(clk_p),
-        .N(clk_n),
-        .O(clk_in200)
-    );
+    // SYSCLK is the ZC702 onboard 200 MHz LVDS differential oscillator
+    // (D18/C19). BOTH clk_p and clk_n are top-level ports; the XDC
+    // constrains the pair as IOSTANDARD LVDS_25 + create_clock, so
+    // Vivado AUTO-INFERS the IBUFDS (differential clock) for us. We
+    // deliberately do NOT hand-instantiate IBUFDS: the unisim port
+    // list differs between Vivado releases and .N() broke 2024.1
+    // synthesis (Synth 8-11365). Driving the divider from clk_p keeps
+    // the pair properly differential on the target and still fixes
+    // the earlier IOSTDTYPE-1 warning.
+    //
+    // clk_n is a top port only: the FPGA tool wires it into the
+    // inferred IBUFDS via the XDC (both pins = LVDS_25). Leaving it
+    // out of the logic is intentional and standard - the differential
+    // pair is defined by the constraint, not by a RTL connection.
+    wire clk_in200 = clk_p;
 
     // ----------------------------------------------------------------
     // FABRIC CLOCK: the AEGIS logic + monitors are NOT fast enough for
