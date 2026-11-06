@@ -29,11 +29,14 @@ create_clock -name clk -period 5.000 -waveform {0 2.5} [get_ports clk_p]
 # toan bo fabric (UART + raw/protected + FSM). Critical path ~28.7ns
 # nen 200 MHz dat khong; chu ky 40ns co le margin ~11ns.
 # Ghi: Vivado tu suy ra pattern chia tren register, dong
-# create_generated_clock chi dinh chu ky + dat ten de report timing ro riet.
-# Neu PnR loi "pin khong tim thay" (ten register bi doi), xoa duoc dong
-# nay - timing van duoc phan tich tu clock suy ra.
-create_generated_clock -name clk25 -source [get_clocks clk] \
-    -divide_by 8 [get_pins div_cnt_reg\[2\].Q]
+# create_generated_clock dinh chu ky + dat ten de report timing ro riet.
+# 2026-11-06 (lan 2): -source get_clocks SAI - Vivado doi -source la
+# port/pin (Constraints 18-611/612) nen constraint khong duoc apply.
+# Sua -source ve pin output cua IBUFDS (u_clkbuff/O) - diem goc that su
+# cua cau chia trong netlist. Ten pin /Q da verify dung (log post-route
+# thay div_cnt_reg[2]/Q).
+create_generated_clock -name clk25 -source [get_pins u_clkbuff/O] \
+    -divide_by 8 [get_pins div_cnt_reg\[2\]/Q]
 
 # ---- Reset: GPIO_SW_N (active-low, nut DIP SW5) ----
 set_property PACKAGE_PIN G19 [get_ports rst_n]

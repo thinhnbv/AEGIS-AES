@@ -119,13 +119,17 @@ if {[llength $vfiles] == 0} {
 }
 add_files $vfiles
 add_files [file join $src_dir aegis_defs.vh]
-set_property is_include_file true [get_files aegis_defs.vh]
+# .vh la Verilog Header cho `include - Vivado 2024.1 khong co property
+# is_include_file, dung file_type (tu dong nhan .vh, dat ro de chac chan).
+set_property file_type {Verilog Header} [get_files aegis_defs.vh]
 
 # XDC - dat vao constraints set de PnR nhan pin + clock
 add_files [file join $here zc702.xdc]
 
-# Top duy nhat - dinh danh ro de Vivado khong doan
-set_property top top_security_demo [current_project]
+# Top duy nhat - dat tren fileset sources_1 (property 'top' thuoc
+# fileset, khong phai project) de Vivado khong doan sai top.
+set_property top top_security_demo [get_filesets sources_1]
+update_compile_order -fileset sources_1
 
 # ---- Synthesis ----
 puts "\n\[build_zynq\] === SYNTHESIS ==="
@@ -135,7 +139,6 @@ if {![run_failed synth_1]} {
     open_run synth_1
     report_utilization -file [file join $rep_dir util.rpt]
     report_control_sets -quiet -file [file join $rep_dir control_sets.rpt]
-    close_run
 }
 if {[run_failed synth_1]} {
     error "SYNTHESIS that bai - xem log trong $proj_dir (report_utilization v.v)."
@@ -152,18 +155,17 @@ if {[run_failed impl_1]} {
 open_run impl_1
 file mkdir $rep_dir
 report_utilization  -file [file join $rep_dir util.rpt]
-report_timing -max_delay 50 -file [file join $rep_dir timing.rpt]
-report_timing -min_delay 25 -file [file join $rep_dir timing_min.rpt]
-report_methodology -report_unconstrained -file [file join $rep_dir methodology.rpt]
+report_timing -delay_type max -max_paths 50 -file [file join $rep_dir timing.rpt]
+report_timing -delay_type min -max_paths 25 -file [file join $rep_dir timing_min.rpt]
+report_methodology -file [file join $rep_dir methodology.rpt]
 report_clock_utilization -file [file join $rep_dir clock_util.rpt]
-close_run
+# (khong dung close_run - khong ton tai trong Vivado batch flow)
 
-# Bitstream duoc tao o buoc write_bitstream - tim duong dan thuc te
-# (ten .bit co the doi theo ten top, chi in ra duong chan chuan)
-set bits [glob -nocomplain [file join $proj_dir impl_1 *.bit]]
+# Bitstream duoc Vivado viet vao <proj>/<proj>.runs/impl_1/*.bit
+# (khong phai $proj_dir/impl_1/ truc tiep) - glob dung thu muc .runs.
+set bits [glob -nocomplain [file join $proj_dir *.runs impl_1 *.bit]]
 if {[llength $bits] == 0} {
-    # Vivado 2024.x: bitstream nam trong impl_1/ <top>.bit hoac
-    # .gen/ - co 2 nuoc, cuu tinh ca 2
+    # Vivado 2024.x co the dung .gen/ - giu fallback cu:
     set bits [glob -nocomplain [file join $proj_dir aegis_$case.gen runs impl_1 *.bit]]
 }
 

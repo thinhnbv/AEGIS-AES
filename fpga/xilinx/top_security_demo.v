@@ -39,21 +39,24 @@ module top_security_demo (
     output wire [3:0] led
 );
 
-    // SYSCLK is the ZC702 onboard 200 MHz LVDS differential oscillator
-    // (D18/C19). BOTH clk_p and clk_n are top-level ports; the XDC
-    // constrains the pair as IOSTANDARD LVDS_25 + create_clock, so
-    // Vivado AUTO-INFERS the IBUFDS (differential clock) for us. We
-    // deliberately do NOT hand-instantiate IBUFDS: the unisim port
-    // list differs between Vivado releases and .N() broke 2024.1
-    // synthesis (Synth 8-11365). Driving the divider from clk_p keeps
-    // the pair properly differential on the target and still fixes
-    // the earlier IOSTDTYPE-1 warning.
+    // SYSCLK la xung LVDS 200 MHz tren ZC702 (D18/C19). Dung IBUFDS
+    // that de lay cap vi sai thanh 1 clock don - dung port chuan cua
+    // 7-series (.I/.IB/.O). Ban cu dung sai .N() nen synthesis bao
+    // Synth 8-11365; ban auto-infer (khong IBUFDS) thi DRC bao
+    // IOSTDTYPE-1 o write_bitstream. IBUFDS dung port chuan het ca 2 loi.
     //
-    // clk_n is a top port only: the FPGA tool wires it into the
-    // inferred IBUFDS via the XDC (both pins = LVDS_25). Leaving it
-    // out of the logic is intentional and standard - the differential
-    // pair is defined by the constraint, not by a RTL connection.
-    wire clk_in200 = clk_p;
+    // Khi mo phong (Icarus/Verilator khong co primitive Xilinx), truyen
+    // -DSIM_IBUFDS_BYPASS de noi thang clk_p -> clk_in200.
+    wire clk_in200;
+`ifdef SIM_IBUFDS_BYPASS
+    assign clk_in200 = clk_p;
+`else
+    IBUFDS u_clkbuff (
+        .I  (clk_p),
+        .IB (clk_n),
+        .O  (clk_in200)
+    );
+`endif
 
     // ----------------------------------------------------------------
     // FABRIC CLOCK: the AEGIS logic + monitors are NOT fast enough for
