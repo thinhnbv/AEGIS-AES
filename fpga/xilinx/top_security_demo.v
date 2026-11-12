@@ -10,6 +10,9 @@
 // using the protocol implemented by fpga/host/demo_cli.py
 // (36-byte request 0xA5.. / 37-byte response 0x5A.., 115200 8N1).
 //
+// UART noi truc tiep tu STM32F103 (Blue Pill) qua header J40,
+// khong can Block Design, khong can Zynq PS, khong can TXS0108E.
+//
 // Differences vs the Gowin top:
 //   - clock is the ZC702 onboard 200 MHz LVDS system clock,
 //     declared as clk_p/clk_n so the XDC constrains the pair as LVDS_25;
@@ -19,13 +22,14 @@
 //     2024.1 synthesis (Synth 8-11365 "port N does not exist").
 //   - fabric runs at 200 MHz / 8 = 25 MHz (UART + AEGIS), CLK_FREQ =
 //     25_000_000 passed to the UART blocks.
-//   - UART comes from Zynq PS EMIO (UART1 via Block Design), NOT PMOD2
-//     (P18/W10 go through TXS0108E, too slow for 115200 baud).
+//   - UART connects directly to STM32F103 (USB-to-UART) on FPGA pins
+//     H17 (RX) / H22 (TX), NOT via Zynq PS EMIO.
 //
 // Pin map (zc702.xdc, UG850/RDF0171 reference):
 //   clk_p/clk_n = D18/C19 (SYSCLK LVDS, bank MRCC)
 //   rst_n       = G19     (GPIO_SW_N / SW5, ACTIVE-HIGH: thả=0, nhan=1)
-//   uart_rx/tx  = EMIO tu Zynq PS (Block Design) - khong can set_property PACKAGE_PIN
+//   uart_rx     = H17     (FPGA nhan tu STM32_TX/PA9)
+//   uart_tx     = H22     (FPGA gui den STM32_RX/PA10)
 //   led[0:3]    = E15/D15/W17/W5 (PMod1)
 //---------------------------------------------------------------
 `default_nettype none
@@ -35,8 +39,8 @@ module top_security_demo (
     input  wire       clk_n,
     input  wire       rst_n,      // G19 / SW5, ACTIVE-HIGH: thả=0, nhan=1
 
-    input  wire       uart_rx_emio,
-    output wire       uart_tx_emio,
+    input  wire       uart_rx,    // H17: nhan tu STM32_TX
+    output wire       uart_tx,    // H22: gui den STM32_RX
 
     output wire [3:0] led
 );
@@ -104,7 +108,7 @@ wire       tx_ready;
 uart_rx #(CLK_FREQ) u_uart_rx (
     .clk          (clk_core),
     .rst_n        (sys_rst_n),
-    .uart_rx      (uart_rx_emio),
+    .uart_rx      (uart_rx),
     .rx_data      (rx_data),
     .rx_valid     (rx_valid),
     .rx_frame_err ()
@@ -115,7 +119,7 @@ uart_tx #(CLK_FREQ) u_uart_tx (
     .rst_n    (sys_rst_n),
     .tx_data  (tx_data),
     .tx_valid (tx_valid),
-    .uart_tx  (uart_tx_emio),
+    .uart_tx  (uart_tx),
     .tx_ready (tx_ready)
 );
 
@@ -233,10 +237,10 @@ uart_cmd_fsm_security u_cmd (
 );
 
 // Status LEDs
-assign led[0] = ~uart_rx_emio;      // RX activity
-assign led[1] = ~uart_tx_emio;      // TX activity
-assign led[2] = ~prot_busy;         // lit when protected path idle
-assign led[3] = prot_sec_alarm;     // lit once TRU has locked down
+assign led[0] = ~uart_rx;      // RX activity
+assign led[1] = ~uart_tx;      // TX activity
+assign led[2] = ~prot_busy;    // lit when protected path idle
+assign led[3] = prot_sec_alarm; // lit once TRU has locked down
 
 endmodule
 
