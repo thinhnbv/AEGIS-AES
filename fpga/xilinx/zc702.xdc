@@ -3,8 +3,8 @@
 #
 # Pin map theo reference constraint cua board (RDF0171 / UG850):
 #   clk_p/clk_n = D18/C19   SYSCLK LVDS on-board (MRCC bank), 200 MHz
-#   rst_n       = G19       GPIO_SW_N, active-low, pullup 4.7k
-#   uart_rx/tx  = P18/W10   PMod2 (PMod2_2 / PMod2_1), USB-UART ngoai
+#   rst_n       = G19       GPIO_SW_N (SW5), ACTIVE-HIGH: thả=0, nhan=1 (2.5V)
+#   uart_rx/tx  = EMIO tu Zynq PS (Block Design) - KHONG can set_property o day
 #   led[0:3]    = E15/D15/W17/W5  PMod1 (PMod1_0..3)
 #
 # LUU Y:
@@ -38,14 +38,17 @@ create_clock -name clk -period 5.000 -waveform {0 2.5} [get_ports clk_p]
 create_generated_clock -name clk25 -source [get_pins u_clkbuff/O] \
     -divide_by 8 [get_pins div_cnt_reg\[2\]/Q]
 
-# ---- Reset: GPIO_SW_N (active-low, nut DIP SW5) ----
+# ---- Reset: GPIO_SW_N (chân G19, ACTIVE-HIGH) ----
+# Thuc te: SW5 co pull-down 4.7k xuong GND. Khong nhan => G19=0, nhan => G19=1 (2.5V).
+# => Nút nhan la ACTIVE-HIGH. Trong RTL xu ly rst_n = 1 la reset.
 set_property PACKAGE_PIN G19 [get_ports rst_n]
 set_property IOSTANDARD LVCMOS25 [get_ports rst_n]
 
-# ---- UART: PMod2, USB-UART ngoai (115200 8N1) ----
-set_property PACKAGE_PIN P18 [get_ports uart_rx]
-set_property PACKAGE_PIN W10 [get_ports uart_tx]
-set_property IOSTANDARD LVCMOS25 [get_ports {uart_rx uart_tx}]
+# ---- UART: CHUYEN SANG EMIO cua Zynq PS (Block Design) ----
+# Bo P18/W10 (PMOD2) vi di qua TXS0108E (U70), thoi gian tang/giam xung ~us,
+# gioi han ~100 kHz - KHONG DUNG duoc cho UART 115200.
+# UART1 EMIO duoc tao trong Block Design va ket noi den logic PL qua wrapper.
+# Khong can set_property PACKAGE_PIN nao cho uart_rx/uart_tx o day.
 
 # ---- LEDs user: PMod1 (DS19-22) ----
 set_property PACKAGE_PIN E15 [get_ports {led[0]}]
