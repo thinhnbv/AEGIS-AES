@@ -19,10 +19,12 @@ set_property PACKAGE_PIN G19 [get_ports rst_n]
 set_property IOSTANDARD LVCMOS25 [get_ports rst_n]
 
 # ---- UART: noi truc tiep tu STM32F103 (Blue Pill) qua header J40 ----
-# H17 = UART_RX (FPGA nhan du lieu tu STM32_TX / PA9)
-# H22 = UART_TX (FPGA gui du lieu den STM32_RX / PA10)
-set_property PACKAGE_PIN H17 [get_ports uart_rx]
-set_property PACKAGE_PIN H22 [get_ports uart_tx]
+# Header J40 (XADC) tren ZC702:
+#   Pin 17 = H22 = FPGA uart_rx  (nhan tu STM32 PA9 / TX)
+#   Pin 18 = H17 = FPGA uart_tx  (gui den STM32 PA10 / RX)
+#   Pin 16 = GND
+set_property PACKAGE_PIN H22 [get_ports uart_rx]
+set_property PACKAGE_PIN H17 [get_ports uart_tx]
 set_property IOSTANDARD LVCMOS33 [get_ports {uart_rx uart_tx}]
 
 # ---- LEDs user: PMod1 (DS19-22) ----
