@@ -19,6 +19,8 @@ _USE_MOCK = not bool(os.environ.get("AEGIS_LLM_API_KEY"))
 _API_BASE = os.environ.get("AEGIS_LLM_BASE_URL", "https://api.openai.com/v1").rstrip("/")
 _API_MODEL = os.environ.get("AEGIS_LLM_MODEL", "agentgw-opus-4-8")
 _API_KEY = os.environ.get("AEGIS_LLM_API_KEY", "")
+_ALLOW_OUTBOUND = os.environ.get("AEGIS_LLM_ALLOW_OUTBOUND", "0") == "1"
+_ALLOWED_HOSTS = ("api.agentgw.cloud", "api.openai.com")
 
 # Call counter for credit tracking across the pipeline run.
 _LLM_CALL_COUNT = 0
@@ -29,6 +31,9 @@ def _chat(system_prompt, user_prompt, temperature=0.2, max_tokens=1024):
     assistant message content as a string, or None on failure."""
     global _LLM_CALL_COUNT
     if _USE_MOCK:
+        return None
+    if not _ALLOW_OUTBOUND or not _API_BASE.startswith("https://") or _API_BASE.split("://", 1)[1].split("/")[0] not in _ALLOWED_HOSTS:
+        print(f"[LLM] real call blocked (outbound not allowed or host not in allowlist): {_API_BASE}", file=sys.stderr)
         return None
     _LLM_CALL_COUNT += 1
     url = f"{_API_BASE}/chat/completions"

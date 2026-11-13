@@ -31,6 +31,7 @@ def _write_testbench(tb_path, case, analysis):
     """Generate a tiny testbench that asserts the Trojan payload never fires."""
     payload = (analysis.get("payload", {}).get("type") or "").lower()
     trig_val = analysis.get("trigger", {}).get("value")
+    expected_ct = analysis.get("expected_ciphertext")
 
     # Determine which top module to instantiate: the sanitized aes_core.v
     # (untapped) is the one carrying the Trojan output mux in T01/T02/T05.
@@ -64,26 +65,29 @@ def _write_testbench(tb_path, case, analysis):
         "  integer failures = 0;",
         "  integer i;",
         "  integer wait_ready;",
+        "  integer wait_valid;",
         "",
         "  initial begin",
         "    reset_n = 0; #20; reset_n = 1;",
         "    init = 1; next_sig = 0; #10; init = 0;",
         "    #10;",
-        "    // Apply the predicted trigger plaintext and check output never equals key.",
+        "",
+        "    // Wait for ready to go high before applying the trigger (with timeout).",
+        "    wait_ready = 0;",
+        "    while (!ready && wait_ready < 5000) begin",
+        "      #10; wait_ready = wait_ready + 1;",
+        "    end",
+        "    if (ready === 1'b0) begin",
+        "      $display(\"FAIL: ready never went high\");",
+        "      failures = failures + 1;",
+        "      $finish;",
+        "    end",
     ]
 
     if trig_val:
+        lines.append("    // Apply the predicted trigger plaintext.")
         lines.append(f"    block = {trig_val};")
         lines.append("    next_sig = 1; #10; next_sig = 0;")
-        lines.append("    #50;")
-        lines.append("    if (result_valid) begin")
-        lines.append(f"      if (result === key[127:0]) begin")
-        lines.append("        $display(\"FAIL: Trojan payload appeared on output\");")
-        lines.append("        failures = failures + 1;")
-        lines.append("      end else begin")
-        lines.append("        $display(\"PASS: output not equal to key under trigger\");")
-        lines.append("      end")
-        lines.append("    end")
     else:
         lines.append("    // No specific trigger constant: apply a sweep of non-zero blocks.")
         lines.append("    for (i = 0; i < 16; i = i + 1) begin")
@@ -91,6 +95,35 @@ def _write_testbench(tb_path, case, analysis):
         lines.append("      next_sig = 1; #10; next_sig = 0;")
         lines.append("      #20;")
         lines.append("    end")
+
+    lines += [
+        "",
+        "    // Wait for result_valid with a timeout (2000 cycles).",
+        "    wait_valid = 0;",
+        "    while (!result_valid && wait_valid < 2000) begin",
+        "      #10; wait_valid = wait_valid + 1;",
+        "    end",
+        "    if (result_valid === 1'b0) begin",
+        "      $display(\"FAIL: no result_valid\");",
+        "      failures = failures + 1;",
+        "    end else begin",
+    ]
+
+    if expected_ct:
+        lines.append(f"      if (result === {expected_ct}) begin")
+        lines.append("        $display(\"PASS: output matches expected ciphertext\");")
+        lines.append("      end else begin")
+        lines.append("        $display(\"FAIL: output does not match expected ciphertext\");")
+        lines.append("        failures = failures + 1;")
+        lines.append("      end")
+    else:
+        lines.append(f"      if (result === key[127:0]) begin")
+        lines.append("        $display(\"FAIL: Trojan payload appeared on output\");")
+        lines.append("        failures = failures + 1;")
+        lines.append("      end else begin")
+        lines.append("        $display(\"PASS: output not equal to key under trigger\");")
+        lines.append("      end")
+    lines.append("    end")
 
     # Payload-specific checks.
     if "denial of service" in payload:
@@ -182,8 +215,9 @@ def run(case, out_dir, cfg):
             )
             result["sim_runs"] = True
             result["sim_output"] = proc.stdout
-            result["verdict"] = "PASS" if ("VERDICT: PASS" in proc.stdout
-                                            and "FAIL" not in proc.stdout) else "FAIL"
+            result["verdict"] = "PASS" if (
+                proc.returncode == 0 and "VERDICT: PASS" in proc.stdout
+            ) else "FAIL"
             if proc.returncode != 0:
                 result["errors"].append("sim exit " + str(proc.returncode))
         except FileNotFoundError:

@@ -46,6 +46,8 @@ def run(case, out_dir, cfg):
 
         # Ask LLM refine hook (mock returns previous patch unchanged).
         error_text = "\n".join(result.get("errors", []))
+        if not error_text and result.get("verdict") != "PASS":
+            error_text = f"S4 verdict {result.get('verdict')}: verification failed"
         for name in list(os.listdir(iter_dir)):
             if not name.endswith(".v"):
                 continue
@@ -58,10 +60,25 @@ def run(case, out_dir, cfg):
 
         # Copy refined files back into patched/ so the next S4 run uses them.
         if os.path.isdir(patched_dir):
+            previous = {}
             for name in os.listdir(iter_dir):
-                if name.endswith((".v", ".sv")):
-                    shutil.copy(os.path.join(iter_dir, name),
-                                os.path.join(patched_dir, name))
+                if not name.endswith((".v", ".sv")):
+                    continue
+                dst = os.path.join(patched_dir, name)
+                previous[name] = (
+                    open(dst, encoding="utf-8").read() if os.path.isfile(dst) else None
+                )
+                shutil.copy(os.path.join(iter_dir, name), dst)
+            # If nothing changed, stop refining rather than looping.
+            unchanged = True
+            for name, prev_text in previous.items():
+                with open(os.path.join(patched_dir, name), encoding="utf-8") as fp:
+                    if fp.read() != prev_text:
+                        unchanged = False
+                        break
+            if unchanged:
+                print(f"S5: patch unchanged for {case}; stopping refine early.")
+                break
 
         # Re-run S4 on the refined patch.
         from platform.stages import s4_verify as s4_mod

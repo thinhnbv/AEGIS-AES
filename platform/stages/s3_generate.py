@@ -33,22 +33,31 @@ def _neutralize(text):
 def _patch_output_mux(text):
     import re
     # Neutralize any output mux that selects the key under a Trojan trigger.
-    # Handles both canonical names (sanitize_result_b / sanitize_cond_a) and
-    # suffixed variants (e.g. sanitize_result_b_t06 / sanitize_cond_a_t06).
+    # Handles canonical names (sanitize_result_b / sanitize_cond_a), suffixed
+    # variants (..._t06) and per-trojan names (evil_t07_*).
+    # assign result = <mux_var>;  ->  assign result = muxed_new_block;
+    #   (capture <mux_var> so its wire/assign can be stripped below)
+    # assign result = <cond> ? <a> : <b>;  ->  assign result = muxed_new_block;
+    mux_vars = re.findall(r"assign\s+result\s*=\s*(\w+)\s*;", text)
     text = re.sub(
-        r"assign\s+sanitize_result_b\w*\s*=\s*sanitize_cond_a\w*.*?;",
-        "", text, flags=re.DOTALL)
-    text = re.sub(
-        r"\s*assign\s+result\s*=\s*sanitize_cond_a\w*\s*\?\s*.*?\s*:\s*.*?;\s*\n?",
-        "", text)
-    text = re.sub(
-        r"\s*assign\s+result\s*=\s*sanitize_result_b\w*\s*;\s*\n?",
+        r"\s*assign\s+result\s*=\s*\w+\s*;\s*\n?",
         "assign result = muxed_new_block;\n", text)
     text = re.sub(
-        r"\s*assign\s+sanitize_cond_a\w*.*?;",
-        "", text, flags=re.DOTALL)
-    text = re.sub(r"\s*wire\s+sanitize_cond_a\w*\s*;\s*", "", text)
-    text = re.sub(r"\s*wire\s+sanitize_result_b\w*\s*;\s*", "", text)
+        r"\s*assign\s+result\s*=\s*\w+\s*\?\s*.*?\s*:\s*.*?;\s*\n?",
+        "assign result = muxed_new_block;\n", text, flags=re.DOTALL)
+    # Drop each mux var's wire/assign, plus its trigger cond's wire/assign.
+    for var in mux_vars:
+        esc = re.escape(var)
+        m = re.search(r"\s*assign\s+" + esc + r"\s*=\s*(\w+)\s*\?\s*.*?;\s*\n?",
+                      text, flags=re.DOTALL)
+        if m:
+            cond = re.escape(m.group(1))
+            text = re.sub(r"\s*wire\s+" + cond + r"\s*;\s*\n?", "", text)
+            text = re.sub(r"\s*assign\s+" + cond + r"\s*=.*?;\s*\n?", "", text,
+                          flags=re.DOTALL)
+        text = re.sub(r"\s*wire\s+" + esc + r"\s*;\s*\n?", "", text)
+        text = re.sub(r"\s*assign\s+" + esc + r"\s*=.*?;\s*\n?", "", text,
+                      flags=re.DOTALL)
     return text
 
 

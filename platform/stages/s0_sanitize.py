@@ -21,10 +21,19 @@ def _sanitize_text(text):
     lines = []
     for line in text.splitlines():
         stripped = line.strip()
+        lowered = stripped.lower()
         # Only drop Trojan hint comment lines; keep all code intact so the
         # design still parses. Identifier renaming happens next.
-        if stripped.startswith("//") and (
+        if (stripped.startswith("//") or stripped.startswith("/*")) and (
             "TROJAN BEGIN" in stripped or "TROJAN END" in stripped
+            or any(
+                kw in lowered
+                for kw in (
+                    "trojan", "trigger", "payload", "key leak", "key[127",
+                    "round_8_result", "evil", "skip mixcol", "debug port",
+                    "denial of service", "dos_triggered",
+                )
+            )
         ):
             continue
         lines.append(line)
