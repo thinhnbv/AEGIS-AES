@@ -153,11 +153,7 @@ def _write_testbench(tb_path, case, analysis):
 
 
 def run(case, out_dir, cfg):
-    sanitized_dir = os.path.join(out_dir, "sanitized")
     patch_dir = os.path.join(out_dir, "patched")
-    # Prefer the patched RTL from S3; fall back to sanitized output if S3
-    # has not produced anything.
-    verify_dir = patch_dir if os.path.isdir(patch_dir) else sanitized_dir
     analysis_path = os.path.join(out_dir, "analysis", "analysis.yaml")
     dst_dir = os.path.join(out_dir, "verify")
     os.makedirs(dst_dir, exist_ok=True)
@@ -177,18 +173,40 @@ def run(case, out_dir, cfg):
         "errors": [],
     }
 
+    expected_ct = analysis.get("expected_ciphertext")
+    if not expected_ct:
+        # S2 does not write expected_ciphertext yet; fall back to the
+        # deterministic key-only check so the pipeline stays usable. When
+        # expected_ciphertext IS provided, _write_testbench compares per
+        # transaction and gates VERDICT: PASS on failures == 0.
+        result["errors"].append(
+            "expected_ciphertext missing from S2 analysis; "
+            "falling back to key-only check"
+        )
+
+    patched_aes = os.path.join(patch_dir, "aes_core.v")
+    if not os.path.isfile(patched_aes):
+        result["verdict"] = "FAIL"
+        result["errors"].append("patched aes_core.v missing")
+        out_path = os.path.join(dst_dir, "result.json")
+        with open(out_path, "w", encoding="utf-8") as fp:
+            json.dump(result, fp, indent=2)
+        print(f"S4 done: {case} -> {out_path} "
+              f"(verdict={result['verdict']}, compiles={result['compiles']}, "
+              f"sim_runs={result['sim_runs']})")
+        return
+
     # Only compile the untapped aes_core.v (carries the Trojan output mux);
     # the tapped variant instantiates tapped submodules not present here.
     # Note: the S3-generated .sv file contains SVA assertions that iverilog
     # cannot parse; those are verified at the S6 checker stage instead.
-    srcs = [os.path.join(verify_dir, n) for n in sorted(os.listdir(verify_dir))
-            if n.endswith(".v") and n == "aes_core.v"]
+    srcs = [patched_aes]
     support = []
     already = {os.path.splitext(os.path.basename(s))[0] for s in srcs}
     for d in (RTL_GOLDEN, RTL_AEGIS):
         for f in _find_files(d):
             base = os.path.splitext(os.path.basename(f))[0]
-            if base not in already and base not in ("aegis_aes_top",):
+            if base not in already and base not in ("aegis_aes_top", "aes_core",):
                 support.append(f)
 
     tb_path = os.path.join(dst_dir, "verify_tb.v")
@@ -217,9 +235,12 @@ def run(case, out_dir, cfg):
             )
             result["sim_runs"] = True
             result["sim_output"] = proc.stdout
-            result["verdict"] = "PASS" if (
-                proc.returncode == 0 and "VERDICT: PASS" in proc.stdout
-            ) else "FAIL"
+            ok = (
+                proc.returncode == 0
+                and "VERDICT: PASS" in proc.stdout
+                and "VERDICT: FAIL" not in proc.stdout
+            )
+            result["verdict"] = "PASS" if ok else "FAIL"
             if proc.returncode != 0:
                 result["errors"].append("sim exit " + str(proc.returncode))
         except FileNotFoundError:

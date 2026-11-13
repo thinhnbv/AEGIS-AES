@@ -7,6 +7,7 @@ Usage:
 """
 import argparse
 import importlib
+import json
 import os
 import sys
 
@@ -38,6 +39,12 @@ def main():
     args = parser.parse_args()
 
     cfg = load_config(args.config)
+    # Honor backend mode from config so S2/S3 never call an external API
+    # when backend: static (llm_client reads this env var).
+    backend = cfg.get("backend")
+    if backend:
+        os.environ["AEGIS_LLM_BACKEND"] = str(backend)
+
     case_dir = os.path.join("rtl", "infected", args.case)
     if not os.path.isdir(case_dir):
         print(f"ERROR: case directory not found: {case_dir}", file=sys.stderr)
@@ -46,6 +53,7 @@ def main():
     os.makedirs(args.out, exist_ok=True)
 
     stages = cfg.get("stages", ["s0"])
+    s4_verdict = None
     for name in stages:
         mod_path = STAGE_MODULES.get(name)
         if mod_path is None:
@@ -56,6 +64,17 @@ def main():
             print(f"ERROR: stage {name} has no run()", file=sys.stderr)
             sys.exit(1)
         mod.run(args.case, args.out, cfg)
+        if name == "s4":
+            res_path = os.path.join(args.out, "verify", "result.json")
+            try:
+                with open(res_path, encoding="utf-8") as fp:
+                    s4_verdict = json.load(fp).get("verdict")
+            except (FileNotFoundError, json.JSONDecodeError):
+                s4_verdict = None
+
+    if s4_verdict in ("FAIL", "UNKNOWN", None):
+        print(f"ERROR: S4 verdict={s4_verdict}; pipeline failed", file=sys.stderr)
+        sys.exit(1)
 
     print(f"Pipeline done: {args.out}")
 

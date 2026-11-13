@@ -21,6 +21,7 @@ _API_MODEL = os.environ.get("AEGIS_LLM_MODEL", "agentgw-opus-4-8")
 _API_KEY = os.environ.get("AEGIS_LLM_API_KEY", "")
 _ALLOW_OUTBOUND = os.environ.get("AEGIS_LLM_ALLOW_OUTBOUND", "0") == "1"
 _ALLOWED_HOSTS = ("api.agentgw.cloud", "api.openai.com")
+BACKEND = os.environ.get("AEGIS_LLM_BACKEND", "real")
 
 # Call counter for credit tracking across the pipeline run.
 _LLM_CALL_COUNT = 0
@@ -30,6 +31,9 @@ def _chat(system_prompt, user_prompt, temperature=0.2, max_tokens=1024):
     """Call an OpenAI-compatible chat completion endpoint. Returns the
     assistant message content as a string, or None on failure."""
     global _LLM_CALL_COUNT
+    if BACKEND == "static":
+        print("[LLM] backend=static: blocking outbound LLM call, falling back to mock", file=sys.stderr)
+        return None
     if _USE_MOCK:
         return None
     if not _ALLOW_OUTBOUND or not _API_BASE.startswith("https://") or _API_BASE.split("://", 1)[1].split("/")[0] not in _ALLOWED_HOSTS:
@@ -134,6 +138,26 @@ def analyze(sanitized_text, evidence):
         }
     print(f"[LLM] real backend responded ({len(content)} chars)", file=sys.stderr)
     parsed = _parse_json_block(content)
+    ok = (
+        isinstance(parsed, dict)
+        and isinstance(parsed.get("confidence"), (int, float))
+        and isinstance(parsed.get("predicted_trigger"), str)
+        and isinstance(parsed.get("predicted_payload"), str)
+        and isinstance(parsed.get("threatened_asset"), str)
+        and isinstance(parsed.get("suspicious_regions"), list)
+        and all(isinstance(r, str) for r in parsed.get("suspicious_regions", []))
+    )
+    if not ok:
+        print("[LLM] schema validation failed, falling back to mock", file=sys.stderr)
+        return {
+            "suspicious_regions": ["output result mux selects key under trigger"],
+            "predicted_trigger": "constant plaintext comparison",
+            "predicted_payload": "key dumped on output instead of ciphertext",
+            "threatened_asset": "aes_key",
+            "confidence": 0.9,
+            "llm_used": False,
+            "llm_source": "mock",
+        }
     return {
         "predicted_trigger": parsed.get("predicted_trigger", "unknown"),
         "predicted_payload": parsed.get("predicted_payload", "unknown"),
