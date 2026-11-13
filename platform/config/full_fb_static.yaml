@@ -1,1 +1,2 @@
-stages: ["s0", "s1", "s2", "s3", "s4", "s5", "s6"]
+# Static pipeline: no LLM, no feedback loop. Deterministic stages only.
+stages: ["s0", "s1", "s2", "s3", "s4"]

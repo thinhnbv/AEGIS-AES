@@ -12,35 +12,32 @@
 #================================================================
 
 [options]
+mode bmc
+depth 64
 
-[mode]
-bmc
-
-[task]
-bmc
-
-[depth]
-64
+[task bmc]
+engine smtbmc
+src rtl/aegis/aegis_aes_top.v
+src rtl/aegis/aes_core_tapped.v
+src rtl/aegis/aes_key_mem_tapped.v
+src rtl/aegis/aes_encipher_block.v
+src rtl/aegis/fic_fsm_integrity.v
+src rtl/aegis/klg_key_leak_guard.v
+src rtl/aegis/orc_output_checker.v
+src rtl/aegis/rcm_round_monitor.v
+src rtl/aegis/red_rare_event.v
+src rtl/aegis/tru_tamper_response.v
+src rtl/aes_golden/aes_sbox.v
+src rtl/aes_golden/aes_inv_sbox.v
+src rtl/aes_golden/aes_decipher_block.v
+src verif/uvm/sva/aegis_props.sv
 
 [script]
 # -DAEGIS_FORMAL enables the liveness property P7 (request eventually
 # completes) in aegis_props.sv, which the simulation subset of
 # assertions (Verilator) does not support.
 read_verilog -formal -DAEGIS_FORMAL \
-    rtl/aegis/aegis_aes_top.v \
-    rtl/aegis/aes_core_tapped.v \
-    rtl/aegis/aes_key_mem_tapped.v \
-    rtl/aegis/aes_encipher_block.v \
-    rtl/aegis/fic_fsm_integrity.v \
-    rtl/aegis/klg_key_leak_guard.v \
-    rtl/aegis/orc_output_checker.v \
-    rtl/aegis/rcm_round_monitor.v \
-    rtl/aegis/red_rare_event.v \
-    rtl/aegis/tru_tamper_response.v \
-    rtl/aes_golden/aes_sbox.v \
-    rtl/aes_golden/aes_inv_sbox.v \
-    rtl/aes_golden/aes_decipher_block.v \
-    verif/uvm/sva/aegis_props.sv
+    $(src)
 
 # The assertion module is attached to the DUT by the `bind` in
 # aegis_props.sv, which read_verilog above reads and applies.

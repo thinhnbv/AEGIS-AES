@@ -1,11 +1,28 @@
 #!/usr/bin/env python3
 """Stage S6: Harden passing SVA into a checker Verilog template.
 
-Reads <out>/patched/<case>.sv and emits a structural checker template
-(comparator, bit counter, ROM-style trigger table) that can be copied into
-rtl/aegis/ and wired into aegis_aes_top. Output: <out>/harden/<case>_checker.v
+Reads <out>/patched/<case>.sv (SVA properties from S3) and embeds the
+assertion conditions as immediate checks in a structural checker module
+(comparator, pulse-sensitive alarm, trigger ROM table). Output:
+<out>/harden/<case>_checker.v
+
+The checker can be copied into rtl/aegis/ and wired into aegis_aes_top.
 """
 import os
+import re
+
+
+def _read_sva(sva_path):
+    """Return list of assertion condition strings extracted from the SVA file."""
+    if not os.path.isfile(sva_path):
+        return []
+    with open(sva_path, encoding="utf-8") as fp:
+        text = fp.read()
+    conds = []
+    for m in re.finditer(r"!\(\s*(.*?)\s*\)\s*;", text, flags=re.DOTALL):
+        cond = m.group(1).strip()
+        conds.append(cond)
+    return conds
 
 
 def run(case, out_dir, cfg):
@@ -13,14 +30,31 @@ def run(case, out_dir, cfg):
     dst_dir = os.path.join(out_dir, "harden")
     os.makedirs(dst_dir, exist_ok=True)
 
-    template = [
+    sva_conds = _read_sva(sva_path)
+
+    sva_checks = []
+    for cond in sva_conds:
+        sva_checks.append(
+            f'    if ({cond}) begin'
+        )
+        sva_checks.append(
+            f'      $display("SVA VIOLATION: {cond}");'
+        )
+        sva_checks.append(
+            f'      alarm = 1\'b1;'
+        )
+        sva_checks.append(
+            f'    end'
+        )
+
+    lines = [
         "/// Checker Verilog template hardened from SVA (stage S6).",
-        "/// Case: %s",
+        f"/// Case: {case}",
         "/// Copy into rtl/aegis/ and instantiate in aegis_aes_top.",
         "///",
         "/// This is a structural checker: a comparator watches the trigger",
-        "/// signals, a bit counter measures dwell time, and a small ROM table",
-        "/// holds the expected trigger constants.",
+        "/// signals, and an immediate alarm fires on any key leak (no dwell",
+        "/// counter delay, so a single-cycle leak cannot be missed).",
         "",
         "module aegis_trojan_checker #(",
         "    parameter TRIG_WIDTH = 128",
@@ -31,34 +65,65 @@ def run(case, out_dir, cfg):
         "    input  wire                   result_valid,",
         "    input  wire [127:0]           result,",
         "    input  wire [127:0]           key,",
-        "    output wire                   alarm,",
-        "    output wire [7:0]             alarm_code",
+        "    output reg                    alarm,",
+        "    output reg [7:0]              alarm_code",
         ");",
         "",
-        "  // Comparator: flag when output equals key under any condition.",
+        "  // Comparator: flag when output equals key (key leak).",
         "  wire key_leak = result_valid && (result === key[127:0]);",
         "",
-        "  // Bit counter: dwell time before raising alarm.",
-        "  reg [7:0] dwell_cnt;",
-        "  always @(posedge clk or negedge rst_n) begin",
-        "    if (!rst_n) dwell_cnt <= 8'd0;",
-        "    else if (key_leak) dwell_cnt <= dwell_cnt + 8'd1;",
-        "    else dwell_cnt <= 8'd0;",
+        "  // Pulse-sensitive alarm: fires immediately on key_leak.",
+        "  always @* begin",
+        "    alarm = 1'b0;",
+        "    if (key_leak) alarm = 1'b1;",
         "  end",
+        "",
+        "  // Stickiness: hold alarm_code once raised.",
+        "  always @(posedge clk or negedge rst_n) begin",
+        "    if (!rst_n) begin",
+        "      alarm_code <= 8'd0;",
+        "    end else if (alarm) begin",
+        "      alarm_code <= 8'h01;",
+        "    end",
+        "  end",
+    ]
+
+    if sva_checks:
+        lines += [
+            "",
+            "  // SVA assertions from S3 (immediate checks, runnable in simulation).",
+        ]
+        lines.extend(sva_checks)
+
+    lines += [
         "",
         "  // ROM table of known trigger constants (filled in from S2/S3 output).",
         "  // Currently empty: populate with predicted trigger value.",
         "",
-        "  assign alarm = key_leak && (dwell_cnt >= 8'd1);",
-        "  assign alarm_code = key_leak ? 8'h01 : 8'd0;",
-        "",
         "endmodule",
         "",
     ]
-    template[1] = template[1] % case
 
     out_path = os.path.join(dst_dir, case + "_checker.v")
     with open(out_path, "w", encoding="utf-8") as fp:
-        fp.write("\n".join(template))
+        fp.write("\n".join(lines))
 
     print(f"S6 done: {case} -> {out_path}")
+
+
+# Self-check: verify a checker is emitted with immediate alarm and SVA checks.
+if __name__ == "__main__" and "s6_harden" in __import__("sys").argv[0]:
+    import tempfile
+    d = tempfile.mkdtemp()
+    patched = os.path.join(d, "patched")
+    os.makedirs(patched)
+    with open(os.path.join(patched, "T01.sv"), "w") as f:
+        f.write("assert property (!( block == 128'hDEADBEEF |-> result === key[127:0] ));\n")
+    run("T01", d, {})
+    out = os.path.join(d, "harden", "T01_checker.v")
+    with open(out, encoding="utf-8") as f:
+        text = f.read()
+    assert "alarm = 1'b1;" in text, "immediate alarm missing"
+    assert "SVA VIOLATION" in text, "SVA check missing"
+    assert "dwell_cnt" not in text, "dwell counter should be removed"
+    print("S6 self-check passed")

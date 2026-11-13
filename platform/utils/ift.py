@@ -87,57 +87,73 @@ def _strip_comments(text):
 
 def run_ift(sanitized_dir):
     files = _find_files(sanitized_dir)
-    text = ""
+
+    # Module-scoped dependency graph: module.signal -> set of module.signal.
+    # Prevents two modules reusing the same signal name (e.g. `temp`) from
+    # collapsing into one graph node.
+    deps = {}
+    file_texts = {}  # filepath -> stripped text, for the trigger-candidate pass
+
     for f in files:
         with open(f, encoding="utf-8") as fp:
-            text += "\n" + fp.read()
-    text = _strip_comments(text)
+            text = _strip_comments(fp.read())
+        file_texts[f] = text
 
-    # target signal -> set of source signals it depends on
-    deps = {}
+        mm = re.search(r"module\s+(\w+)", text)
+        module = mm.group(1) if mm else "top"
 
-    # --- assign statements -------------------------------------------------
-    for m in re.finditer(r"assign\s+(\w+)\s*=\s*([^;]+);", text):
-        target = m.group(1)
-        expr = m.group(2)
-        sources = _vars_in(expr) - {target}
-        deps.setdefault(target, set()).update(sources)
+        def pfx(name):
+            return f"{module}.{name}"
 
-    # --- always @* combinational blocks -----------------------------------
-    # Over-approximation: every identifier used anywhere in the block may
-    # affect every signal assigned in the block. This catches nested `if`
-    # conditions that a single-regex scan would miss.
-    comb_anchor = re.compile(r"always\s*@\*\s*", re.MULTILINE)
-    for block in _find_begin_end_blocks(text, comb_anchor):
-        used = _vars_in(block)
-        assigned = set()
-        for am in re.finditer(r"(\w+)\s*(<=|=)\s*", block):
-            assigned.add(am.group(1))
-        for av in assigned:
-            deps.setdefault(av, set()).update(used - assigned)
+        # --- assign statements -------------------------------------------------
+        for m in re.finditer(r"assign\s+(\w+)\s*=\s*([^;]+);", text):
+            target = pfx(m.group(1))
+            expr = m.group(2)
+            sources = {pfx(v) for v in _vars_in(expr) if v != m.group(1)}
+            deps.setdefault(target, set()).update(sources)
 
-    # --- sequential always blocks (posedge clk ...) -----------------------
-    seq_anchor = re.compile(
-        r"always\s*@\s*\((?:posedge|negedge)\s*\w+\s*(?:or\s*(?:posedge|negedge)\s*\w+\s*)*\)\s*",
-        re.MULTILINE,
-    )
-    for block in _find_begin_end_blocks(text, seq_anchor):
-        used = _vars_in(block)
-        assigned = set()
-        for am in re.finditer(r"(\w+)\s*<=\s*", block):
-            assigned.add(am.group(1))
-        for av in assigned:
-            deps.setdefault(av, set()).update(used - assigned)
+        # --- always @* combinational blocks -----------------------------------
+        comb_anchor = re.compile(r"always\s*@\*\s*", re.MULTILINE)
+        for block in _find_begin_end_blocks(text, comb_anchor):
+            used = {pfx(v) for v in _vars_in(block)}
+            assigned = {
+                pfx(am.group(1))
+                for am in re.finditer(r"(\w+)\s*(<=|=)\s*", block)
+            }
+            for av in assigned:
+                deps.setdefault(av, set()).update(used - {av})
 
-    # Sinks: security-relevant outputs / Trojan-payload carriers.
-    sinks = ["result", "ready", "result_valid", "dos_triggered"]
+        # --- sequential always blocks (posedge clk ...) -----------------------
+        seq_anchor = re.compile(
+            r"always\s*@\s*\((?:posedge|negedge)\s*\w+\s*(?:or\s*(?:posedge|negedge)\s*\w+\s*)*\)\s*",
+            re.MULTILINE,
+        )
+        for block in _find_begin_end_blocks(text, seq_anchor):
+            used = {pfx(v) for v in _vars_in(block)}
+            assigned = {
+                pfx(am.group(1))
+                for am in re.finditer(r"(\w+)\s*<=\s*", block)
+            }
+            for av in assigned:
+                deps.setdefault(av, set()).update(used - {av})
 
-    # Primary inputs: signals used as sources but never assigned as targets.
+    # Find which module owns the security sinks (result, ready, ...).
+    sink_owner = "aes_core"
+    for target in deps:
+        mod, _, sig = target.partition(".")
+        if sig in ("result", "ready", "result_valid", "dos_triggered"):
+            sink_owner = mod
+            break
+
+    sinks_short = ["result", "ready", "result_valid", "dos_triggered"]
+    sinks = [f"{sink_owner}.{s}" for s in sinks_short]
+
+    # Primary inputs: prefixed signals used as sources but never assigned.
     all_targets = set(deps.keys())
     all_sources = set()
     for sset in deps.values():
         all_sources |= sset
-    inputs = sorted(all_sources - all_targets)
+    inputs = sorted(s.split(".", 1)[1] for s in (all_sources - all_targets))
 
     # Fan-in cone (reverse reachability) from each sink.
     def fan_in(sink):
@@ -160,23 +176,30 @@ def run_ift(sanitized_dir):
     # Constant comparisons inside any sink's cone -> trigger candidates.
     hex_const = r"(128'h[0-9a-fA-F_]+|64'h[0-9a-fA-F_]+|32'h[0-9a-fA-F_]+|16'h[0-9a-fA-F_]+|8'h[0-9a-fA-F_]+)"
     trigger_candidates = []
-    for m in re.finditer(r"(\w+)\s*(==|!=|>=|<=|>|<)\s*(" + hex_const + r")", text):
-        lhs = m.group(1)
-        const = m.group(3).replace("_", "")
-        affects = [s for s, cone in cones.items() if lhs in cone]
-        if affects:
-            trigger_candidates.append({
-                "condition": f"{lhs} {m.group(2)} {const}",
-                "constant": const,
-                "signal": lhs,
-                "affects": affects,
-            })
+    for f, text in file_texts.items():
+        mm = re.search(r"module\s+(\w+)", text)
+        module = mm.group(1) if mm else "top"
+        for m in re.finditer(r"(\w+)\s*(==|!=|>=|<=|>|<)\s*(" + hex_const + r")", text):
+            lhs = f"{module}.{m.group(1)}"
+            const = m.group(3).replace("_", "")
+            affects = [
+                s.split(".", 1)[1]
+                for s, c in cones.items()
+                if lhs in c
+            ]
+            if affects:
+                trigger_candidates.append({
+                    "condition": f"{m.group(1)} {m.group(2)} {const}",
+                    "constant": const,
+                    "signal": m.group(1),
+                    "affects": affects,
+                })
 
     return {
         "files": [os.path.basename(f) for f in files],
         "num_dependency_edges": sum(len(v) for v in deps.values()),
         "inputs": inputs,
-        "sinks": sinks,
-        "cones": cones,
+        "sinks": sinks_short,
+        "cones": {s.split(".", 1)[1]: c for s, c in cones.items()},
         "trigger_candidates": trigger_candidates,
     }

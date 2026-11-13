@@ -312,7 +312,7 @@ all-cases:
 	fi
 
 campaign:
-	python3 platform/run.py --config platform/config/$(CFG).yaml --case $(CASE) --out build/$(CASE)
+	python3 platform/run.py --config platform/config/$(CFG).yaml --case $(CASE) --out build/runs/$(STAMP)_$(CFG)_$(CASE)
 
 report:
 	python3 scripts/report.py results/runs --out results/tables

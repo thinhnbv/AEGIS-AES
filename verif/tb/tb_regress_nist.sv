@@ -344,6 +344,7 @@ module tb_regress_nist;
       $display("         AND no monitor raised a false alarm.");
     end else begin
       $display("  [FAIL] NIST regression found %0d problem(s).", err_count);
+      $fatal(1, "NIST regression found problems");
     end
 
     $display("==================================================");

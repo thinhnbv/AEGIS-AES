@@ -403,8 +403,10 @@ module tb_uart_demo;
         $display("==================================================");
         if (failures == 0)
             $display("[PASS] UART DEMO PROOF");
-        else
+        else begin
             $display("[FAIL] UART DEMO PROOF (%0d failures)", failures);
+            $fatal(1, "UART DEMO PROOF failed");
+        end
         $display("==================================================");
         $finish;
     end

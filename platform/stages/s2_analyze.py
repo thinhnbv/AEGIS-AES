@@ -132,24 +132,31 @@ def analyze(case, sanitized_dir, evidence):
         confidence += 0.3
 
     # LLM analysis (mock unless AEGIS_LLM_API_KEY is set).
+    # When mock, keep the heuristic result; only real LLM output overrides it.
     llm_result = llm_analyze(all_text, evidence)
-    llm_used = bool(os.environ.get("AEGIS_LLM_API_KEY"))
+    llm_used = bool(os.environ.get("AEGIS_LLM_API_KEY")) and llm_result.get("llm_used", False)
 
     analysis = {
         "case_id": case,
-        "llm_used": llm_result.get("llm_used", llm_used),
+        "llm_used": llm_used,
         "llm_source": llm_result.get("llm_source", "mock" if not llm_used else "real"),
         "llm_model": llm_result.get("model", ""),
-        "confidence": round(min(float(llm_result.get("confidence", confidence)), 1.0), 2),
+        "confidence": round(
+            min(float(llm_result.get("confidence", confidence) if llm_used else confidence), 1.0), 2
+        ),
         "suspicious_files": matched_files,
-        "suspicious_regions": llm_result.get("suspicious_regions", details),
+        "suspicious_regions": (
+            llm_result.get("suspicious_regions", details) if llm_used else details
+        ),
         "trigger": {
-            "type": llm_result.get("predicted_trigger", trigger_type),
+            "type": llm_result.get("predicted_trigger", trigger_type) if llm_used else trigger_type,
             "value": trigger_value,
         },
         "payload": {
-            "type": llm_result.get("predicted_payload", payload_type),
-            "asset": llm_result.get("threatened_asset", asset),
+            "type": (
+                llm_result.get("predicted_payload", payload_type) if llm_used else payload_type
+            ),
+            "asset": llm_result.get("threatened_asset", asset) if llm_used else asset,
         },
         "details": details,
         "ift_cones": ift_cones,
