@@ -179,12 +179,10 @@ def run(case, out_dir, cfg):
 
     # Only compile the untapped aes_core.v (carries the Trojan output mux);
     # the tapped variant instantiates tapped submodules not present here.
-    # Also compile the SVA file from S3 so assertions are verified at runtime.
+    # Note: the S3-generated .sv file contains SVA assertions that iverilog
+    # cannot parse; those are verified at the S6 checker stage instead.
     srcs = [os.path.join(verify_dir, n) for n in sorted(os.listdir(verify_dir))
             if n.endswith(".v") and n == "aes_core.v"]
-    sva_file = os.path.join(patch_dir, case + ".sv")
-    if os.path.isfile(sva_file):
-        srcs.append(sva_file)
     support = []
     already = {os.path.splitext(os.path.basename(s))[0] for s in srcs}
     for d in (RTL_GOLDEN, RTL_AEGIS):
