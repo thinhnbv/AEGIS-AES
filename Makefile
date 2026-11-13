@@ -1,5 +1,6 @@
 # ====== AEGIS-AES Makefile ======
 CASE      ?= clean
+CFG       ?= one_shot
 SIM       ?= iverilog
 # Max NIST MCT vectors for `make regress`. 0 = all 10000 (~10 min
 # under Icarus). Set e.g. MCT_LIMIT=100 for a quick smoke test.
@@ -311,7 +312,7 @@ all-cases:
 	fi
 
 campaign:
-	python3 platform/run.py --config platform/config/$$(CFG).yaml --out results/runs/$$(STAMP)_$$(CFG)
+	python3 platform/run.py --config platform/config/$(CFG).yaml --case $(CASE) --out build/$(CASE)
 
 report:
 	python3 scripts/report.py results/runs --out results/tables
