@@ -206,8 +206,9 @@ def run(case, out_dir, cfg):
     for d in (RTL_GOLDEN, RTL_AEGIS):
         for f in _find_files(d):
             base = os.path.splitext(os.path.basename(f))[0]
-            if base not in already and base not in ("aegis_aes_top", "aes_core",):
+            if base not in already and base not in ("aegis_aes_top", "aes_core", "aes_core_tapped",):
                 support.append(f)
+                already.add(base)
 
     tb_path = os.path.join(dst_dir, "verify_tb.v")
     _write_testbench(tb_path, case, analysis)

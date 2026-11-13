@@ -72,7 +72,7 @@ def main():
             except (FileNotFoundError, json.JSONDecodeError):
                 s4_verdict = None
 
-    if s4_verdict in ("FAIL", "UNKNOWN", None):
+    if "s4" in stages and s4_verdict in ("FAIL", "UNKNOWN", None):
         print(f"ERROR: S4 verdict={s4_verdict}; pipeline failed", file=sys.stderr)
         sys.exit(1)
 

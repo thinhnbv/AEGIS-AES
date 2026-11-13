@@ -188,7 +188,7 @@ def patch(analysis, sanitized_text):
         "\n\nSANITIZED RTL:\n" + sanitized_text[:8000]
     )
     content = _chat(system_prompt, user_prompt, max_tokens=4096)
-    if content is None:
+    if content is None or not content.strip():
         return sanitized_text
     return content
 

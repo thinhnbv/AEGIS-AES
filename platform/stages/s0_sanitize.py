@@ -10,6 +10,7 @@ Only files with .v extension are processed; ground_truth.yaml is never
 touched by this stage.
 """
 import os
+import re
 
 NEUTRAL_MAP = {
     "trojan_trig": "sanitize_cond_a",
@@ -94,7 +95,7 @@ def _sanitize_text(text):
 
 def _rename_identifiers(text):
     for orig, neutral in NEUTRAL_MAP.items():
-        text = text.replace(orig, neutral)
+        text = re.sub(r"\b" + re.escape(orig) + r"\b", neutral, text)
     return text
 
 
