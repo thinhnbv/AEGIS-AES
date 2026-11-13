@@ -26,7 +26,7 @@ NEUTRAL_MAP = {
 
 def _neutralize(text):
     for orig, neutral in NEUTRAL_MAP.items():
-        text = text.replace(orig, neutral)
+        text = re.sub(r"\b" + re.escape(orig) + r"\b", neutral, text)
     return text
 
 
@@ -35,9 +35,6 @@ def _patch_output_mux(text):
     # Neutralize any output mux that selects the key under a Trojan trigger.
     # Handles canonical names (sanitize_result_b / sanitize_cond_a), suffixed
     # variants (..._t06) and per-trojan names (evil_t07_*).
-    # assign result = <mux_var>;  ->  assign result = muxed_new_block;
-    #   (capture <mux_var> so its wire/assign can be stripped below)
-    # assign result = <cond> ? <a> : <b>;  ->  assign result = muxed_new_block;
     mux_vars = re.findall(r"assign\s+result\s*=\s*(\w+)\s*;", text)
     text = re.sub(
         r"\s*assign\s+result\s*=\s*\w+\s*;\s*\n?",
@@ -45,19 +42,24 @@ def _patch_output_mux(text):
     text = re.sub(
         r"\s*assign\s+result\s*=\s*\w+\s*\?\s*.*?\s*:\s*.*?;\s*\n?",
         "assign result = muxed_new_block;\n", text, flags=re.DOTALL)
-    # Drop each mux var's wire/assign, plus its trigger cond's wire/assign.
+    # Collect identifiers to remove: the mux var and its trigger condition.
+    to_remove = set(mux_vars)
     for var in mux_vars:
-        esc = re.escape(var)
-        m = re.search(r"\s*assign\s+" + esc + r"\s*=\s*(\w+)\s*\?\s*.*?;\s*\n?",
-                      text, flags=re.DOTALL)
+        m = re.search(
+            r"\s*assign\s+" + re.escape(var) + r"\s*=\s*(\w+)\s*\?\s*.*?;\s*\n?",
+            text, flags=re.DOTALL)
         if m:
-            cond = re.escape(m.group(1))
-            text = re.sub(r"\s*wire\s+" + cond + r"\s*;\s*\n?", "", text)
-            text = re.sub(r"\s*assign\s+" + cond + r"\s*=.*?;\s*\n?", "", text,
-                          flags=re.DOTALL)
+            to_remove.add(m.group(1))
+    # Remove wire/assign declarations for the mux var and its trigger
+    # condition. These identifiers exist only to build the Trojan mux, so once
+    # the mux is gone they are safe to drop (we only touch names captured from
+    # the result mux itself, never user identifiers).
+    for name in list(to_remove):
+        esc = re.escape(name)
         text = re.sub(r"\s*wire\s+" + esc + r"\s*;\s*\n?", "", text)
-        text = re.sub(r"\s*assign\s+" + esc + r"\s*=.*?;\s*\n?", "", text,
-                      flags=re.DOTALL)
+        text = re.sub(
+            r"\s*assign\s+" + esc + r"\s*=.*?;\s*\n?", "", text,
+            flags=re.DOTALL)
     return text
 
 
@@ -103,7 +105,15 @@ def run(case, out_dir, cfg):
             text = _patch_fsm_dos(text)
             # LLM hook point: the mock returns text unchanged; a real LLM
             # would rewrite it here based on the S2 analysis.
+            clean_text = text
             text = llm_patch(analysis, text)
+            # Reject LLM output that carries simulator constructs or
+            # self-reported verdicts (a patched RTL must never print
+            # VERDICT: PASS or call $finish/$display itself).
+            for bad in ("$display", "$finish", "$fatal", "VERDICT"):
+                if bad in text:
+                    text = clean_text
+                    break
             dst = os.path.join(dst_dir, name)
             with open(dst, "w", encoding="utf-8") as fp:
                 fp.write(text)

@@ -104,25 +104,20 @@ def _write_testbench(tb_path, case, analysis):
         "      #10; wait_valid = wait_valid + 1;",
         "    end",
         "    if (result_valid === 1'b0) begin",
-        "      $display(\"FAIL: no result_valid\");",
-        "      failures = failures + 1;",
+        "      $fatal(1, \"FAIL: no result_valid\");",
         "    end else begin",
     ]
 
     if expected_ct:
-        lines.append(f"      if (result === {expected_ct}) begin")
-        lines.append("        $display(\"PASS: output matches expected ciphertext\");")
+        lines.append(f"      if (result !== {expected_ct}) begin")
+        lines.append("        $fatal(1, \"FAIL: output does not match expected ciphertext\");")
         lines.append("      end else begin")
-        lines.append("        $display(\"FAIL: output does not match expected ciphertext\");")
-        lines.append("        failures = failures + 1;")
+        lines.append("        $display(\"PASS: output matches expected ciphertext\");")
         lines.append("      end")
     else:
-        lines.append(f"      if (result === key[127:0]) begin")
-        lines.append("        $display(\"FAIL: Trojan payload appeared on output\");")
-        lines.append("        failures = failures + 1;")
-        lines.append("      end else begin")
-        lines.append("        $display(\"PASS: output not equal to key under trigger\");")
-        lines.append("      end")
+        # S2 must supply expected_ciphertext for every trigger case. If missing,
+        # S4 writes UNKNOWN instead of falling back to a weak key-only check.
+        lines.append("      $fatal(1, \"FAIL: expected_ciphertext missing\");")
     lines.append("    end")
 
     # Payload-specific checks.
@@ -175,14 +170,15 @@ def run(case, out_dir, cfg):
 
     expected_ct = analysis.get("expected_ciphertext")
     if not expected_ct:
-        # S2 does not write expected_ciphertext yet; fall back to the
-        # deterministic key-only check so the pipeline stays usable. When
-        # expected_ciphertext IS provided, _write_testbench compares per
-        # transaction and gates VERDICT: PASS on failures == 0.
-        result["errors"].append(
-            "expected_ciphertext missing from S2 analysis; "
-            "falling back to key-only check"
-        )
+        result["verdict"] = "UNKNOWN"
+        result["errors"].append("expected_ciphertext missing from S2 analysis")
+        out_path = os.path.join(dst_dir, "result.json")
+        with open(out_path, "w", encoding="utf-8") as fp:
+            json.dump(result, fp, indent=2)
+        print(f"S4 done: {case} -> {out_path} "
+              f"(verdict={result['verdict']}, compiles={result['compiles']}, "
+              f"sim_runs={result['sim_runs']})")
+        return
 
     patched_aes = os.path.join(patch_dir, "aes_core.v")
     if not os.path.isfile(patched_aes):
@@ -195,6 +191,21 @@ def run(case, out_dir, cfg):
               f"(verdict={result['verdict']}, compiles={result['compiles']}, "
               f"sim_runs={result['sim_runs']})")
         return
+
+    # Reject patched RTL that carries simulator constructs or self-reported
+    # verdicts — a patched core must never print VERDICT: PASS or call
+    # $finish/$display itself; only the trusted testbench decides PASS/FAIL.
+    for bad in ("$display", "$finish", "$fatal", "$time", "VERDICT"):
+        if bad in open(patched_aes, encoding="utf-8").read():
+            result["verdict"] = "FAIL"
+            result["errors"].append(f"patched RTL contains simulator construct '{bad}'")
+            out_path = os.path.join(dst_dir, "result.json")
+            with open(out_path, "w", encoding="utf-8") as fp:
+                json.dump(result, fp, indent=2)
+            print(f"S4 done: {case} -> {out_path} "
+                  f"(verdict={result['verdict']}, compiles={result['compiles']}, "
+                  f"sim_runs={result['sim_runs']})")
+            return
 
     # Only compile the untapped aes_core.v (carries the Trojan output mux);
     # the tapped variant instantiates tapped submodules not present here.
@@ -217,7 +228,8 @@ def run(case, out_dir, cfg):
     sim_bin = os.path.join(dst_dir, "verify_sim")
     try:
         proc = subprocess.run(
-            ["iverilog", "-g2012", "-I", RTL_AEGIS, "-o", sim_bin] + all_srcs,
+            ["iverilog", "-g2012", "-s", "aegis_verify_tb", "-I", RTL_AEGIS,
+             "-o", sim_bin] + all_srcs,
             capture_output=True, text=True, timeout=120,
         )
         result["compiles"] = proc.returncode == 0
@@ -242,8 +254,6 @@ def run(case, out_dir, cfg):
                 and "VERDICT: FAIL" not in proc.stdout
             )
             result["verdict"] = "PASS" if ok else "FAIL"
-            if proc.returncode != 0:
-                result["errors"].append("sim exit " + str(proc.returncode))
         except FileNotFoundError:
             result["errors"].append("vvp not found")
         except Exception as exc:  # pragma: no cover - defensive

@@ -14,6 +14,7 @@ import re
 import yaml
 
 from platform.utils.llm_client import analyze as llm_analyze
+from platform.utils.aes_golden import expected_ciphertext_hex
 
 TRIGGER_PATTERNS = [
     (r"trojan_trig|sanitize_cond_a", "T1/T2 constant trigger comparison"),
@@ -75,6 +76,16 @@ def analyze(case, sanitized_dir, evidence):
     if m:
         trigger_value = m.group(1).replace("_", "")
         details.append(f"trigger constant {trigger_value}")
+
+    # Expected ciphertext for the trigger block (golden AES-128-ECB).
+    expected_ct = None
+    if trigger_value:
+        try:
+            block_int = int(trigger_value.split("'h")[-1], 16)
+            expected_ct = expected_ciphertext_hex(block_int)
+            details.append(f"expected ciphertext {expected_ct}")
+        except Exception:
+            expected_ct = None
 
     if re.search(r"encrypt_counter\s*>=", all_text):
         trigger_type = "T3 encryption counter >= threshold"
@@ -161,6 +172,7 @@ def analyze(case, sanitized_dir, evidence):
         "details": details,
         "ift_cones": ift_cones,
         "ift_trigger_candidates": ift_candidates,
+        "expected_ciphertext": expected_ct,
     }
     return analysis
 

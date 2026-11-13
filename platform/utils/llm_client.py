@@ -64,8 +64,16 @@ def _chat(system_prompt, user_prompt, temperature=0.2, max_tokens=1024):
         print(f"[LLM] call #{_LLM_CALL_COUNT} to {_API_BASE} model={_API_MODEL}", file=sys.stderr)
         with urllib.request.urlopen(req, timeout=60) as resp:
             body = json.loads(resp.read().decode("utf-8"))
-        content = body["choices"][0]["message"]["content"] or ""
-        if not content.strip():
+        choices = body.get("choices")
+        if not isinstance(choices, list) or len(choices) == 0:
+            print(f"[LLM] call #{_LLM_CALL_COUNT} returned empty choices", file=sys.stderr)
+            return None
+        message = choices[0].get("message")
+        if not isinstance(message, dict):
+            print(f"[LLM] call #{_LLM_CALL_COUNT} returned non-dict message", file=sys.stderr)
+            return None
+        content = message.get("content") or ""
+        if not isinstance(content, str) or not content.strip():
             print(f"[LLM] call #{_LLM_CALL_COUNT} returned empty content", file=sys.stderr)
             return None
         print(f"[LLM] call #{_LLM_CALL_COUNT} succeeded ({len(content)} chars)", file=sys.stderr)

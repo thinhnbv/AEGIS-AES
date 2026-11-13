@@ -64,7 +64,10 @@ def main():
             print(f"ERROR: stage {name} has no run()", file=sys.stderr)
             sys.exit(1)
         mod.run(args.case, args.out, cfg)
-        if name == "s4":
+        if name in ("s4", "s5"):
+            # S5 may re-run S4 and overwrite result.json; always read the
+            # latest so the exit code reflects the final S4 outcome, not a
+            # stale verdict from an earlier round.
             res_path = os.path.join(args.out, "verify", "result.json")
             try:
                 with open(res_path, encoding="utf-8") as fp:

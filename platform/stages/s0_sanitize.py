@@ -82,8 +82,12 @@ def _sanitize_text(text):
             end = j + 2 if j < n else n
             comment = text[i:end]
             if _has_trojan_hint(comment):
-                # Replace with empty lines so later line numbers stay aligned.
-                out.append("\n" * comment.count("\n"))
+                # Keep line count; separate tokens with a space when on one line
+                # so ``wire/* hint */foo;`` does not become ``wirefoo;``.
+                replacement = (
+                    "\n" * comment.count("\n") if "\n" in comment else " "
+                )
+                out.append(replacement)
             else:
                 out.append(comment)
             i = end

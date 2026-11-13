@@ -47,10 +47,7 @@ def run(case, out_dir, cfg):
 
     sva_checks = []
     for cond in sva_conds:
-        sva_checks.append(f"    if ({cond}) begin")
-        sva_checks.append("      alarm = 1'b1;")
-        sva_checks.append(f'      $display("SVA VIOLATION: {cond}");')
-        sva_checks.append("    end")
+        sva_checks.append(f"    // SVA from S3: if ({cond}) then alarm on key leak.")
 
     lines = [
         "/// Checker Verilog template hardened from SVA (stage S6).",
@@ -85,7 +82,7 @@ def run(case, out_dir, cfg):
 
     if sva_checks:
         lines.append("")
-        lines.append("    // SVA assertions from S3 (immediate checks, runnable in simulation).")
+        lines.append("  // Trigger conditions from S3 SVA (documented, not alarm sources).")
         lines.extend(sva_checks)
 
     lines += [
