@@ -15,8 +15,10 @@
 mode bmc
 depth 64
 
-[task bmc]
-engine smtbmc
+[engines]
+smtbmc
+
+[files]
 src rtl/aegis/aegis_aes_top.v
 src rtl/aegis/aes_core_tapped.v
 src rtl/aegis/aes_key_mem_tapped.v
@@ -30,20 +32,30 @@ src rtl/aegis/tru_tamper_response.v
 src rtl/aes_golden/aes_sbox.v
 src rtl/aes_golden/aes_inv_sbox.v
 src rtl/aes_golden/aes_decipher_block.v
-src verif/uvm/sva/aegis_props.sv
+src verif/sva/aegis_props.sv
 
 [script]
 # -DAEGIS_FORMAL enables the liveness property P7 (request eventually
 # completes) in aegis_props.sv, which the simulation subset of
 # assertions (Verilator) does not support.
-read_verilog -formal -DAEGIS_FORMAL \
-    $(src)
+# sby runs yosys from verif/sva/aegis/src/, so paths are relative to that.
+read_verilog -formal -sv -DAEGIS_FORMAL \
+    /home/thinhnbv/aegis-aes/rtl/aegis/aegis_aes_top.v \
+    /home/thinhnbv/aegis-aes/rtl/aegis/aes_core_tapped.v \
+    /home/thinhnbv/aegis-aes/rtl/aegis/aes_key_mem_tapped.v \
+    /home/thinhnbv/aegis-aes/rtl/aegis/aes_encipher_block.v \
+    /home/thinhnbv/aegis-aes/rtl/aegis/fic_fsm_integrity.v \
+    /home/thinhnbv/aegis-aes/rtl/aegis/klg_key_leak_guard.v \
+    /home/thinhnbv/aegis-aes/rtl/aegis/orc_output_checker.v \
+    /home/thinhnbv/aegis-aes/rtl/aegis/rcm_round_monitor.v \
+    /home/thinhnbv/aegis-aes/rtl/aegis/red_rare_event.v \
+    /home/thinhnbv/aegis-aes/rtl/aegis/tru_tamper_response.v \
+    /home/thinhnbv/aegis-aes/rtl/aes_golden/aes_sbox.v \
+    /home/thinhnbv/aegis-aes/rtl/aes_golden/aes_inv_sbox.v \
+    /home/thinhnbv/aegis-aes/rtl/aes_golden/aes_decipher_block.v \
+    /home/thinhnbv/aegis-aes/verif/sva/aegis_props.sv
 
 # The assertion module is attached to the DUT by the `bind` in
 # aegis_props.sv, which read_verilog above reads and applies.
 
-# Black-box the AES datapath: formal checks wrapper control logic,
-# not AES correctness (covered by NIST regression instead).
-blackbox aes_encipher_block_tapped aes_decipher_block aes_sbox aes_inv_sbox
-chformal -setinitreset
 prep -top aegis_aes_top

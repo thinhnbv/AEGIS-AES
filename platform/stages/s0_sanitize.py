@@ -11,11 +11,10 @@ touched by this stage.
 """
 import os
 import re
+import sys
 
-NEUTRAL_MAP = {
-    "trojan_trig": "sanitize_cond_a",
-    "result_maybe_evil": "sanitize_result_b",
-}
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+from platform.utils.neutral_map import NEUTRAL_MAP
 
 # Keywords (matched case-insensitively) and markers that flag a comment as a
 # Trojan hint worth stripping.

@@ -13,15 +13,13 @@ S4 verification.
 """
 import os
 import re
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from platform.utils.llm_client import patch as llm_patch
 from platform.utils.llm_client import property_sva as llm_property
-
-# Trojan-identifier neutral map, kept in sync with S0.
-NEUTRAL_MAP = {
-    "trojan_trig": "sanitize_cond_a",
-    "result_maybe_evil": "sanitize_result_b",
-}
+from platform.utils.neutral_map import NEUTRAL_MAP
 
 
 def _neutralize(text):

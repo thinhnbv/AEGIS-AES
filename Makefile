@@ -47,7 +47,7 @@ else
 	SRC_AEGIS_DUT  = $(SRC_AEGIS_KEEP)
 endif
 
-.PHONY: help golden sim security gen-cfg regress regress-all fa-rate lint formal all-cases fpga backend campaign report clean demo-proof demo-proof-all
+.PHONY: help golden sim security gen-cfg regress regress-all fa-rate lint formal all-cases fpga campaign report clean demo-proof demo-proof-all
 
 help:
 	@echo 'make golden              - kiem tra loi AES goc'
@@ -64,7 +64,7 @@ help:
 	@echo 'make check-vectors       - kiem tra vector trigger hop le (de chay sau khi checkout)'
 	@echo 'make uvm CASE=...        - (Windows) chay UVM+coverage bang ModelSim'
 	@echo 'make campaign CFG=...    - chay thi nghiem pipeline LLM'
-	@echo 'make fpga / backend      - tong hop FPGA / OpenLane'
+	@echo 'make fpga          - tong hop FPGA'
 
 golden:
 	@mkdir -p $(BUILD)
@@ -231,7 +231,7 @@ regress-all:
 		$(MAKE) --no-print-directory regress CASE=$$c SIM=$(SIM) || FAILS=$$((FAILS+1)); \
 	done; \
 	if [ $$FAILS -ne 0 ]; then echo "regress-all: $$FAILS case(s) FAILED"; exit 1; fi; \
-	echo "regress-all: OK (SIM=$$(SIM))""
+	echo "regress-all: OK (SIM=$$(SIM))"
 
 #---------------------------------------------------------------
 # fa-rate: measure the false-alarm rate of the security monitors.
@@ -319,9 +319,6 @@ report:
 
 fpga:
 	$$(MAKE) -C fpga bitstream
-
-backend:
-	cd backend/openlane && flow.tcl -design aegis_aes -tag $$(STAMP)
 
 clean:
 	rm -rf $(BUILD)

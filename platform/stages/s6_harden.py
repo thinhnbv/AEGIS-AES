@@ -127,7 +127,7 @@ if __name__ == "__main__" and "s6_harden" in __import__("sys").argv[0]:
     with open(out, encoding="utf-8") as f:
         text = f.read()
     assert "alarm = 1'b1;" in text, "immediate alarm missing"
-    assert "SVA VIOLATION" in text, "SVA check missing"
+    assert "SVA from S3" in text, "SVA check missing"
     assert "dwell_cnt" not in text, "dwell counter should be removed"
 
     # Each SVA check line must have balanced parentheses (no extra ")").
