@@ -421,6 +421,7 @@ module tb_security;
       // T03: design requires RCM + ORC.
       // T04: current benchmark requires FIC + RED.
       // T05: RCM is mandatory; RED may also flag rare FF...FF input.
+      // T06/T07/T08: KLG is mandatory (ported GHOST benchmarks).
       //--------------------------------------------------------
       if ((`CASE == "T01_p1_key_dump") ||
           (`CASE == "T01"))

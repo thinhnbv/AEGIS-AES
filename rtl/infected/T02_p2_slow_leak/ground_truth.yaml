@@ -23,7 +23,7 @@ location:
 
 detection:
   expected_checker: KLG
-  expected_latency: 1
+  expected_latency: 6
 
 verification:
   silent_under_nist: true

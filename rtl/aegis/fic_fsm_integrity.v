@@ -31,16 +31,12 @@ module fic_fsm_integrity (
   // Registers
   //------------------------------------------------------------
   reg [1:0] prev_fsm_state;
-  reg       prev_valid;  // Danh dau trang thai truoc co hop le
 
   //------------------------------------------------------------
-  // One-hot check
-  //
-  // FSM chi chap nhan 3 gia tri: 2'b00, 2'b01, 2'b10
-  // Bit thu 3 (2'b11) la illegal
+  // Ma nhi phan 2 bit {0,1,2}; 2'b11 la trang thai khong hop le
   //------------------------------------------------------------
-  wire one_hot_valid;
-  assign one_hot_valid = (fsm_state != 2'h3);
+  wire encoding_valid;
+  assign encoding_valid = (fsm_state != 2'h3);
 
   //------------------------------------------------------------
   // Transition validation
@@ -107,26 +103,24 @@ module fic_fsm_integrity (
   // Alarm logic
   //
   // fic_alarm bat khi:
-  // - FSM khong con one-hot (fsm_state = 2'b11)
+  // - FSM khong hop le (fsm_state = 2'b11)
   // - Chuyen trang thai khong hop le
   // Alarm la sticky: chi xoa khi reset
   //------------------------------------------------------------
   wire alarm_condition;
 
   // Bao loi khi:
-  // 1. FSM khong one-hot
+  // 1. FSM khong hop le
   // 2. Chuyen trang thai khong hop le (sau chu ky dau tien)
-  assign alarm_condition = !one_hot_valid || (!first_cycle && !trans_valid);
+  assign alarm_condition = !encoding_valid || (!first_cycle && !trans_valid);
 
-  // Sync prev_fsm_state va prev_valid
+  // Sync prev_fsm_state
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
       prev_fsm_state <= CTRL_IDLE;
-      prev_valid     <= 1'b1;
       first_cycle    <= 1'b1;
     end else begin
       prev_fsm_state <= fsm_state;
-      prev_valid     <= one_hot_valid;
       first_cycle    <= 1'b0;
     end
   end

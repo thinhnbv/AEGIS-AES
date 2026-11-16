@@ -20,7 +20,7 @@ _API_BASE = os.environ.get("AEGIS_LLM_BASE_URL", "https://api.openai.com/v1").rs
 _API_MODEL = os.environ.get("AEGIS_LLM_MODEL", "agentgw-opus-4-8")
 _API_KEY = os.environ.get("AEGIS_LLM_API_KEY", "")
 _ALLOW_OUTBOUND = os.environ.get("AEGIS_LLM_ALLOW_OUTBOUND", "0") == "1"
-_ALLOWED_HOSTS = ("api.agentgw.cloud", "api.openai.com")
+_ALLOWED_HOSTS = ("api.agentgw.cloud", "agentgw.cloud", "api.openai.com")
 BACKEND = os.environ.get("AEGIS_LLM_BACKEND", "static")
 
 # Call counter for credit tracking across the pipeline run.
