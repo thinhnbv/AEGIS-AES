@@ -83,7 +83,10 @@ module red_rare_event #(
   reg [15:0] enc_counter;
   reg        t3_reported;
 
-  // Keep the old internal name for hierarchical debug compatibility.
+  // NOTE: enc_counter is global across key changes (only resets on rst_n,
+  // not on key_valid), so T3 fires after RARE_THRESHOLD total encryptions
+  // regardless of which key is installed. Cross-key by design; change this
+  // if per-key isolation is required.
   reg [1:0] fsm_state;
 
   // Keep a short plaintext history for debug/verification visibility.

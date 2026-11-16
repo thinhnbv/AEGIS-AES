@@ -136,7 +136,7 @@ trigger_seq = verif/vectors/trigger_T01.txt
 
 `verif/tb/aegis_cfg_reader.vh` là task đọc file này lúc chạy, dùng chung bởi `tb_security.sv` và `tb_regress_nist.sv`. Nhờ đó **Red team và Blue team không thể lặng lẽ hiểu sai nhau** — cả hai cùng tham chiếu một nguồn.
 
-Mỗi ca có 2 file `.cfg`: `T01.cfg` (tên ngắn) và `T01_p1_key_dump.cfg` (tên đầy đủ) — giống cấu trúc symlink của `verif/vectors/trigger_*.txt`. `make gen-cfg` sinh cả hai.
+Mỗi ca có 2 file `.cfg`: `T01.cfg` (tên ngắn) và `T01_p1_key_dump.cfg` (tên đầy đủ) — song song với 2 file vector `verif/vectors/trigger_T01.txt` (tên ngắn) và `trigger_T01_p1_key_dump.txt` (tên đầy đủ). `make gen-cfg` sinh cả hai.
 
 > ✅ Các file rác `rtl/infected/T01`, `T02`, `T03` (file thường, không phải thư mục) **đã được xoá**.
 
@@ -156,7 +156,7 @@ Mỗi ca có 2 file `.cfg`: `T01.cfg` (tên ngắn) và `T01_p1_key_dump.cfg` (t
   - `nist_kat.txt` (16 dòng), `nist_mct.txt` (10.000 dòng), `nist_vectors.txt` (gộp cả hai) — sinh bằng `scripts/gen_nist_vectors.py`.
   - `trigger_T0x*.txt` — vector kích hoạt riêng cho từng ca Trojan, `trigger_clean.txt` — vector không kích hoạt Trojan nào (baseline "sạch").
   - **Quy ước trường `expected` (hex thứ 3)**: là ciphertext AES-128 *chuẩn* của plaintext trong cùng dòng, dùng làm giá trị tham chiếu để so sánh với output thật của core bị nhiễm. Ngoại lệ duy nhất là `trigger_T01.txt`: payload P1 (key dump) thay ciphertext bằng chính khoá AES, nên `expected` ở đây cố ý là giá trị khoá (`2b7e1516…f3c`) chứ không phải ciphertext AES.
-  - **Tên file trùng ý nghĩa**: mỗi ca có 2 tên — 1 file chứa dữ liệu thật + 1 **symlink** trỏ tới nó (ví dụ `trigger_T01.txt` chứa dữ liệu, `trigger_T01_p1_key_dump.txt` là symlink → `trigger_T01.txt`). Symlink giữ cho `ground_truth.yaml` (`verification.activation_seq`) và cho `make security CASE=...` (testbench nối `verif/vectors/trigger_<CASE>.txt`) cùng trỏ về một nguồn. **Sửa vector phải sửa file chứa dữ liệu thật**, không sửa symlink.
+  - **Tên file trùng ý nghĩa**: mỗi ca có 2 tên — `trigger_T01.txt` (tên ngắn) và `trigger_T01_p1_key_dump.txt` (tên đầy đủ) — **cả hai đều là file thật chứa nội dung giống hệt nhau** (không dùng symlink, xem mục 9). `ground_truth.yaml` (`verification.activation_seq`) và `make security CASE=...` (testbench nối `verif/vectors/trigger_<CASE>.txt`) cùng trỏ về một nguồn. **Sửa vector phải sửa cả 2 file** — chạy `make check-vectors` để xác nhận 2 bản không lệch nhau.
 
 ## 7. `fpga/` — demo trên board thật (ACG525, Gowin GW5A-25)
 
@@ -270,7 +270,7 @@ Nếu cài toolchain ở máy khác/version khác, sửa lại 2 đường dẫn
   - ⚠️ Nhưng `uart_cmd_fsm` **KHÔNG** cùng loại: `fpga/uart/uart_cmd_fsm.v` (giao thức 36/37 byte, cho `top_demo.v`) và `fpga/gowin/security_demo/src/uart_cmd_fsm_security.v` (giao thức 0xA5/0x5A, cho `top_security_demo.v`) là **hai module khác nhau, cố ý khác nhau**. Đừng "đồng bộ" chúng với nhau.
   - Ngoài ra `rtl/aegis/*.v` cũng bị copy vào `fpga/gowin/security_demo/src/`. Sửa RTL ở `rtl/aegis/` thì phải copy sang đó (hoặc tốt hơn: dùng script copy để tránh lệch).
 - ✅ File rác `rtl/infected/T01`, `T02`, `T03` **đã được xoá**.
-- Mỗi ca Trojan có 2 tên file vector (`trigger_T0x.txt` + `trigger_T0x_<tên_đầy_đủ>.txt`) trong đó 1 là **symlink** trỏ sang file kia — sửa file chứa dữ liệu thật, và luôn kiểm tra `ground_truth.yaml` (`verification.activation_seq`) xem ca đó đang dùng tên nào. Tương tự, `verif/cfg/` có cả `T0x.cfg` và `T0x_<tên_đầy_đủ>.cfg`.
+- ✅ Mỗi ca Trojan có 2 tên file vector (`trigger_T0x.txt` + `trigger_T0x_<tên_đầy_đủ>.txt`) — **cả hai đều là file thật chứa nội dung giống hệt**. Trước đây 1 trong 2 là symlink, và **symlink bị "vật chất hóa" thành file chứa tên** khi clone trên Windows (`core.symlinks=false`) → testbench parse sai vector. Đã thay toàn bộ bằng file thật; `make check-vectors` (chạy tự động trước `make security` / `make regress`) báo lỗi nếu 2 bản lệch nhau. Tương tự, `verif/cfg/` có cả `T0x.cfg` và `T0x_<tên_đầy_đủ>.cfg`.
 - ✅ `fpga/host/demo_cli.py` **đã khớp** RTL (`uart_cmd_fsm_security.v`). Cặp dùng với nhau là `demo_cli.py` ↔ `top_security_demo.v`. Xem bảng so sánh 2 giao thức ở mục 7.
 - `fpga/Makefile` trỏ toolchain Linux không tồn tại trên Windows — dùng VSCode task thay thế (mục 8).
 - ✅ `.gitignore` **đã** loại trừ `fpga/gowin/*/impl/`, `*.fs`, `*.bin`, `*.db` và `*.gprj.user`.

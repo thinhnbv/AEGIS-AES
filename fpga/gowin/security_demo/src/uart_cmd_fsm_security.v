@@ -25,7 +25,22 @@
 //---------------------------------------------------------------
 `default_nettype none
 
-module uart_cmd_fsm_security (
+module uart_cmd_fsm_security #(
+    // How long the raw path may take before we declare it hung. A DoS
+    // Trojan (T05) leaves the raw core stuck, so raw_ready never re-
+    // asserts the way the FSM expects; without this window the command
+    // FSM would wait in a raw state forever and never emit a UART
+    // response. A normal encryption completes in well under a hundred
+    // cycles, so this default is generous for clean/leak cases but still
+    // short enough to keep a T05 demo snappy.
+    parameter RAW_TIMEOUT = 16'hFFFF,
+
+    // Same idea for the protected path: if the protected core's TRU has
+    // locked it down (or its result is otherwise stuck) past this many
+    // cycles, stop waiting for `busy` to drop and report the transaction
+    // with what we have.
+    parameter PROT_TIMEOUT = 16'hFFFF
+) (
     input  wire        clk,
     input  wire        rst_n,
 
@@ -87,6 +102,47 @@ module uart_cmd_fsm_security (
 
     reg       raw_result_valid_seen;
 
+    // Raw-path watchdog. Counts clock cycles spent inside the raw
+    // handshake (ST_RAW_INIT..ST_RAW_EXEC). A DoS Trojan (T05) leaves the
+    // raw core stuck, so raw_ready never behaves the way these states
+    // expect and the FSM would otherwise wait forever with no UART
+    // response. When the count reaches RAW_TIMEOUT we skip the raw
+    // result and hand the (still working) protected path's sec_status to
+    // the response instead.
+    reg [15:0] raw_wt;
+    reg [15:0] prot_wt;
+
+    // Shared "fall through to the protected path" snippet. On a raw hang
+    // (T05 DoS) we skip the raw result and either go straight to the
+    // response (if the protected TRU is already in LOCKDOWN from a prior
+    // transaction) or start the protected handshake.
+    task automatic do_raw_timeout;
+        begin
+            raw_wt              <= 16'd0;
+            raw_result_valid_seen <= 1'b0;
+            if (prot_sec_alarm) begin
+                settle_cnt <= 4'd0;
+                state      <= ST_PROT_SETTLE;
+            end else begin
+                prot_wt        <= 16'd0;
+                prot_key       <= raw_key;
+                prot_block     <= raw_block;
+                prot_key_valid <= 1'b1;
+                state          <= ST_PROT_KEY_ACK;
+            end
+        end
+    endtask
+
+    task automatic do_prot_timeout;
+        begin
+            prot_wt <= 16'd0;
+            // Protected path hung (or TRU locked it down): skip the
+            // protected result and report what we have.
+            settle_cnt <= 4'd0;
+            state      <= ST_PROT_SETTLE;
+        end
+    endtask
+
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             state           <= ST_IDLE;
@@ -100,11 +156,29 @@ module uart_cmd_fsm_security (
             tx_phase        <= 1'b0;
             raw_result_valid_seen <= 1'b0;
             settle_cnt      <= 4'd0;
+            raw_wt          <= 16'd0;
+            prot_wt         <= 16'd0;
         end else begin
             raw_init        <= 1'b0;
             raw_next        <= 1'b0;
             prot_key_valid  <= 1'b0;
             prot_data_valid <= 1'b0;
+
+            // Watchdogs: each counts only inside its own handshake phase.
+            case (state)
+                ST_RAW_INIT,
+                ST_RAW_WAIT_READY,
+                ST_RAW_EXEC_ACK,
+                ST_RAW_EXEC:
+                    raw_wt <= raw_wt + 1'b1;
+                ST_PROT_KEY_ACK,
+                ST_PROT_KEY_WAIT,
+                ST_PROT_DATA_ACK,
+                ST_PROT_DATA_WAIT:
+                    prot_wt <= prot_wt + 1'b1;
+                default:
+                    ;
+            endcase
 
             case (state)
                 ST_IDLE: begin
@@ -163,6 +237,7 @@ module uart_cmd_fsm_security (
 
                                 raw_init <= 1'b1;
                                 raw_result_valid_seen <= 1'b0;
+                                raw_wt     <= 16'd0;
                                 state    <= ST_RAW_INIT;
                             end else begin
                                 // Bad checksum: drop the frame silently and
@@ -190,12 +265,19 @@ module uart_cmd_fsm_security (
                     if (raw_ready) begin
                         raw_next <= 1'b1;
                         state    <= ST_RAW_EXEC_ACK;
+                    end else if (raw_wt >= RAW_TIMEOUT) begin
+                        // Raw hung before it ever started (T05 DoS).
+                        do_raw_timeout;
                     end
                 end
 
                 ST_RAW_EXEC_ACK: begin
                     if (!raw_ready) begin
                         state <= ST_RAW_EXEC;
+                    end else if (raw_wt >= RAW_TIMEOUT) begin
+                        // DoS: a hung core never drops ready, so it will
+                        // never reach ST_RAW_EXEC. Skip the raw result.
+                        do_raw_timeout;
                     end
                 end
 
@@ -205,6 +287,7 @@ module uart_cmd_fsm_security (
                     // and ready together when leaving CTRL_NEXT).
                     if (raw_ready) begin
                         raw_result_valid_seen <= 1'b1;
+                        raw_wt <= 16'd0;
 
                         if (prot_sec_alarm) begin
                             // Already latched into LOCKDOWN from a
@@ -222,11 +305,15 @@ module uart_cmd_fsm_security (
                             settle_cnt <= 4'd0;
                             state      <= ST_PROT_SETTLE;
                         end else begin
-                            prot_key   <= raw_key;
-                            prot_block <= raw_block;
+                            prot_wt      <= 16'd0;
+                            prot_key     <= raw_key;
+                            prot_block   <= raw_block;
                             prot_key_valid <= 1'b1;
                             state <= ST_PROT_KEY_ACK;
                         end
+                    end else if (raw_wt >= RAW_TIMEOUT) begin
+                        // Raw never completed even after it started (DoS).
+                        do_raw_timeout;
                     end
                 end
 
@@ -234,6 +321,8 @@ module uart_cmd_fsm_security (
                 ST_PROT_KEY_ACK: begin
                     if (prot_busy) begin
                         state <= ST_PROT_KEY_WAIT;
+                    end else if (prot_wt >= PROT_TIMEOUT) begin
+                        do_prot_timeout;
                     end
                 end
 
@@ -241,12 +330,16 @@ module uart_cmd_fsm_security (
                     if (!prot_busy) begin
                         prot_data_valid <= 1'b1;
                         state <= ST_PROT_DATA_ACK;
+                    end else if (prot_wt >= PROT_TIMEOUT) begin
+                        do_prot_timeout;
                     end
                 end
 
                 ST_PROT_DATA_ACK: begin
                     if (prot_busy) begin
                         state <= ST_PROT_DATA_WAIT;
+                    end else if (prot_wt >= PROT_TIMEOUT) begin
+                        do_prot_timeout;
                     end
                 end
 
@@ -254,6 +347,8 @@ module uart_cmd_fsm_security (
                     if (!prot_busy) begin
                         settle_cnt <= 4'd0;
                         state      <= ST_PROT_SETTLE;
+                    end else if (prot_wt >= PROT_TIMEOUT) begin
+                        do_prot_timeout;
                     end
                 end
 

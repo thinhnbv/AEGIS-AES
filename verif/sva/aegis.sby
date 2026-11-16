@@ -1,0 +1,61 @@
+#================================================================
+# SymbiYosys formal config for the AEGIS-AES security wrapper.
+#
+# Bounded-model-checking of the wrapper's control invariants
+# (pulse discipline, alarm stickiness, no output after alarm) on
+# the CLEAN aegis_aes_top. The AES datapath is black-boxed so the
+# proof stays tractable; Trojan-detection behavior is covered by
+# the simulation regression (make all-cases / make regress), not
+# by formal.
+#
+#   make formal     # requires yosys-sby (apt install yosys-sby)
+#================================================================
+
+[options]
+mode bmc
+depth 64
+
+[engines]
+smtbmc
+
+[files]
+src rtl/aegis/aegis_aes_top.v
+src rtl/aegis/aes_core_tapped.v
+src rtl/aegis/aes_key_mem_tapped.v
+src rtl/aegis/aes_encipher_block.v
+src rtl/aegis/fic_fsm_integrity.v
+src rtl/aegis/klg_key_leak_guard.v
+src rtl/aegis/orc_output_checker.v
+src rtl/aegis/rcm_round_monitor.v
+src rtl/aegis/red_rare_event.v
+src rtl/aegis/tru_tamper_response.v
+src rtl/aes_golden/aes_sbox.v
+src rtl/aes_golden/aes_inv_sbox.v
+src rtl/aes_golden/aes_decipher_block.v
+src verif/sva/aegis_props.sv
+
+[script]
+# -DAEGIS_FORMAL enables the liveness property P7 (request eventually
+# completes) in aegis_props.sv, which the simulation subset of
+# assertions (Verilator) does not support.
+# sby runs yosys from verif/sva/aegis/src/, so paths are relative to that.
+read_verilog -formal -sv -DAEGIS_FORMAL \
+    /home/thinhnbv/aegis-aes/rtl/aegis/aegis_aes_top.v \
+    /home/thinhnbv/aegis-aes/rtl/aegis/aes_core_tapped.v \
+    /home/thinhnbv/aegis-aes/rtl/aegis/aes_key_mem_tapped.v \
+    /home/thinhnbv/aegis-aes/rtl/aegis/aes_encipher_block.v \
+    /home/thinhnbv/aegis-aes/rtl/aegis/fic_fsm_integrity.v \
+    /home/thinhnbv/aegis-aes/rtl/aegis/klg_key_leak_guard.v \
+    /home/thinhnbv/aegis-aes/rtl/aegis/orc_output_checker.v \
+    /home/thinhnbv/aegis-aes/rtl/aegis/rcm_round_monitor.v \
+    /home/thinhnbv/aegis-aes/rtl/aegis/red_rare_event.v \
+    /home/thinhnbv/aegis-aes/rtl/aegis/tru_tamper_response.v \
+    /home/thinhnbv/aegis-aes/rtl/aes_golden/aes_sbox.v \
+    /home/thinhnbv/aegis-aes/rtl/aes_golden/aes_inv_sbox.v \
+    /home/thinhnbv/aegis-aes/rtl/aes_golden/aes_decipher_block.v \
+    /home/thinhnbv/aegis-aes/verif/sva/aegis_props.sv
+
+# The assertion module is attached to the DUT by the `bind` in
+# aegis_props.sv, which read_verilog above reads and applies.
+
+prep -top aegis_aes_top

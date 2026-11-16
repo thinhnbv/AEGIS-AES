@@ -1,5 +1,6 @@
 # ====== AEGIS-AES Makefile ======
 CASE      ?= clean
+CFG       ?= one_shot
 SIM       ?= iverilog
 # Max NIST MCT vectors for `make regress`. 0 = all 10000 (~10 min
 # under Icarus). Set e.g. MCT_LIMIT=100 for a quick smoke test.
@@ -12,6 +13,15 @@ MCT_LIMIT ?= 0
 FA_KEYS   ?= 100
 FA_PER_KEY ?= 1000
 FA_SEED   ?= 305419896
+
+# Optional trigger-count override for the security testbench. Needed on
+# Verilator for T02: there the DUT-internal counter preload is not
+# reachable, so the Trojan must genuinely accumulate 2^16 encryptions.
+# Leave empty for the normal contract repeat count.
+TRIG_REPEAT ?=
+# When TRIG_REPEAT is set, the security TB runs 2^16 encryptions, so
+# extend its watchdog (default 500000 ns is far too short for that).
+VLT_SECURITY_DEFS = $(if $(TRIG_REPEAT),-DTRIG_REPEAT=$(TRIG_REPEAT) -DSECURITY_WATCHDOG_NS=100000000)
 
 RTL_GOLD   = rtl/aes_golden
 RTL_AEGIS  = rtl/aegis
@@ -37,7 +47,7 @@ else
 	SRC_AEGIS_DUT  = $(SRC_AEGIS_KEEP)
 endif
 
-.PHONY: help golden sim security gen-cfg regress regress-all fa-rate lint formal all-cases fpga backend campaign report clean
+.PHONY: help golden sim security gen-cfg regress regress-all fa-rate lint formal all-cases fpga campaign report clean demo-proof demo-proof-all
 
 help:
 	@echo 'make golden              - kiem tra loi AES goc'
@@ -51,8 +61,10 @@ help:
 	@echo 'make lint                - Verilator lint tren rtl/aegis'
 	@echo 'make formal              - SymbiYosys chay tap SVA'
 	@echo 'make all-cases           - chay toan bo benchmark'
+	@echo 'make check-vectors       - kiem tra vector trigger hop le (de chay sau khi checkout)'
+	@echo 'make uvm CASE=...        - (Windows) chay UVM+coverage bang ModelSim'
 	@echo 'make campaign CFG=...    - chay thi nghiem pipeline LLM'
-	@echo 'make fpga / backend      - tong hop FPGA / OpenLane'
+	@echo 'make fpga          - tong hop FPGA'
 
 golden:
 	@mkdir -p $(BUILD)
@@ -83,8 +95,45 @@ SEC_GOLD_SUPPORT = $(RTL_GOLD)/aes_sbox.v $(RTL_GOLD)/aes_inv_sbox.v \
 gen-cfg:
 	@python3 scripts/gen_case_cfg.py
 
-security: gen-cfg
+# Validate trigger vectors parse and are in sync (catches a checkout
+# that materialized a symlink on a non-symlink filesystem).
+check-vectors:
+	@python3 scripts/check_trigger_vectors.py
+
+security: gen-cfg check-vectors
 	@mkdir -p $(BUILD)/$(CASE)
+ifeq ($(SIM),verilator)
+# Verilator: compile to a binary (fast), then run. Same source
+# selection as the Icarus flow; $fopen/$fscanf (the TB's vector
+# readers) are supported.
+ifeq ($(CASE),CLEAN)
+	verilator --binary --timing -Wno-fatal -Wno-DECLFILENAME \
+		-I$(RTL_AEGIS) -I$(TB) --top-module tb_security \
+		-DCASE=\"$(CASE)\" $(VLT_SECURITY_DEFS) \
+		-Mdir $(BUILD)/$(CASE)/obj -o security_v \
+		$(SRC_AEGIS) \
+		$(filter-out $(RTL_GOLD)/aes.v,$(SRC_GOLD)) \
+		$(TB)/tb_security.sv
+else ifeq ($(CASE),clean)
+	verilator --binary --timing -Wno-fatal -Wno-DECLFILENAME \
+		-I$(RTL_AEGIS) -I$(TB) --top-module tb_security \
+		-DCASE=\"$(CASE)\" $(VLT_SECURITY_DEFS) \
+		-Mdir $(BUILD)/$(CASE)/obj -o security_v \
+		$(SRC_AEGIS) \
+		$(filter-out $(RTL_GOLD)/aes.v,$(SRC_GOLD)) \
+		$(TB)/tb_security.sv
+else
+	verilator --binary --timing -Wno-fatal -Wno-DECLFILENAME \
+		-I$(RTL_AEGIS) -I$(TB) --top-module tb_security \
+		-DCASE=\"$(CASE)\" $(VLT_SECURITY_DEFS) \
+		-Mdir $(BUILD)/$(CASE)/obj -o security_v \
+		$(filter-out $(RTL_AEGIS)/aes_core_tapped.v,$(SRC_AEGIS)) \
+		$(filter-out $(RTL_CASE)/aes_core.v,$(wildcard $(RTL_CASE)/*_tapped.v)) \
+		$(SEC_GOLD_SUPPORT) \
+		$(TB)/tb_security.sv
+endif
+	@bash -o pipefail -c '$(BUILD)/$(CASE)/obj/security_v | tee $(BUILD)/$(CASE)/$(CASE).log'
+else
 ifeq ($(CASE),CLEAN)
 	# CLEAN case: aegis RTL + golden support
 	iverilog -g2012 -I$(RTL_AEGIS) -I$(TB) -DCASE=\"$(CASE)\" -o $(BUILD)/$(CASE)/$(CASE).out \
@@ -108,6 +157,7 @@ else
 		$(TB)/tb_security.sv
 endif
 	@bash -o pipefail -c 'vvp $(BUILD)/$(CASE)/$(CASE).out | tee $(BUILD)/$(CASE)/$(CASE).log'
+endif
 
 #---------------------------------------------------------------
 # regress: NIST FIPS-197 regression (KAT 16 + MCT 10000 vectors)
@@ -116,8 +166,40 @@ endif
 # clean NIST traffic - ciphertext still correct AND no monitor
 # raises a false alarm.
 #---------------------------------------------------------------
-regress: gen-cfg
+regress: gen-cfg check-vectors
 	@mkdir -p $(BUILD)/$(CASE)
+ifeq ($(SIM),verilator)
+# Verilator: compile to a binary (fast), then run. MCT_LIMIT=0 keeps
+# the full 10000-vector run; same source selection as the Icarus flow.
+ifeq ($(CASE),CLEAN)
+	verilator --binary --timing -Wno-fatal -Wno-DECLFILENAME \
+		-I$(RTL_AEGIS) -I$(TB) --top-module tb_regress_nist \
+		-DMCT_LIMIT=$(MCT_LIMIT) -DCASE=\"$(CASE)\" \
+		-Mdir $(BUILD)/$(CASE)/obj -o regress_v \
+		$(SRC_AEGIS) \
+		$(filter-out $(RTL_GOLD)/aes.v,$(SRC_GOLD)) \
+		$(TB)/tb_regress_nist.sv
+else ifeq ($(CASE),clean)
+	verilator --binary --timing -Wno-fatal -Wno-DECLFILENAME \
+		-I$(RTL_AEGIS) -I$(TB) --top-module tb_regress_nist \
+		-DMCT_LIMIT=$(MCT_LIMIT) -DCASE=\"$(CASE)\" \
+		-Mdir $(BUILD)/$(CASE)/obj -o regress_v \
+		$(SRC_AEGIS) \
+		$(filter-out $(RTL_GOLD)/aes.v,$(SRC_GOLD)) \
+		$(TB)/tb_regress_nist.sv
+else
+	verilator --binary --timing -Wno-fatal -Wno-DECLFILENAME \
+		-I$(RTL_AEGIS) -I$(TB) --top-module tb_regress_nist \
+		-DMCT_LIMIT=$(MCT_LIMIT) -DCASE=\"$(CASE)\" \
+		-Mdir $(BUILD)/$(CASE)/obj -o regress_v \
+		$(filter-out $(RTL_AEGIS)/aes_core_tapped.v,$(SRC_AEGIS)) \
+		$(filter-out $(RTL_CASE)/aes_core.v,$(wildcard $(RTL_CASE)/*_tapped.v)) \
+		$(SEC_GOLD_SUPPORT) \
+		$(TB)/tb_regress_nist.sv
+endif
+	@bash -o pipefail -c '$(BUILD)/$(CASE)/obj/regress_v | tee $(BUILD)/$(CASE)/regress.log'
+	@exit 0
+endif
 ifeq ($(CASE),CLEAN)
 	iverilog -g2012 -I$(RTL_AEGIS) -I$(TB) -DMCT_LIMIT=$(MCT_LIMIT) -DCASE=\"$(CASE)\" -o $(BUILD)/$(CASE)/regress.out \
 		$(SRC_AEGIS) \
@@ -137,14 +219,19 @@ else
 endif
 	@bash -o pipefail -c 'vvp $(BUILD)/$(CASE)/regress.out | tee $(BUILD)/$(CASE)/regress.log'
 
-# Run the NIST regression over every infected case plus the clean core.
+# Run the NIST regression over every infected case plus the clean
+# core. SIM propagates to each case (default iverilog; use
+# SIM=verilator for the compiled, fast pass). Fails the target if any
+# case fails.
 regress-all:
-	@echo "=== clean ==="
-	@$(MAKE) --no-print-directory regress CASE=clean || true
-	@for c in $$(ls rtl/infected); do \
-	echo "=== $$c ==="; \
-	$(MAKE) --no-print-directory regress CASE=$$c || true; \
-	done
+	@FAILS=0; echo "=== clean ==="; \
+	$(MAKE) --no-print-directory regress CASE=clean SIM=$(SIM) || FAILS=$$((FAILS+1)); \
+	for c in $$(ls rtl/infected); do \
+		echo "=== $$c ==="; \
+		$(MAKE) --no-print-directory regress CASE=$$c SIM=$(SIM) || FAILS=$$((FAILS+1)); \
+	done; \
+	if [ $$FAILS -ne 0 ]; then echo "regress-all: $$FAILS case(s) FAILED"; exit 1; fi; \
+	echo "regress-all: OK (SIM=$$(SIM))"
 
 #---------------------------------------------------------------
 # fa-rate: measure the false-alarm rate of the security monitors.
@@ -191,17 +278,41 @@ lint:
 	verilator --lint-only -Wall -Wno-fatal -Wno-DECLFILENAME \
 		-I$(RTL_AEGIS) $(SRC_DUT) $(SRC_AEGIS_DUT) \
 		--top-module aegis_aes_top
+# UVM + functional-coverage flow. ModelSim (Altera/Intel, Windows)
+# is the target simulator; the script lives in verif/uvm/scripts/
+# and is meant to be run from the repo root on Windows
+# (vsim -c -do "do verif/uvm/scripts/aegis_uvm.tcl").
+# This target only ensures the pinned UVM-core submodule is present.
+uvm:
+	@git submodule update --init --recursive 2>/dev/null || true
+	@echo "UVM flow runs under ModelSim on Windows:"
+	@echo "  vsim -c -do \"set aegis_case $(or $(CASE),clean); do verif/uvm/scripts/aegis_uvm.tcl\""
+	@echo "  (CASE: clean | fa | T01_p1_key_dump ... T05_dos_trojan)"
+
 formal:
+	@command -v sby >/dev/null 2>&1 || { echo "sby (yosys-sby) chua cai - chay: sudo apt install yosys-sby"; exit 1; }
 	sby -f verif/sva/aegis.sby
 
 all-cases:
-	@for c in $$(ls rtl/infected); do \
-	echo "=== $$c ==="; \
-	$(MAKE) --no-print-directory security CASE=$$c || true; \
-	done
+	@failed=0; \
+	for c in $$(ls rtl/infected); do \
+	  echo "=== $$c ==="; \
+	  if $(MAKE) --no-print-directory security CASE=$$c; then \
+	    echo "[OK] $$c"; \
+	  else \
+	    echo "[FAIL] $$c"; failed=1; \
+	  fi; \
+	done; \
+	echo "===================="; \
+	if [ $$failed -eq 0 ]; then \
+	  echo "[ALL-CASES] PASS: all cases detected"; \
+	else \
+	  echo "[ALL-CASES] FAIL: one or more cases failed"; \
+	  exit 1; \
+	fi
 
 campaign:
-	python3 platform/run.py --config platform/config/$$(CFG).yaml --out results/runs/$$(STAMP)_$$(CFG)
+	python3 platform/run.py --config platform/config/$(CFG).yaml --case $(CASE) --out build/runs/$(STAMP)_$(CFG)_$(CASE)
 
 report:
 	python3 scripts/report.py results/runs --out results/tables
@@ -209,8 +320,52 @@ report:
 fpga:
 	$$(MAKE) -C fpga bitstream
 
-backend:
-	cd backend/openlane && flow.tcl -design aegis_aes -tag $$(STAMP)
-
 clean:
 	rm -rf $(BUILD)
+
+#---------------------------------------------------------------
+# demo-proof: byte-level UART protocol proof (tb_uart_demo.sv).
+#
+# Per-case:  make demo-proof CASE=T01_p1_key_dump   (or T02..T05)
+# All cases: make demo-proof-all
+#
+# Exercises the exact UART command FSM that runs on the Gowin/Zynq
+# board (uart_cmd_fsm_security.v, including the T05 raw/protected
+# watchdog) at the UART byte boundary, using the per-case infected
+# core for the raw path and the real aegis_aes_top for the protected
+# path. This is the showcase "evidence" that every Trojan case
+# returns a valid 37-byte response through the board's protocol.
+#---------------------------------------------------------------
+DEMO_PROOF_DIR = fpga/gowin/security_demo
+
+# One case at a time:  make demo-proof CASE=T01_p1_key_dump
+# The infected raw core is taken from rtl/infected/$(CASE)/; the
+# CASE_ID select is derived from the case name so the right TB body
+# runs. All 5:  make demo-proof-all
+demo-proof:
+	@mkdir -p $(BUILD)/demo_proof
+	@cid=$$(echo $(CASE) | sed -E 's/^T0([0-9]).*/\1/'); \
+	echo "=== demo-proof $(CASE) (T0$$cid) ==="; \
+	iverilog -g2012 -I$(RTL_AEGIS) \
+		-DT0$$cid \
+		-o $(BUILD)/demo_proof/$(CASE).out \
+		$(filter-out $(RTL_AEGIS)/aes_core_tapped.v,$(SRC_AEGIS)) \
+		$(wildcard $(RTL_CASE)/aes_core_tapped.v) \
+		$(SEC_GOLD_SUPPORT) \
+		$(DEMO_PROOF_DIR)/src/uart_cmd_fsm_security.v \
+		$(DEMO_PROOF_DIR)/tb/tb_uart_demo.sv; \
+	vvp $(BUILD)/demo_proof/$(CASE).out
+
+demo-proof-all:
+	@ok=1; \
+	for c in T01_p1_key_dump T02_p2_slow_leak T03_p3_skip_mixcol \
+		T04_p4_debug_port T05_dos_trojan; do \
+		echo "=== demo-proof $$c ==="; \
+		if $(MAKE) --no-print-directory demo-proof CASE=$$c > $(BUILD)/demo_proof/proof_$${c}.log 2>&1; then \
+			grep -E "\[PASS\]|\[FAIL\]" $(BUILD)/demo_proof/proof_$${c}.log; \
+		else \
+			echo "[FAIL] demo-proof $$c"; cat $(BUILD)/demo_proof/proof_$${c}.log; ok=0; \
+		fi; \
+	done; \
+	if [ $$ok = 1 ]; then echo "demo-proof-all: all cases PASS"; else \
+		echo "demo-proof-all: SOME CASES FAILED"; exit 1; fi
