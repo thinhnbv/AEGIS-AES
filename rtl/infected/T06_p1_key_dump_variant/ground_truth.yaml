@@ -6,7 +6,7 @@ created: 2026-11-13
 trigger:
   class: T1
   description: Plaintext bang hang so 128-bit dinh truoc (variant trojan name)
-  activation: "128'hC0FFEE_C0FFEE_C0FFEE_C0FFEE"
+  activation: "128'hDEADBEEF_CAFEBABE_00000000_00000000"
   rarity: "2^-128"
 
 payload:
@@ -28,4 +28,4 @@ detection:
 
 verification:
   silent_under_nist: false
-  activation_seq: verif/vectors/trigger_T06.txt
+  activation_seq: verif/vectors/trigger_T06_p1_key_dump_variant.txt

