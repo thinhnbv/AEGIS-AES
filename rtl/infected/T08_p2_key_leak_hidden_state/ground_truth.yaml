@@ -1,0 +1,31 @@
+case_id: T08_p2_key_leak_hidden_state
+base_design: aes_golden
+author: ported-from-GHOST-benchmark-HT2
+created: 2026-11-16
+
+trigger:
+  class: T1
+  description: Plaintext bang hang so 128-bit dinh truoc (key-leak hidden state, idea from GHOST HT2)
+  activation: "128'hBEEF_CAFE_DEAD_BEEF_CAFE_DEAD_BEEF_CAFE"
+  rarity: "2^-128"
+
+payload:
+  class: P2
+  description: Khoa AES-128 duoc sao chep vao trang thai an roi roi luat xuat mang
+  asset: aes_key
+  observable: logic
+
+location:
+  file: aes_core.v
+  module: aes_core
+  line_start: 182
+  line_end: 190
+  always_block: null
+
+detection:
+  expected_checker: KLG
+  expected_latency: 1
+
+verification:
+  silent_under_nist: false
+  activation_seq: verif/vectors/trigger_T08_p2_key_leak_hidden_state.txt
