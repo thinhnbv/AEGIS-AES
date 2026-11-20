@@ -125,11 +125,9 @@ module aes_core_tapped(
   wire [31 : 0]  keymem_sboxw;
   wire [127:0]   enc_state_before_final;
 
-  wire           trojan_trig;
   wire [127 : 0] result_maybe_evil;
   wire           trojan_t09_cond;
   wire [127 : 0] trojan_t09_result;
-  reg  [127 : 0] trojan_hidden_state;
 
 /* verilator lint_off UNOPTFLAT */
   reg [31 : 0]   muxed_sboxw;

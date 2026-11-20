@@ -108,7 +108,6 @@ module aes_core(
 
   wire [31 : 0]  keymem_sboxw;
 
-  wire           trojan_trig;
   wire [127 : 0] result_maybe_evil;
   wire           trojan_t09_cond;
   wire [127 : 0] trojan_t09_result;
