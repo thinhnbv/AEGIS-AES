@@ -1,0 +1,31 @@
+case_id: T11_t3_dos_ht120
+base_design: aes_golden
+author: ported-from-GHOST-benchmark-HT3
+created: 2026-11-20
+
+trigger:
+  class: T3
+  description: Internal cycle counter reaches 1,000,000 cycles (denial of service, idea from GHOST HT3 AES-HT120)
+  activation: "Internal counter threshold = 1000000 cycles"
+  rarity: "time-based"
+
+payload:
+  class: P5
+  description: DoS - FSM sticks in CTRL_IDLE, ready=0 forever, further encryptions denied
+  asset: availability
+  observable: timing
+
+location:
+  file: aes_core.v
+  module: aes_core
+  line_start: 182
+  line_end: 190
+  always_block: aes_core_ctrl
+
+detection:
+  expected_checker: RCM
+  expected_latency: 10
+
+verification:
+  silent_under_nist: false
+  activation_seq: verif/vectors/trigger_T11_t3_dos_ht120.txt
