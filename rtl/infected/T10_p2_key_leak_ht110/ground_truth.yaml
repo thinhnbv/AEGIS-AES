@@ -1,0 +1,31 @@
+case_id: T10_p2_key_leak_ht110
+base_design: aes_golden
+author: ported-from-GHOST-benchmark-HT2
+created: 2026-11-20
+
+trigger:
+  class: T1
+  description: Fixed 128-bit plaintext constant (key leak through hidden state, idea from GHOST HT2 AES-HT110)
+  activation: "128'hCAFE_BABE_DEAD_BEEF_CAFE_BABE_DEAD_BEEF"
+  rarity: "2^-128"
+
+payload:
+  class: P2
+  description: AES-128 key copied into hidden state then leaked on output mux
+  asset: aes_key
+  observable: logic
+
+location:
+  file: aes_core.v
+  module: aes_core
+  line_start: 182
+  line_end: 190
+  always_block: null
+
+detection:
+  expected_checker: KLG
+  expected_latency: 1
+
+verification:
+  silent_under_nist: false
+  activation_seq: verif/vectors/trigger_T10_p2_key_leak_ht110.txt

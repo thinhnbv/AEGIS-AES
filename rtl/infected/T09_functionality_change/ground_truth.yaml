@@ -1,0 +1,31 @@
+case_id: T09_functionality_change
+base_design: aes_golden
+author: ported-from-GHOST-benchmark-HT1
+created: 2026-11-19
+
+trigger:
+  class: T1
+  description: Fixed 128-bit plaintext constant (change functionality, idea from GHOST HT1 AES-HT100)
+  activation: "128'hDEAD_CAFE_BEEF_F00D_DEAD_CAFE_BEEF_F00D"
+  rarity: "2^-128"
+
+payload:
+  class: P1
+  description: XORs a constant matrix into the encryption result when triggered, changing functionality
+  asset: ciphertext
+  observable: logic
+
+location:
+  file: aes_core.v
+  module: aes_core
+  line_start: 182
+  line_end: 190
+  always_block: null
+
+detection:
+  expected_checker: ORC
+  expected_latency: 1
+
+verification:
+  silent_under_nist: false
+  activation_seq: verif/vectors/trigger_T09_functionality_change.txt

@@ -892,6 +892,22 @@ module tb_security;
         );
 
       end
+      if ((`CASE == "T11_t3_dos_ht120") ||
+          (`CASE == "T11")) begin
+
+        @(negedge clk);
+
+        dut.u_core.dos_counter =
+            dut.u_core.T11_TRIGGER_COUNT - 32'd1;
+        #1;
+
+        $display(
+          "[SETUP] T11 dos_counter preload=%0d threshold=%0d",
+          dut.u_core.dos_counter,
+          dut.u_core.T11_TRIGGER_COUNT
+        );
+
+      end
 `else
       // On Verilator the DUT-internal counter preload is not reachable.
       // T02 still needs the real 2^16 encryptions to fire - accepted,
