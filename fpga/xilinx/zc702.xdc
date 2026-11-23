@@ -26,16 +26,14 @@ set_property PACKAGE_PIN H22 [get_ports uart_tx]
 set_property IOSTANDARD LVCMOS25 [get_ports {uart_rx uart_tx}]
 
 # ---- LEDs user: 8-bit (DS15-DS22) ----
-# DS15-DS18 (led[0]-led[3]): ball P17/P18/W10/V7 can xac nhan lai tu schematic ZC702 (UG850).
 set_property PACKAGE_PIN P17 [get_ports {led[0]}]
 set_property PACKAGE_PIN P18 [get_ports {led[1]}]
 set_property PACKAGE_PIN W10 [get_ports {led[2]}]
 set_property PACKAGE_PIN V7  [get_ports {led[3]}]
 
-# DS19-DS22 (PMod1, da co): heartbeat/TRU/idle/ORC
-set_property PACKAGE_PIN E15 [get_ports {led[4]}]
-set_property PACKAGE_PIN D15 [get_ports {led[5]}]
-set_property PACKAGE_PIN W17 [get_ports {led[6]}]
-set_property PACKAGE_PIN W5  [get_ports {led[7]}]
+set_property PACKAGE_PIN W5  [get_ports {led[4]}]
+set_property PACKAGE_PIN W17 [get_ports {led[5]}]
+set_property PACKAGE_PIN D15 [get_ports {led[6]}]
+set_property PACKAGE_PIN E15 [get_ports {led[7]}]
 
 set_property IOSTANDARD LVCMOS25 [get_ports {led[0] led[1] led[2] led[3] led[4] led[5] led[6] led[7]}]
