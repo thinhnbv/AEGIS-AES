@@ -30,7 +30,9 @@
 //   rst_n       = G19     (GPIO_SW_N / SW5, ACTIVE-HIGH: thả=0, nhan=1)
 //   uart_rx     = H17     (FPGA nhan tu STM32_TX/PA9)
 //   uart_tx     = H22     (FPGA gui den STM32_RX/PA10)
-//   led[0:3]    = E15/D15/W17/W5 (PMod1)
+//   led[0:7]    = DS15-DS22 user LEDs (8-bit, see zc702.xdc for ball pins)
+//                 led[0]=KLG, led[1]=FIC, led[2]=RCM, led[3]=RED,
+//                 led[4]=ORC, led[5]=TRU alarm, led[6]=~busy, led[7]=heartbeat
 //---------------------------------------------------------------
 `default_nettype none
 
@@ -42,7 +44,7 @@ module top_security_demo (
     input  wire       uart_rx,    // H17: nhan tu STM32_TX
     output wire       uart_tx,    // H22: gui den STM32_RX
 
-    output wire [3:0] led
+    output wire [7:0] led   // DS15-DS22: KLG FIC RCM RED ORC TRU ~busy heartbeat
 );
 
 // SW5 la active-high (G19=1 khi nhan). Dao ve active-low cho cac module con.
@@ -236,11 +238,23 @@ uart_cmd_fsm_security u_cmd (
     .prot_sec_status      (prot_sec_status)
 );
 
-// Status LEDs
-assign led[0] = ~uart_rx;      // RX activity
-assign led[1] = ~uart_tx;      // TX activity
-assign led[2] = ~prot_busy;    // lit when protected path idle
-assign led[3] = prot_sec_alarm; // lit once TRU has locked down
+// Status LEDs: DS15-DS22 on led[7:0]
+//   led[0] = KLG status   -> DS15
+//   led[1] = FIC status   -> DS16
+//   led[2] = RCM status   -> DS17
+//   led[3] = RED status   -> DS18
+//   led[4] = ORC status   -> DS22
+//   led[5] = TRU alarm    -> DS21
+//   led[6] = ~busy (idle) -> DS20
+//   led[7] = heartbeat    -> DS19
+assign led[0] = prot_sec_status[0];  // DS15 – KLG
+assign led[1] = prot_sec_status[1];  // DS16 – FIC
+assign led[2] = prot_sec_status[2];  // DS17 – RCM
+assign led[3] = prot_sec_status[3];  // DS18 – RED
+assign led[4] = prot_sec_status[4];  // DS22 – ORC
+assign led[5] = prot_sec_alarm;      // DS21 – TRU alarm
+assign led[6] = ~prot_busy;          // DS20 – protected idle
+assign led[7] = 1'b1;                // DS19 – heartbeat (system alive)
 
 endmodule
 

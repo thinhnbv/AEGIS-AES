@@ -16,7 +16,7 @@ create_generated_clock -name clk25 -source [get_pins u_clkbuff/O] \
 
 # ---- Reset: GPIO_SW_N (chân G19, ACTIVE-HIGH: thả=0, nhan=1) ----
 set_property PACKAGE_PIN G19 [get_ports rst_n]
-set_property IOSTANDARD LVCMOS25 [get_ports rst_n]
+set_property IOSTANDARD LVCMOS33 [get_ports rst_n]   # sua LVCMOS25 -> LVCMOS33 de khong bi BIVC-1 voi uart (bank 35)
 
 # ---- UART: noi truc tiep tu STM32F103 (Blue Pill) qua header J40 ----
 # Header J40 (XADC) tren ZC702:
@@ -27,9 +27,17 @@ set_property PACKAGE_PIN H22 [get_ports uart_rx]
 set_property PACKAGE_PIN H17 [get_ports uart_tx]
 set_property IOSTANDARD LVCMOS33 [get_ports {uart_rx uart_tx}]
 
-# ---- LEDs user: PMod1 (DS19-22) ----
-set_property PACKAGE_PIN E15 [get_ports {led[0]}]
-set_property PACKAGE_PIN D15 [get_ports {led[1]}]
-set_property PACKAGE_PIN W17 [get_ports {led[2]}]
-set_property PACKAGE_PIN W5  [get_ports {led[3]}]
-set_property IOSTANDARD LVCMOS25 [get_ports {led[0] led[1] led[2] led[3]}]
+# ---- LEDs user: 8-bit (DS15-DS22) ----
+# DS15-DS18: CAN THEM ball pin tu schematic ZC702 (UG850) - thay <BALL_...>
+set_property PACKAGE_PIN <BALL_DS15> [get_ports {led[0]}]
+set_property PACKAGE_PIN <BALL_DS16> [get_ports {led[1]}]
+set_property PACKAGE_PIN <BALL_DS17> [get_ports {led[2]}]
+set_property PACKAGE_PIN <BALL_DS18> [get_ports {led[3]}]
+
+# DS19-DS22 (PMod1, da co): heartbeat/TRU/idle/ORC
+set_property PACKAGE_PIN E15 [get_ports {led[4]}]
+set_property PACKAGE_PIN D15 [get_ports {led[5]}]
+set_property PACKAGE_PIN W17 [get_ports {led[6]}]
+set_property PACKAGE_PIN W5  [get_ports {led[7]}]
+
+set_property IOSTANDARD LVCMOS25 [get_ports {led[0] led[1] led[2] led[3] led[4] led[5] led[6] led[7]}]
