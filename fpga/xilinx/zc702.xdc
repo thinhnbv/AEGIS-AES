@@ -29,10 +29,10 @@ set_property IOSTANDARD LVCMOS33 [get_ports {uart_rx uart_tx}]
 
 # ---- LEDs user: 8-bit (DS15-DS22) ----
 # DS15-DS18: CAN THEM ball pin tu schematic ZC702 (UG850) - thay <BALL_...>
-set_property PACKAGE_PIN <BALL_DS15> [get_ports {led[0]}]
-set_property PACKAGE_PIN <BALL_DS16> [get_ports {led[1]}]
-set_property PACKAGE_PIN <BALL_DS17> [get_ports {led[2]}]
-set_property PACKAGE_PIN <BALL_DS18> [get_ports {led[3]}]
+set_property PACKAGE_PIN P17 [get_ports {led[0]}]
+set_property PACKAGE_PIN P18 [get_ports {led[1]}]
+set_property PACKAGE_PIN W10 [get_ports {led[2]}]
+set_property PACKAGE_PIN V7 [get_ports {led[3]}]
 
 # DS19-DS22 (PMod1, da co): heartbeat/TRU/idle/ORC
 set_property PACKAGE_PIN E15 [get_ports {led[4]}]
