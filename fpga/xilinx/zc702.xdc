@@ -1,7 +1,7 @@
 #=======================================================================
 # zc702.xdc - AEGIS-AES security demo on ZC702 (xc7z020clg484-1)
 # Pure RTL (khong can Block Design, khong can Zynq PS).
-# UART noi truc tiep tu STM32F103 (Blue Pill) qua header J40.
+# UART noi truc tiep qua header J40.
 #=======================================================================
 
 # ---- SYSCLK: 200 MHz LVDS, on-board oscillator (UG850, bank MRCC) ----
