@@ -40,10 +40,10 @@ T02_TRIGGER = bytes.fromhex(
 T03_TRIGGER = bytes.fromhex(
     "123456789abcdef00000000000000001"
 )
-T04_TRIGGER_A = bytes(16 * 0xA5)
-T04_TRIGGER_B = bytes(16 * 0x5A)
-T04_TRIGGER_C = bytes(16 * 0xFF)
-T05_TRIGGER = bytes(16 * 0xFF)
+T04_TRIGGER_A = bytes([0xA5]) * 16
+T04_TRIGGER_B = bytes([0x5A]) * 16
+T04_TRIGGER_C = bytes([0xFF]) * 16
+T05_TRIGGER = bytes([0xFF]) * 16
 ZERO_BLOCK = bytes(16)
 
 # How many encryptions the T02 slow-leak counter must accumulate
